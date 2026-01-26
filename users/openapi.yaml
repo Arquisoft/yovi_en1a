@@ -1,0 +1,35 @@
+openapi: 3.0.0
+info:
+  title: User Service API
+  version: 1.0.0
+  description: API for managing users
+paths:
+  /createuser:
+    post:
+      summary: Creates a new user
+      description: Creates a new user with the given username.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+              properties:
+                username:
+                  type: string
+                  example: "testuser"
+      responses:
+        '200':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Hello testuser! welcome to the course!"
+        '400':
+          description: Error creating user

@@ -1,0 +1,24 @@
+{
+  "name": "users",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node users-service.js",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "express-prom-bundle": "^8.0.0",
+    "js-yaml": "^4.1.0",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.15",
+    "supertest": "^7.1.4",
+    "vitest": "^4.0.15"
+  }
+}
