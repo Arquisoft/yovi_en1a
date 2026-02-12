@@ -1,225 +1,75 @@
-ifndef::imagesdir[:imagesdir: ../images]
-
 [[section-building-block-view]]
-
-
 == Building Block View
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Content
-The building block view shows the static decomposition of the system into building blocks (modules, components, subsystems, classes, interfaces, packages, libraries, frameworks, layers, partitions, tiers, functions, macros, operations, data structures, ...) as well as their dependencies (relationships, associations, ...)
+The Building Block View provides a static decomposition of the YOVI_0 system. It follows a hierarchical approach, starting from the overall system and zooming into individual components.
 
-This view is mandatory for every architecture documentation.
-In analogy to a house this is the _floor plan_.
+=== 5.1. Level 1: White Box Overall System
 
-.Motivation
-Maintain an overview of your source code by making its structure understandable through
-abstraction.
+The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).
 
-This allows you to communicate with your stakeholder on an abstract level without disclosing implementation details.
+[plantuml, level1-whitebox, png]
+----
+@startuml
+!include <C4/C4_Container>
 
-.Form
-The building block view is a hierarchical collection of black boxes and white boxes
-(see figure below) and their descriptions.
+Layout_LeftToRight()
 
-image::05_building_blocks-EN.png["Hierarchy of building blocks"]
+System_Boundary(yovi, "YOVI_0 System") {
+    Container(webapp, "Webapp", "React, TypeScript", "Provides the UI and exposes the Public Bot API.")
+    Container(usersvc, "User Service", "Node.js, Express", "Manages user registration and persists match statistics.")
+    Container(gamey, "GameY Engine", "Rust, Axum", "Handles game logic, YEN parsing, and AI strategies.")
+}
 
-*Level 1* is the white box description of the overall system together with black
-box descriptions of all contained building blocks.
+Rel(webapp, usersvc, "Manages users", "JSON/HTTP")
+Rel(webapp, gamey, "Requests moves/validation", "JSON/YEN/HTTP")
+@enduml
+----
 
-*Level 2* zooms into some building blocks of level 1.
-Thus it contains the white box description of selected building blocks of level 1, together with black box descriptions of their internal building blocks.
-
-*Level 3* zooms into selected building blocks of level 2, and so on.
-
-
-.Further Information
-
-See https://docs.arc42.org/section-5/[Building Block View] in the arc42 documentation.
-
-****
-endif::arc42help[]
-
-=== Whitebox Overall System
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Here you describe the decomposition of the overall system using the following white box template. It contains
-
- * an overview diagram
- * a motivation for the decomposition
- * black box descriptions of the contained building blocks. For these we offer you alternatives:
-
-   ** use _one_ table for a short and pragmatic overview of all contained building blocks and their interfaces
-   ** use a list of black box descriptions of the building blocks according to the black box template (see below).
-   Depending on your choice of tool this list could be sub-chapters (in text files), sub-pages (in a Wiki) or nested elements (in a modeling tool).
-
-
- * (optional:) important interfaces, that are not explained in the black box templates of a building block, but are very important for understanding the white box.
-Since there are so many ways to specify interfaces why do not provide a specific template for them.
- In the worst case you have to specify and describe syntax, semantics, protocols, error handling,
- restrictions, versions, qualities, necessary compatibilities and many things more.
-In the best case you will get away with examples or simple signatures.
-
-****
-endif::arc42help[]
-
-_**<Overview Diagram>**_
-
-Motivation::
-
-_<text explanation>_
-
-
-Contained Building Blocks::
-_<Description of contained building block (black boxes)>_
-
-Important Interfaces::
-_<Description of important interfaces>_
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Insert your explanations of black boxes from level 1:
-
-If you use tabular form you will only describe your black boxes with name and
-responsibility according to the following schema:
-
-[cols="1,2" options="header"]
+[cols="1,3", options="header"]
 |===
-| **Name** | **Responsibility**
-| _<black box 1>_ | _<Text>_
-| _<black box 2>_ | _<Text>_
+|Name |Responsibility
+|**Webapp** |The central orchestrator. It handles the hexagonal grid rendering, user interaction, and provides the documented API for external bots to participate in matches.
+|**User Service** |A specialized service for administrative tasks. It simulates user persistence and provides the data necessary for the "Participation History" and "Statistics" requirements.
+|**GameY Engine** |The high-performance "brain" of the system. Written in Rust for computational efficiency, it implements the formal rules of Game Y and suggests moves based on different difficulty levels.
 |===
 
+=== 5.2. Level 2: White Box GameY (Logic Subsystem)
 
+This level zooms into the **GameY** component, as it contains the most complex logic regarding YEN notation and game strategies.
 
-If you use a list of black box descriptions then you fill in a separate black box template for every important building block .
-Its headline is the name of the black box.
-****
-endif::arc42help[]
+[plantuml, gamey-whitebox, png]
+----
+@startuml
+package "GameY Engine (Rust)" {
+    component [Web Interface] as web
+    component [Core Logic] as core
+    component [Bot Registry] as bot
+    component [Notation Handler] as notation
+}
 
-==== <Name black box 1>
+web --> core : requests evaluation
+core --> notation : parses/generates YEN
+core --> bot : invokes AI strategy
+@enduml
+----
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Here you describe <black box 1>
-according the the following black box template:
+[cols="1,3", options="header"]
+|===
+|Component |Description
+|**Core Logic (`src/core`)** |The heart of the engine. It defines the board state and the connectivity logic (checking if a player has connected three edges).
+|**Bot Registry (`src/bot`)** |A modular registry for AI strategies. It satisfies the requirement for "more than one strategy" (e.g., Random vs. Advanced).
+|**Notation Handler (`src/notation`)** |Translates internal data structures into the **YEN Notation** format required for JSON communication.
+|**Web Interface (`src/web`)** |The entry point for the service, exposing endpoints like `/next-move` to the Webapp.
+|===
 
-* Purpose/Responsibility
-* Interface(s), when they are not extracted as separate paragraphs. This interfaces may include qualities and performance characteristics.
-* (Optional) Quality-/Performance characteristics of the black box, e.g.availability, run time behavior, ....
-* (Optional) directory/file location
-* (Optional) Fulfilled requirements (if you need traceability to requirements).
-* (Optional) Open issues/problems/risks
+=== 5.3. Level 2: White Box Webapp (Frontend Subsystem)
 
-****
-endif::arc42help[]
+The Webapp manages the user's view and the external API for bots.
 
-_<Purpose/Responsibility>_
-
-_<Interface(s)>_
-
-_<(Optional) Quality/Performance Characteristics>_
-
-_<(Optional) Directory/File Location>_
-
-_<(Optional) Fulfilled Requirements>_
-
-_<(optional) Open Issues/Problems/Risks>_
-
-
-
-
-==== <Name black box 2>
-
-_<black box template>_
-
-==== <Name black box n>
-
-_<black box template>_
-
-
-==== <Name interface 1>
-
-...
-
-==== <Name interface m>
-
-
-
-=== Level 2
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Here you can specify the inner structure of (some) building blocks from level 1 as white boxes.
-
-You have to decide which building blocks of your system are important enough to justify such a detailed description.
-Please prefer relevance over completeness. Specify important, surprising, risky, complex or volatile building blocks.
-Leave out normal, simple, boring or standardized parts of your system
-****
-endif::arc42help[]
-
-==== White Box _<building block 1>_
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-...describes the internal structure of _building block 1_.
-****
-endif::arc42help[]
-
-_<white box template>_
-
-==== White Box _<building block 2>_
-
-
-_<white box template>_
-
-...
-
-==== White Box _<building block m>_
-
-
-_<white box template>_
-
-
-
-=== Level 3
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Here you can specify the inner structure of (some) building blocks from level 2 as white boxes.
-
-When you need more detailed levels of your architecture please copy this
-part of arc42 for additional levels.
-****
-endif::arc42help[]
-
-==== White Box <_building block x.1_>
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Specifies the internal structure of _building block x.1_.
-****
-endif::arc42help[]
-
-_<white box template>_
-
-
-==== White Box <_building block x.2_>
-
-_<white box template>_
-
-
-
-==== White Box <_building block y.1_>
-
-_<white box template>_
+[cols="1,3", options="header"]
+|===
+|Component |Description
+|**Game Controller** |Manages the local game loop, turn-taking, and coordinate conversion (UI pixels to Barycentric/Index).
+|**Public Bot API Controller** |Specifically designed to meet the requirement of allowing bots to play. It accepts YEN positions and returns the engine's response.
+|**Statistics View** |Interfaces with the User Service to display the player's win/loss history.
+|===
