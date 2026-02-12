@@ -5,21 +5,20 @@ The YOVI_0 system (Game Y at UniOvi) is a distributed gaming platform designed t
 
 === 3.1. Business Context
 
-The business context defines how YOVI_0 interacts with external entities. The system acts as a standardized provider for both human players and third-party bots, ensuring interoperability through the YEN notation.
+The business context defines how YOVI_0 interacts with external entities. The system acts as a standardized provider for both human players and third-party bots, ensuring interoperability through the **YEN notation**.
 
 [plantuml, context-diagram, png]
 ----
 @startuml
-!include <C4/C4_Context>
+skinparam componentStyle uml2
+actor "Human Player" as player
+component [YOVI_0 System] as yovi <<System>>
+entity "External Bot" as bot
+actor "Admin / Micrati Dev" as admin
 
-Person(player, "Human Player", "A user who plays Game Y and views their statistics.")
-System_Ext(bot, "External Bot", "Automated agent that plays matches via the REST API.")
-System(yovi, "YOVI_0 System", "Provides the gaming platform, user management, and game logic.")
-System_Ext(micrati, "Micrati Devs/Admins", "Maintainers of the platform and evaluation board.")
-
-Rel(player, yovi, "Registers, plays games, and views history", "HTTPS")
-Rel(bot, yovi, "Sends game states and requests moves", "REST/YEN JSON")
-Rel(yovi, micrati, "Sends logs and health metrics", "Docker/TCP")
+player <--> yovi : "Plays & views stats (HTTPS)"
+bot <--> yovi : "Requests moves (REST/YEN)"
+yovi --> admin : "Logs & metrics"
 @enduml
 ----
 
@@ -27,32 +26,32 @@ Rel(yovi, micrati, "Sends logs and health metrics", "Docker/TCP")
 |===
 |Communication Partner |Inputs |Outputs
 |**Human Player**
-|Account registration data (username/password), game moves via the hexagonal board UI, and selection of AI difficulty/strategy.
-|Real-time board updates, personal performance statistics (win/loss ratios), and historical match records.
+|Account registration data, game moves via hexagonal UI, and selection of AI strategy.
+|Real-time board updates, personal performance statistics, and historical match records.
 
 |**External Bots**
 |RESTful API requests containing current board states in **YEN notation**.
-|Calculated next moves in YEN notation and validation of whether a specific game state is a "win" or "loss".
+|Calculated next moves in YEN notation and game-state validation.
 
 |**Micrati Developers / Admins**
-|Infrastructure configuration, CI/CD scripts, and Docker container management.
-|Application health metrics, observability data via logs, and test coverage reports.
+|Infrastructure configuration, CI/CD scripts, and Docker management.
+|Application health metrics, observability logs, and test coverage reports.
 |===
 
 **External Domain Interfaces:**
-* **YEN Notation:** This is the primary domain language. It is a JSON-based representation of the board that ensures that any external subsystem can understand the current turn, player list, and piece layout.
-* **Coordinate Systems:** The system accepts both **Barycentric (x,y,z)** and **Index-based** coordinates to allow for different mathematical approaches by bot developers.
+* **YEN Notation:** The primary domain language. It is a JSON-based representation ensuring interoperability between any external subsystem.
+* **Coordinate Systems:** Supports both **Barycentric (x,y,z)** and **Index-based** coordinates to accommodate different mathematical approaches by bot developers.
 
 === 3.2. Technical Context
 
-The YOVI_0 architecture is based on a microservices-inspired model. All communication between the React-based frontend and the specialized services is handled over asynchronous and synchronous network calls.
+The YOVI_0 architecture follows a microservices-inspired model. All communication between the React-based frontend and the specialized services is handled over network calls.
 
-[cols="1,2,2", options="header"]
+[cols="1,1,2", options="header"]
 |===
 |Interface |Protocol |Description
 |**Client Browser**
 |HTTPS / TCP
-|The entry point for the user. It delivers the React Single Page Application (SPA). Once loaded, the SPA handles all subsequent business logic calls via fetch/axios.
+|The entry point for the user. Delivers the React SPA, which subsequently handles business logic via fetch/axios.
 
 |**Internal Services**
 |HTTP / JSON
@@ -60,11 +59,11 @@ The YOVI_0 architecture is based on a microservices-inspired model. All communic
 
 |**Public Bot API**
 |REST / JSON
-|A public-facing endpoint allowing third-party applications to interact with the game engine. It follows a strict request-response pattern using the YEN standard.
+|A public endpoint allowing third-party applications to interact with the game engine using the YEN standard.
 |===
 
 **Mapping Input/Output to Channels:**
 
-* **Game Logic Flow:** When a user or bot submits a move, the Webapp sends a JSON POST request to the Rust service. The Rust service parses the YEN layout, validates the move, and returns a JSON response containing the updated state.
-* **Authentication Flow:** User credentials from the registration form are sent via HTTP POST to the User Service, which processes the simulation and returns a welcome status.
-* **Observability:** Logs generated by the Node.js and Rust environments are mapped to the standard output of their respective Docker containers, accessible via the technical management console.
+* **Game Logic Flow:** Move submissions are sent via JSON POST to the Rust service. The service parses the YEN layout, validates the move, and returns the updated state.
+* **Authentication Flow:** Credentials are sent via HTTP POST to the User Service, which processes the persistence simulation and returns a status code.
+* **Observability:** Logs from Node.js and Rust are mapped to standard Docker output (`stdout`), accessible via the technical management console.

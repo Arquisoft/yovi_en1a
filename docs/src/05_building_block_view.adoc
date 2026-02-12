@@ -10,18 +10,16 @@ The following diagram shows the top-level decomposition of the YOVI_0 system int
 [plantuml, level1-whitebox, png]
 ----
 @startuml
-!include <C4/C4_Container>
+skinparam componentStyle uml2
 
-Layout_LeftToRight()
-
-System_Boundary(yovi, "YOVI_0 System") {
-    Container(webapp, "Webapp", "React, TypeScript", "Provides the UI and exposes the Public Bot API.")
-    Container(usersvc, "User Service", "Node.js, Express", "Manages user registration and persists match statistics.")
-    Container(gamey, "GameY Engine", "Rust, Axum", "Handles game logic, YEN parsing, and AI strategies.")
+package "YOVI_0 System" {
+    component [Webapp] as webapp <<React>>
+    component [User Service] as usersvc <<Node.js>>
+    component [GameY Engine] as gamey <<Rust>>
 }
 
-Rel(webapp, usersvc, "Manages users", "JSON/HTTP")
-Rel(webapp, gamey, "Requests moves/validation", "JSON/YEN/HTTP")
+webapp --> usersvc : "JSON/HTTP (Stats)"
+webapp --> gamey : "JSON/YEN (Moves)"
 @enduml
 ----
 
@@ -41,25 +39,25 @@ This level zooms into the **GameY** component, as it contains the most complex l
 ----
 @startuml
 package "GameY Engine (Rust)" {
-    component [Web Interface] as web
-    component [Core Logic] as core
-    component [Bot Registry] as bot
-    component [Notation Handler] as notation
+    [Web Interface] as web
+    [Core Logic] as core
+    [Bot Registry] as bot
+    [Notation Handler] as notation
 }
 
-web --> core : requests evaluation
-core --> notation : parses/generates YEN
-core --> bot : invokes AI strategy
+web --> core : "requests evaluation"
+core --> notation : "parses/generates YEN"
+core --> bot : "invokes AI strategy"
 @enduml
 ----
 
 [cols="1,3", options="header"]
 |===
 |Component |Description
-|**Core Logic (`src/core`)** |The heart of the engine. It defines the board state and the connectivity logic (checking if a player has connected three edges).
-|**Bot Registry (`src/bot`)** |A modular registry for AI strategies. It satisfies the requirement for "more than one strategy" (e.g., Random vs. Advanced).
-|**Notation Handler (`src/notation`)** |Translates internal data structures into the **YEN Notation** format required for JSON communication.
-|**Web Interface (`src/web`)** |The entry point for the service, exposing endpoints like `/next-move` to the Webapp.
+|**Core Logic** |The heart of the engine. It defines the board state and the connectivity logic (checking if a player has connected three edges).
+|**Bot Registry** |A modular registry for AI strategies. It satisfies the requirement for "more than one strategy" (e.g., Random vs. Advanced).
+|**Notation Handler** |Translates internal data structures into the **YEN Notation** format required for JSON communication.
+|**Web Interface** |The entry point for the service, exposing endpoints like `/next-move` to the Webapp.
 |===
 
 === 5.3. Level 2: White Box Webapp (Frontend Subsystem)
