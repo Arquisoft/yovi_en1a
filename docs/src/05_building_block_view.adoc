@@ -1,7 +1,3 @@
-:diagram-server-url: https://www.plantuml.com/plantuml
-:diagram-server-type: plantuml
-ifndef::imagesdir[:imagesdir: ../images]
-
 [[section-building-block-view]]
 == Building Block View
 
