@@ -38,4 +38,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         args: >
-          -Dsonar.pullrequest.github.repository=Arquisoft/yovi_en1a
+          -Dsonar.pullrequest.key=${{ github.event.pull_request.number }}
+          -Dsonar.pullrequest.branch=${{ github.head_ref }}
+          -Dsonar.pullrequest.base=${{ github.base_ref }}
