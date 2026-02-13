@@ -7,7 +7,7 @@ The YOVI_0 system (Game Y at UniOvi) is a distributed gaming platform designed t
 
 The business context defines how YOVI_0 interacts with external entities. The system acts as a standardized provider for both human players and third-party bots, ensuring interoperability through the **YEN notation**.
 
-[plantuml, context-diagram, svg]
+[plantuml, context-diagram, png]
 ----
 @startuml
 skinparam componentStyle uml2
