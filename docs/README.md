@@ -3,7 +3,7 @@
 We are following the [Arc42](https://github.com/arc42/arc42-template) template.
 
 The documentation is compiled locally and deployed to GitHub pages.
-The deployment url is: [https://arquisoft.github.io/yovi_0/](https://arquisoft.github.io/yovi_0/).
+The deployment url is: [https://arquisoft.github.io/yovi_en1a/](https://arquisoft.github.io/yovi_en1a/).
 
 ## Requirements
 
@@ -42,7 +42,7 @@ The documentation will be generated under the `docs/build` directory.
 
 ### Documentation deployment
 
-If we want to deploy it to GitHub pages, so it is accessible via [https://arquisoft.github.io/yovi_0/](https://arquisoft.github.io/yovi_0/), we need to execute `npm run deploy`.
+If we want to deploy it to GitHub pages, so it is accessible via [https://arquisoft.github.io/yovi_en1a/](https://arquisoft.github.io/yovi_en1a/), we need to execute `npm run deploy`.
 
 If you check the `package.json` in this directory you can see how deploying is as easy as executing `gh-pages -d build`, which can be directly executed using `npm run deploy` in the docs directory.
 

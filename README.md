@@ -1,4 +1,4 @@
-# YOVI_EN1A - Game Y at UniOvi
+# YOVI_en1a - Game Y at UniOvi
 
 [![Release — Test, Build, Publish, Deploy](https://github.com/arquisoft/yovi_en1a/actions/workflows/release-deploy.yml/badge.svg)](https://github.com/arquisoft/yovi_en1a/actions/workflows/release-deploy.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en1a&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en1a)
