@@ -1,80 +1,69 @@
-ifndef::imagesdir[:imagesdir: ../images]
-
 [[section-context-and-scope]]
 == Context and Scope
 
+The YOVI_0 system (Game Y at UniOvi) is a distributed gaming platform designed to provide a competitive environment for both human players and automated agents. The system's primary boundary lies between the user-facing web interface and the high-performance game logic engine implemented in Rust.
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Contents
-Context and scope - as the name suggests - delimits your system (i.e. your scope) from all its communication partners
-(neighboring systems and users, i.e. the context of your system). It thereby specifies the external interfaces.
+=== 3.1. Business Context
 
-If necessary, differentiate the business context (domain specific inputs and outputs) from the technical context (channels, protocols, hardware).
+The business context defines how YOVI_0 interacts with external entities. The system acts as a standardized provider for both human players and third-party bots, ensuring interoperability through the **YEN notation**.
 
-.Motivation
-The domain interfaces and technical interfaces to communication partners are among your system's most critical aspects. Make sure that you completely understand them.
+[plantuml, context-diagram, svg]
+----
+@startuml
+skinparam componentStyle uml2
+actor "Human Player" as player
+component [YOVI_0 System] as yovi <<System>>
+entity "External Bot" as bot
+actor "Admin / Micrati Dev" as admin
 
-.Form
-Various options:
+player <--> yovi : "Plays & views stats (HTTPS)"
+bot <--> yovi : "Requests moves (REST/YEN)"
+yovi --> admin : "Logs & metrics"
+@enduml
+----
 
-* Context diagrams
-* Lists of communication partners and their interfaces.
+[cols="1,2,2", options="header"]
+|===
+|Communication Partner |Inputs |Outputs
+|**Human Player**
+|Account registration data, game moves via hexagonal UI, and selection of AI strategy.
+|Real-time board updates, personal performance statistics, and historical match records.
 
+|**External Bots**
+|RESTful API requests containing current board states in **YEN notation**.
+|Calculated next moves in YEN notation and game-state validation.
 
-.Further Information
+|**Micrati Developers / Admins**
+|Infrastructure configuration, CI/CD scripts, and Docker management.
+|Application health metrics, observability logs, and test coverage reports.
+|===
 
-See https://docs.arc42.org/section-3/[Context and Scope] in the arc42 documentation.
+**External Domain Interfaces:**
+* **YEN Notation:** The primary domain language. It is a JSON-based representation ensuring interoperability between any external subsystem.
+* **Coordinate Systems:** Supports both **Barycentric (x,y,z)** and **Index-based** coordinates to accommodate different mathematical approaches by bot developers.
 
-****
-endif::arc42help[]
+=== 3.2. Technical Context
 
-=== Business Context
+The YOVI_0 architecture follows a microservices-inspired model. All communication between the React-based frontend and the specialized services is handled over network calls.
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Contents
-Specification of *all* communication partners (users, IT-systems, ...) with explanations of domain specific inputs and outputs or interfaces.
-Optionally you can add domain specific formats or communication protocols.
+[cols="1,1,2", options="header"]
+|===
+|Interface |Protocol |Description
+|**Client Browser**
+|HTTPS / TCP
+|The entry point for the user. Delivers the React SPA, which subsequently handles business logic via fetch/axios.
 
-.Motivation
-All stakeholders should understand which data are exchanged with the environment of the system.
+|**Internal Services**
+|HTTP / JSON
+|Communication between the Webapp and the **Node.js User Service** (Port 3000) and the **Rust GameY Engine** (Port 4000).
 
-.Form
-All kinds of diagrams that show the system as a black box and specify the domain interfaces to communication partners.
+|**Public Bot API**
+|REST / JSON
+|A public endpoint allowing third-party applications to interact with the game engine using the YEN standard.
+|===
 
-Alternatively (or additionally) you can use a table.
-The title of the table is the name of your system, the three columns contain the name of the communication partner, the inputs, and the outputs.
+**Mapping Input/Output to Channels:**
 
-****
-endif::arc42help[]
-
-**<Diagram or Table>**
-
-**<optionally: Explanation of external domain interfaces>**
-
-=== Technical Context
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Contents
-Technical interfaces (channels and transmission media) linking your system to its environment. In addition a mapping of domain specific input/output to the channels, i.e. an explanation which I/O uses which channel.
-
-.Motivation
-Many stakeholders make architectural decision based on the technical interfaces between the system and its context. Especially infrastructure or hardware designers decide these technical interfaces.
-
-.Form
-E.g. UML deployment diagram describing channels to neighboring systems,
-together with a mapping table showing the relationships between channels and input/output.
-
-****
-endif::arc42help[]
-
-**<Diagram or Table>**
-
-**<optionally: Explanation of technical interfaces>**
-
-**<Mapping Input/Output to Channels>**
+* **Game Logic Flow:** Move submissions are sent via JSON POST to the Rust service. The service parses the YEN layout, validates the move, and returns the updated state.
+* **Authentication Flow:** Credentials are sent via HTTP POST to the User Service, which processes the persistence simulation and returns a status code.
+* **Observability:** Logs from Node.js and Rust are mapped to standard Docker output (`stdout`), accessible via the technical management console.
