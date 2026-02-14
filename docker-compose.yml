@@ -2,7 +2,7 @@ services:
   users:
     build: ./users
     container_name: users
-    image: ghcr.io/arquisoft/yovi_0-users:latest
+    image: ghcr.io/arquisoft/yovi_en1a-users:latest
     ports:
       - "3000:3000"
     networks:
@@ -14,7 +14,7 @@ services:
       args:
         - VITE_API_URL=http://localhost:3000
     container_name: webapp
-    image: ghcr.io/arquisoft/yovi_0-webapp:latest
+    image: ghcr.io/arquisoft/yovi_en1a-webapp:latest
     ports:
       - "80:80"
     depends_on:
@@ -25,7 +25,7 @@ services:
   gamey:
     build: ./gamey
     container_name: gamey
-    image: ghcr.io/arquisoft/yovi_0-gamey:latest
+    image: ghcr.io/arquisoft/yovi_en1a-gamey:latest
     ports:
       - "4000:4000"
     networks:
