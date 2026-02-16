@@ -12,6 +12,9 @@ include::src/config.adoc[]
 :revremark: (based upon AsciiDoc version)
 // toc-title definition MUST follow document title without blank line!
 :toc-title: Table of Contents
+:diagram-server-url: https://www.plantuml.com/plantuml
+:diagram-server-type: plantuml
+:plantuml-server-url: https://www.plantuml.com/plantuml
 
 //additional style for arc42 help callouts
 ifdef::backend-html5[]
