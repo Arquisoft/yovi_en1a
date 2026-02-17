@@ -86,14 +86,53 @@ Please copy the structure from level 1 for each selected element.
 endif::arc42help[]
 
 ==== _<Infrastructure Element 1>_
-
 _<diagram + explanation>_
+
+image::../images/07_vm_ports.png[]
+
 
 ==== _<Infrastructure Element 2>_
-
 _<diagram + explanation>_
 
-...
+[plantuml, level1-whitebox, svg]
+----
+@startuml
+title YOVI Deployment Diagram
+
+skinparam componentStyle uml2
+left to right direction
+
+node "User Device" <<device>> {
+    node "Web Browser" <<execution environment>> {
+        component [Webapp] as webapp <<React>>
+    }
+}
+
+node "Ubuntu Linux - Azure" <<device>> {
+
+    node "Node.js Runtime" <<execution environment>> {
+        component [User Service] as usersvc <<Service>>
+        note right of usersvc : Port 3000
+    }
+
+    node "Rust Runtime" <<execution environment>> {
+        component [GameY Engine] as gamey <<Service>>
+        note right of gamey : Port 4000
+    }
+
+    node "HTTP Server" <<reverse proxy>> {
+        artifact "Static Assets" as static
+        note right of static : Port 80
+    }
+}
+
+' Relationships
+webapp --( Port_80 : "Fetch UI"
+webapp --> usersvc : "JSON/HTTP (Stats) :3000"
+webapp --> gamey : "JSON/YEN (Moves) :4000"
+
+@enduml
+----
 
 ==== _<Infrastructure Element n>_
 
