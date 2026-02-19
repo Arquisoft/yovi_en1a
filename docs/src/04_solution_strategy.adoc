@@ -32,3 +32,27 @@ See https://docs.arc42.org/section-4/[Solution Strategy] in the arc42 documentat
 
 ****
 endif::arc42help[]
+=== Technology Decisions
+|===
+| Decision | Technology | Motivation
+| **Logic Engine** | Rust | High-performance execution of game rules and AI move calculations with guaranteed memory safety.
+| **Frontend** | React.js | Facilitates efficient state management for the complex hexagonal grid UI.
+| **User Service** | Node.js | Non-blocking I/O ideal for handling concurrent API requests for users and statistics.
+| **Database** | MongoDB | Document-based storage naturally fits the YEN Notation (JSON) format and allows for flexible player statistics.
+| **Interoperability** | YEN Notation | A standardized JSON-based language that ensures any external bot can communicate with the engine.
+|===
+
+=== Top-level Decomposition
+
+The system follows a Microservices-oriented decomposition to ensure a clean separation of concerns:
+ **Webapp (React):** Serves as the primary entry point and "Gateway" for both human users and external bot API requests.**Logic Engine (Rust):** A stateless service dedicated to game rule validation and AI calculations. **User Service (Node.js):** Manages the business logic for user accounts and statistics, communicating directly with the MongoDB cluster.
+
+=== Achievement of Quality Goals
+
+* **Interoperability:** By implementing the YEN Notation across all layers, the system allows bots using different mathematical models (Barycentric/Index) to compete seamlessly.
+* **Persistence & Flexibility:** Using MongoDB ensures that as the game evolves (e.g., adding new bot metrics or match data), the system can adapt the data structure dynamically.
+* **Performance:** Strategic offloading of computational logic to Rust ensures that the system meets the real-time requirements of a competitive gaming platform.
+
+=== Organizational Decisions
+
+* **Containerization (Docker):** To maintain consistency across different development environments, each component (React, Node, Rust, MongoDB) is containerized, ensuring the "Technical Context" is replicated exactly during deployment.

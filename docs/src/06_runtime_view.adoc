@@ -1,7 +1,9 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-runtime-view]]
-== Runtime View
+==  Runtime View
+
+This section describes the dynamic behavior of the YOVI_0 system. The scenarios selected below represent architecturally significant interactions between the React Webapp, the Rust GameY Engine, the Node.js User Service, and external actors.
 
 
 ifdef::arc42help[]
@@ -39,29 +41,193 @@ See https://docs.arc42.org/section-6/[Runtime View] in the arc42 documentation.
 ****
 endif::arc42help[]
 
-=== <Runtime Scenario 1>
 
 
-* _<insert runtime diagram or textual description of the scenario>_
-* _<insert description of the notable aspects of the interactions between the
-building block instances depicted in this diagram.>_
+=== Scenario 1: Human Player vs. AI (Move Execution)
 
-It is possible to use a sequence diagram:
+*Description:* This scenario illustrates the core game loop when a human player interacts with the frontend to play against the system's AI. It highlights the transformation of UI interactions into the standardized YEN notation and the delegation of logic to the high-performance Rust engine.
 
-[plantuml,"Sequence diagram",png]
+*Notable Aspects:* The Webapp acts as a pure presentation layer. It does not calculate game rules. All coordinate conversions (Barycentric/Index) and move validations are strictly handled by the `GameY Engine`.
+
+[plantuml, target="human-vs-ai-move", format="png"]
 ----
-actor Alice
-actor Bob
-database Pod as "Bob's Pod"
-Alice -> Bob: Authentication Request
-Bob --> Alice: Authentication Response
-Alice  --> Pod: Store route
-Alice -> Bob: Another authentication Request
-Alice <-- Bob: another authentication Response
+@startuml
+autonumber
+actor "Human Player" as User
+participant "Webapp\n(React)" as UI
+participant "GameY Engine\n(Rust)" as Rust
+
+User -> UI : Clicks a hexagonal cell
+UI -> UI : Convert pixel coordinates\nto Barycentric/Index
+UI -> Rust : POST /next-move \n(Current State + Player Move in YEN)
+activate Rust
+
+Rust -> Rust : Validate Player Move
+Rust -> Rust : Calculate AI Response \n(Difficulty Strategy)
+Rust -> Rust : Update Board State
+
+Rust --> UI : 200 OK \n(New Board State in YEN JSON)
+deactivate Rust
+
+UI -> UI : Parse YEN JSON
+UI -> User : Render updated hexagonal grid
+@enduml
+----
+===  Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)
+
+*Description:* This scenario illustrates the data flow of a single turn in a networked multiplayer match between two human players. It demonstrates how a move made by one player is validated, saved, and eventually displayed on the opponent's screen.
+
+*Notable Aspects:* Unlike the "Human vs. AI" scenario where the Rust engine immediately calculates a counter-move, here the `GameY Engine` is strictly used for rule validation. The `User Service` and `MongoDB` act as the central state managers, holding the updated board so the second player's Webapp can retrieve it (either via polling or WebSockets).
+
+[plantuml, target="human-vs-human", format="png"]
+----
+@startuml
+autonumber
+actor "Player 1" as P1
+participant "Webapp (P1)\n(React)" as UI1
+participant "GameY Engine\n(Rust)" as Rust
+participant "User Service\n(Node.js)" as Node
+database "MongoDB" as DB
+participant "Webapp (P2)\n(React)" as UI2
+actor "Player 2" as P2
+
+P1 -> UI1 : Makes a move (Hex cell click)
+UI1 -> UI1 : Convert to YEN notation
+
+UI1 -> Rust : POST /validate-move (YEN Payload)
+activate Rust
+Rust -> Rust : Evaluate Rule Set
+Rust --> UI1 : 200 OK (Move Valid, New State in YEN)
+deactivate Rust
+
+UI1 -> Node : POST /update-match (matchId, New State)
+activate Node
+Node -> DB : updateOne(matchId, newState)
+activate DB
+DB --> Node : Write OK
+deactivate DB
+Node --> UI1 : 200 OK (Match Updated)
+deactivate Node
+
+UI1 -> P1 : Render updated board (Wait for turn)
+
+... Meanwhile (via Polling or WebSocket) ...
+
+UI2 -> Node : GET /match-state?id=matchId
+activate Node
+Node -> DB : findOne({ id: matchId })
+activate DB
+DB --> Node : Current Match State
+deactivate DB
+Node --> UI2 : Return New Board State (YEN JSON)
+deactivate Node
+
+UI2 -> UI2 : Parse YEN JSON
+UI2 -> P2 : Render Player 1's move\n(Player 2's turn starts)
+@enduml
 ----
 
-=== <Runtime Scenario 2>
+=== Scenario 3: Match Conclusion and Statistics Persistance
 
-=== ...
+*Description:* This scenario demonstrates the data flow when a game concludes (either by a win, loss, or draw). It shows the interaction between the Frontend, the Logic Engine, and the User Service to ensure persistent data storage.
 
-=== <Runtime Scenario n>
+*Notable Aspects:* The `GameY Engine` is stateless; it only validates the win. The responsibility of saving the match and updating user statistics is delegated to the `User Service`, which asynchronously communicates with `MongoDB`.
+
+[plantuml, target="match-conclusion", format="png"]
+----
+@startuml
+autonumber
+actor "Player" as User
+participant "Webapp\n(React)" as UI
+participant "GameY Engine\n(Rust)" as Rust
+participant "User Service\n(Node.js)" as Node
+database "MongoDB" as DB
+
+User -> UI : Makes the winning move
+UI -> Rust : POST /validate (YEN Notation)
+activate Rust
+Rust -> UI : Result: "WIN_PLAYER_1" (YEN JSON)
+deactivate Rust
+
+UI -> Node : POST /save-match \n(Match Details & Winner)
+activate Node
+Node -> DB : insertOne(matchDetails)
+activate DB
+DB --> Node : Write OK
+deactivate DB
+
+Node -> DB : updateOne(userStats, { $inc: { wins: 1 } })
+activate DB
+DB --> Node : Write OK
+deactivate DB
+
+Node --> UI : 201 Created (Stats Updated)
+deactivate Node
+
+UI -> User : Display "Congratulations!" \nand updated statistics
+@enduml
+----
+
+===  Scenario 4: User Authentication and Login Flow
+
+*Description:* This scenario illustrates the security and session management architecture of the system. It details how the system handles a user login request, verifies credentials, and establishes a secure session for the player.
+
+*Notable Aspects:* The `GameY Engine` is bypassed entirely for this process, as it is strictly dedicated to game logic. This interaction occurs purely between the Webapp (Frontend), the `User Service` (Node.js), and the Database (MongoDB). It demonstrates a clean separation of concerns where the User Service handles all identity and access management.
+
+[plantuml, target="auth-flow", format="png"]
+----
+@startuml
+autonumber
+actor "Human Player" as User
+participant "Webapp\n(React)" as UI
+participant "User Service\n(Node.js)" as Node
+database "MongoDB" as DB
+
+User -> UI : Submits credentials\n(username, password)
+UI -> Node : POST /login
+activate Node
+
+Node -> DB : findOne({ username })
+activate DB
+DB --> Node : User Record & Hashed Password
+deactivate DB
+
+Node -> Node : Verify Password Hash
+Node -> Node : Generate JWT Auth Token
+
+Node --> UI : 200 OK \n(JWT Token + User Data)
+deactivate Node
+
+UI -> UI : Store Token securely\n(e.g., Session Storage)
+UI -> User : Redirect to Game Lobby
+@enduml
+----
+
+=== Scenario 5: Error Handling - Invalid Move Validation
+
+*Description:* This exception scenario demonstrates system resilience. It shows what happens when an invalid move (for example, attempting to play on an already occupied coordinate) is submitted by the user. 
+
+*Notable Aspects:* The `GameY Engine` acts as the single source of truth for game rules. If a YEN payload violates these rules, the engine strictly rejects the state change. It returns an appropriate error code, which the Webapp must gracefully handle to warn the user without breaking or crashing the UI state.
+
+[plantuml, target="invalid-move", format="png"]
+----
+@startuml
+autonumber
+actor "Player" as User
+participant "Webapp\n(React)" as UI
+participant "GameY Engine\n(Rust)" as Rust
+
+User -> UI : Attempts illegal move\n(e.g., occupied cell)
+UI -> Rust : POST /next-move \n(Invalid YEN Notation)
+activate Rust
+
+Rust -> Rust : Parse YEN & Evaluate Rule Set
+Rust -> Rust : Detect Rule Violation 
+
+Rust --> UI : 400 Bad Request \n(Error: "CELL_ALREADY_OCCUPIED")
+deactivate Rust
+
+UI -> UI : Revert optimistic UI updates
+UI -> User : Display warning: "Invalid move!"
+@enduml
+----
