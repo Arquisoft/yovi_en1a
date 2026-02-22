@@ -127,7 +127,7 @@ endif::arc42help[]
 [options="header",cols="1,2,2"]
 |===
 |Role/Name|Contact|Expectations
-| Development team | yovi_en2a | To receive clear requirements and timely feedback on builds.
+| Development team | yovi_en1a | To receive clear requirements and timely feedback on builds.
 | Players | N/A | To get an engaging application of the game that is stable and intuitive.
 | Evaluators | Archisoft |  To ensure the architectural integrity between the frontend (TypeScript) and backend (Rust) via the YEN notation.
 | Micrati | N/A |  To receive a functional prototype that meets all predefined success criteria.

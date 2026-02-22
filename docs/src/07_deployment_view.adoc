@@ -124,6 +124,7 @@ To satisfy the requirement of consulting participation history and metrics, a pe
 The following port configuration defines the boundaries and communication paths within the Ubuntu Virtual Machine:
 
 * **Internal/External Service Ports:**
+** **Port 80:** The public access for the Webapp containing Game Y.
 ** **Port 3000:** The Webapp and external Bots communicate with the User Service for identity and statistics management.
 ** **Port 4000:** The Webapp and external Bots send game moves to the GameY Engine using the **JSON/YEN protocol**.
 * **Monitoring:**
