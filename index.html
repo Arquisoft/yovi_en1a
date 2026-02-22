@@ -971,20 +971,9 @@ These stakeholders determine the extent and the level of detail of your work and
 <div class="paragraph">
 <p>The business context defines how YOVI_0 interacts with external entities. The system acts as a standardized provider for both human players and third-party bots, ensuring interoperability through the <strong>YEN notation</strong>.</p>
 </div>
-<div class="listingblock">
+<div class="imageblock">
 <div class="content">
-<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
-@startuml
-skinparam componentStyle uml2
-actor "Human Player" as player
-component [YOVI_0 System] as yovi &lt;&lt;System&gt;&gt;
-entity "External Bot" as bot
-actor "Admin / Micrati Dev" as admin
-
-player &lt;--&gt; yovi : "Plays &amp; views stats (HTTPS)"
-bot &lt;--&gt; yovi : "Requests moves (REST/YEN)"
-yovi --&gt; admin : "Logs &amp; metrics"
-@enduml</pre>
+<img src="./images/context-diagram.svg" alt="context diagram" width="417" height="350">
 </div>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -1138,21 +1127,9 @@ Refer to details in the following sections.</p>
 <div class="paragraph">
 <p>The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).</p>
 </div>
-<div class="listingblock">
+<div class="imageblock">
 <div class="content">
-<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
-@startuml
-skinparam componentStyle uml2
-
-package "YOVI_0 System" {
-    component [Webapp] as webapp &lt;&lt;React&gt;&gt;
-    component [User Service] as usersvc &lt;&lt;Node.js&gt;&gt;
-    component [GameY Engine] as gamey &lt;&lt;Rust&gt;&gt;
-}
-
-webapp --&gt; usersvc : "JSON/HTTP (Stats)"
-webapp --&gt; gamey : "JSON/YEN (Moves)"
-@enduml</pre>
+<img src="./images/level1-whitebox.svg" alt="level1 whitebox" width="315" height="233">
 </div>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -1187,21 +1164,9 @@ webapp --&gt; gamey : "JSON/YEN (Moves)"
 <div class="paragraph">
 <p>This level zooms into the <strong>GameY</strong> component, as it contains the most complex logic regarding YEN notation and game strategies.</p>
 </div>
-<div class="listingblock">
+<div class="imageblock">
 <div class="content">
-<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
-@startuml
-package "GameY Engine (Rust)" {
-    [Web Interface] as web
-    [Core Logic] as core
-    [Bot Registry] as bot
-    [Notation Handler] as notation
-}
-
-web --&gt; core : "requests evaluation"
-core --&gt; notation : "parses/generates YEN"
-core --&gt; bot : "invokes AI strategy"
-@enduml</pre>
+<img src="./images/gamey-whitebox.svg" alt="gamey whitebox" width="329" height="303">
 </div>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -1351,17 +1316,9 @@ building block instances depicted in this diagram.&gt;</em></p>
 <div class="paragraph">
 <p>It is possible to use a sequence diagram:</p>
 </div>
-<div class="listingblock">
+<div class="imageblock">
 <div class="content">
-<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
-actor Alice
-actor Bob
-database Pod as "Bob's Pod"
-Alice -&gt; Bob: Authentication Request
-Bob --&gt; Alice: Authentication Response
-Alice  --&gt; Pod: Store route
-Alice -&gt; Bob: Another authentication Request
-Alice &lt;-- Bob: another authentication Response</pre>
+<img src="./images/Sequence%20diagram.png" alt="Sequence diagram" width="332" height="335">
 </div>
 </div>
 </div>
@@ -1387,31 +1344,9 @@ Alice &lt;-- Bob: another authentication Response</pre>
 <div class="paragraph">
 <p>The high-level deployment consists of an Azure Virtual Machine hosting the containerized backend services. The frontend is a React application delivered to the user&#8217;s web browser.</p>
 </div>
-<div class="listingblock">
+<div class="imageblock">
 <div class="content">
-<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
-@startuml
-title YOVI Deployment Diagram - Level 1
-
-skinparam componentStyle uml2
-left to right direction
-
-node "User Device" &lt;&lt;device&gt;&gt; {
-    node "Web Browser" &lt;&lt;execution environment&gt;&gt; {
-        component [Webapp] as webapp &lt;&lt;React&gt;&gt;
-    }
-}
-
-node "Ubuntu Linux - Azure VM" &lt;&lt;device&gt;&gt; {
-    node "Docker Engine" &lt;&lt;runtime&gt;&gt; {
-        component [User Service] as usersvc &lt;&lt;Node.js&gt;&gt;
-        component [GameY Engine] as gamey &lt;&lt;Rust&gt;&gt;
-    }
-}
-
-webapp --&gt; usersvc : "JSON/HTTP :3000"
-webapp --&gt; gamey : "JSON/YEN :4000"
-@enduml</pre>
+<img src="./images/level1-whitebox.svg" alt="level1 whitebox" width="649" height="326">
 </div>
 </div>
 <div class="dlist">
@@ -1477,29 +1412,9 @@ webapp --&gt; gamey : "JSON/YEN :4000"
 <div class="paragraph">
 <p>This level describes how the internal components are isolated within the Ubuntu host to manage specific runtime dependencies.</p>
 </div>
-<div class="listingblock">
+<div class="imageblock">
 <div class="content">
-<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
-@startuml
-title Level 2 - Docker Execution Environment
-
-node "Docker Host (Ubuntu)" {
-
-    node "yovi-network" &lt;&lt;network&gt;&gt; {
-        component "WebApp Container" as nodejs {
-            portout 3000
-        }
-        component "GameY Container" as rust {
-            portout 4000
-        }
-    }
-}
-
-node "Prometheus" as mon &lt;&lt;container&gt;&gt;
-
-rust ..&gt; mon : "Metrics :9091"
-nodejs ..&gt; mon : "Metrics :9090"
-@enduml</pre>
+<img src="./images/level2-docker.svg" alt="level2 docker" width="345" height="338">
 </div>
 </div>
 <div class="dlist">
