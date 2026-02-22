@@ -1,100 +1,133 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-deployment-view]]
-
-
 == Deployment View
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Content
-The deployment view describes:
+=== Infrastructure Level 1: Azure Cloud Environment
 
- 1. technical infrastructure used to execute your system, with infrastructure elements like geographical locations, environments, computers, processors, channels and net topologies as well as other infrastructure elements and
+The high-level deployment consists of an Azure Virtual Machine hosting the containerized backend services. The frontend is a React application delivered to the user's web browser.
 
-2. mapping of (software) building blocks to that infrastructure elements.
+[plantuml, level1-whitebox, svg]
+----
+@startuml
+title YOVI Deployment Diagram - Level 1
 
-Often systems are executed in different environments, e.g. development environment, test environment, production environment. In such cases you should document all relevant environments.
+skinparam componentStyle uml2
+left to right direction
 
-Especially document a deployment view if your software is executed as distributed system with more than one computer, processor, server or container or when you design and construct your own hardware processors and chips.
+node "User Device" <<device>> {
+    node "Web Browser" <<execution environment>> {
+        component [Webapp] as webapp <<React>>
+    }
+}
 
-From a software perspective it is sufficient to capture only those elements of an infrastructure that are needed to show a deployment of your building blocks. Hardware architects can go beyond that and describe an infrastructure to any level of detail they need to capture.
+node "Ubuntu Linux - Azure VM" <<device>> {
+    node "Docker Engine" <<runtime>> {
+        component [User Service] as usersvc <<Node.js>>
+        component [GameY Engine] as gamey <<Rust>>
+    }
+}
 
-.Motivation
-Software does not run without hardware.
-This underlying infrastructure can and will influence a system and/or some
-cross-cutting concepts. Therefore, there is a need to know the infrastructure.
-
-.Form
-
-Maybe a highest level deployment diagram is already contained in section 3.2. as
-technical context with your own infrastructure as ONE black box. In this section one can
-zoom into this black box using additional deployment diagrams:
-
-* UML offers deployment diagrams to express that view. Use it, probably with nested diagrams,
-when your infrastructure is more complex.
-* When your (hardware) stakeholders prefer other kinds of diagrams rather than a deployment diagram, let them use any kind that is able to show nodes and channels of the infrastructure.
-
-
-.Further Information
-
-See https://docs.arc42.org/section-7/[Deployment View] in the arc42 documentation.
-
-****
-endif::arc42help[]
-
-=== Infrastructure Level 1
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Describe (usually in a combination of diagrams, tables, and text):
-
-* distribution of a system to multiple locations, environments, computers, processors, .., as well as physical connections between them
-* important justifications or motivations for this deployment structure
-* quality and/or performance features of this infrastructure
-* mapping of software artifacts to elements of this infrastructure
-
-For multiple environments or alternative deployments please copy and adapt this section of arc42 for all relevant environments.
-****
-endif::arc42help[]
-
-_**<Overview Diagram>**_
+webapp --> usersvc : "JSON/HTTP :3000"
+webapp --> gamey : "JSON/YEN :4000"
+@enduml
+----
 
 Motivation::
-
-_<explanation in text form>_
+The YOVI system is hosted on **Microsoft Azure** using an IaaS model. This allows the system to run the high-performance Rust GameY Engine and the Node.js User Service in a unified Ubuntu environment, ensuring low latency between the game logic and the data management layer.
 
 Quality and/or Performance Features::
-
-_<explanation in text form>_
+* **Performance:** The Rust-based GameY Engine provides native execution speed for strategy generation and win verification.
+* **Accessibility:** Services are exposed directly via their respective ports to allow bot interaction and direct Webapp communication.
+* **Flexibility:** Azure provides the vertical scaling necessary to handle greater board sizes than during complex game simulations.
 
 Mapping of Building Blocks to Infrastructure::
-_<description of the mapping>_
+[cols="1,2,2"]
+|===
+|Building Block |Infrastructure Element |Description
+
+|**Webapp**
+|User Web Browser
+|Client-side application providing the UI for Game Y.
+
+|**User Service**
+|Node.js Container
+|Handles user registration, participation history, and win/loss statistics.
+
+|**GameY Engine**
+|Rust Container
+|Core logic for win verification and move suggestion via YEN notation.
+|===
+
+'''
+
+=== Infrastructure Level 2: Organization in Containers (Docker)
+
+This level describes how the internal components are isolated within the Ubuntu host to manage specific runtime dependencies.
+
+[plantuml, level2-docker, svg]
+----
+@startuml
+title Level 2 - Docker Execution Environment
+
+node "Docker Host (Ubuntu)" {
+
+    node "yovi-network" <<network>> {
+        component "WebApp Container" as nodejs {
+            portout 3000
+        }
+        component "GameY Container" as rust {
+            portout 4000
+        }
+    }
+}
+
+node "Prometheus" as mon <<container>>
+
+rust ..> mon : "Metrics :9091"
+nodejs ..> mon : "Metrics :9090"
+@enduml
+----
+
+Motivation::
+Docker ensures that the Rust toolchain and Node.js environment are encapsulated. This prevents version conflicts on the Azure host and simplifies the pipeline by ensuring the same image is used for testing and production.
+
+Quality and/or Performance Features::
+* **Isolation:** If a specific Game Y strategy causes a memory leak in the engine, the Docker container limits prevent it from affecting the availability of the User Service.
+* **Observability:** Each container exposes a dedicated monitoring port to track performance metrics as required by the evaluation criteria.
+* **Portability and Dependency Management**: By using Docker to containerize the services, the system can run the Rust-based GameY Engine and Node.js User Service on any infrastructure (like the Azure VM) without requiring the host machine to have those specific runtimes or compilers installed manually. This ensures a consistent execution environment across development and production.
 
 
-=== Infrastructure Level 2
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Here you can include the internal structure of (some) infrastructure elements from level 1.
+'''
 
-Please copy the structure from level 1 for each selected element.
-****
-endif::arc42help[]
+=== Infrastructure Level 3: Data Persistence
 
-==== _<Infrastructure Element 1>_
+Motivation::
+To satisfy the requirement of consulting participation history and metrics, a persistent storage layer is mapped to the Docker environment.
 
-_<diagram + explanation>_
+[cols="1,2"]
+|===
+|Element |Storage Strategy
 
-==== _<Infrastructure Element 2>_
+|**User Profiles & Stats**
+|Docker Volume mapped to the host filesystem to ensure participation data survives container restarts.
 
-_<diagram + explanation>_
+|**Move History**
+|Standardized logging within the GameY container for audit trails of YEN notation states.
+|===
 
-...
+'''
 
-==== _<Infrastructure Element n>_
+=== Network and Connectivity
 
-_<diagram + explanation>_
+The following port configuration defines the boundaries and communication paths within the Ubuntu Virtual Machine:
+
+* **Internal/External Service Ports:**
+** **Port 80:** The public access for the Webapp containing Game Y.
+** **Port 3000:** The Webapp and external Bots communicate with the User Service for identity and statistics management.
+** **Port 4000:** The Webapp and external Bots send game moves to the GameY Engine using the **JSON/YEN protocol**.
+* **Monitoring:**
+** **Port 9090/9091:** Reserved for internal monitoring (Prometheus/Grafana) to track the health of the host and the individual microservices.
+
+image::07_vm_ports.png[Network Port Mapping]

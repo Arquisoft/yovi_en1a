@@ -18,6 +18,19 @@ These include
 endif::arc42help[]
 
 === Requirements Overview
+The project aims to develop a full-stack web application for a game named YOVI,
+communicating human players and automated agents. The following high level specifications
+must be in the final version of the application:
+
+* **Gameplay Engine:** An front-end implementation based on the "Classic" version of Game Y.
+** **Player-vs-Machine:** Mode with adjustable board dimensions.
+** **Strategies:** Selectable difficulty levels and logic.
+* **User Management:**
+** Secure registration and authentication.
+** Personal dashboards with win/loss statistics and match history.
+* **Developer API:**
+** Publicly accessible and fully documented.
+** Support for **YEN notation** via a `/play` endpoint.
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -46,7 +59,25 @@ See https://docs.arc42.org/section-1/[Introduction and Goals] in the arc42 docum
 endif::arc42help[]
 
 === Quality Goals
+[cols="1,3", options="header"]
+|===
+| Goal | Description
 
+| *Availability*
+| The application and its API must be publicly accessible and maintain high uptime for both web users and bot integrations.
+
+| *Compatibility*
+| The API must strictly adhere to the **YEN notation** standard to ensure that any external bot can communicate with the game engine without formatting errors.
+
+| *Usability*
+| The frontend should be intuitive, allowing users to easily toggle between game strategies and view their statistics without a steep learning curve.
+
+| *Scalability*
+| The backend architecture should handle concurrent matches from both web users and API-based bots without significant latency.
+
+| *Security*
+| User data and match histories must be protected via secure authentication, ensuring users can only manage their own profiles.
+|===
 ifdef::arc42help[]
 [role="arc42help"]
 ****
@@ -96,6 +127,8 @@ endif::arc42help[]
 [options="header",cols="1,2,2"]
 |===
 |Role/Name|Contact|Expectations
-| _<Role-1>_ | _<Contact-1>_ | _<Expectation-1>_
-| _<Role-2>_ | _<Contact-2>_ | _<Expectation-2>_
+| Development team | yovi_en1a | To receive clear requirements and timely feedback on builds.
+| Players | N/A | To get an engaging application of the game that is stable and intuitive.
+| Evaluators | Archisoft |  To ensure the architectural integrity between the frontend (TypeScript) and backend (Rust) via the YEN notation.
+| Micrati | N/A |  To receive a functional prototype that meets all predefined success criteria.
 |===

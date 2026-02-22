@@ -1,29 +1,85 @@
 ifndef::imagesdir[:imagesdir: ../images]
 
 [[section-architecture-constraints]]
-== Architecture Constraints
+[[section-constraints]]
+== Constraints
 
+=== Technical Constraints
+Technical constraints define the specific technologies and tools that must be used.
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Contents
-Any requirement that constraints software architects in their freedom of design and implementation decisions or decision about the development process. These constraints sometimes go beyond individual systems and are valid for whole organizations and companies.
+[cols="1,2"]
+|===
+|Constraint |Description
 
-.Motivation
-Architects should know exactly where they are free in their design decisions and where they must adhere to constraints.
-Constraints must always be dealt with; they may be negotiable, though.
+|**Programming Languages**
+|Frontend must be **TypeScript/React**. The core Game Y logic (win verification/suggestions) must be **Rust**.
 
-.Form
-Simple tables of constraints with explanations.
-If needed you can subdivide them into
-technical constraints, organizational and political constraints and
-conventions (e.g. programming or versioning guidelines, documentation or naming conventions)
+|**Data Exchange**
+|All subsystem communication must use **JSON** formatted according to the **YEN notation** (size, turn, players, layout).
 
+|**Deployment & Runtime**
+|The system must be containerized with **Docker** and run on an **Ubuntu Linux** environment (Microsoft Azure).
 
-.Further Information
+|**External Connectivity**
+|The system must expose a documented **Web API** accessible by third-party bots for automated gameplay.
+|===
 
-See https://docs.arc42.org/section-2/[Architecture Constraints] in the arc42 documentation.
+=== Architectural Constraints
+Architectural constraints are the high-level design requirements that dictate the system's structure.
 
-****
-endif::arc42help[]
+[cols="1,2"]
+|===
+|Constraint |Description
+
+|**Subsystem Decoupling**
+|The system must be split into at least **two distinct subsystems** (Web App and Rust Module). They must remain independent and communicate only via web services.
+
+|**Stateless Logic**
+|The Rust module should ideally operate as a **stateless service**, taking a YEN state as input and returning a move/verification without maintaining local session state.
+
+|**Strategy Extensibility**
+|The architecture must support **multiple AI strategies** and difficulty levels, selectable by the user or the bot via the API.
+
+|**Multi-Coordinate Support**
+|The system must handle both **Barycentric (x,y,z)** and **Index-based (0...n)** coordinate systems, ensuring correct mapping between the UI and the Engine.
+|===
+
+=== Organizational Constraints
+Organizational constraints relate to the project management and academic requirements.
+
+[cols="1,2"]
+|===
+|Constraint |Description
+
+|**Academic Framework**
+|Must satisfy all criteria for the **ASW assignment**, including traceability and quality attributes.
+
+|**Team Workflow**
+|Mandatory use of **Git** for version control, featuring documented **Code Reviews** and **Issue Tracking**.
+
+|**Documentation Standard**
+|Architecture must be documented using the **arc42 template** and include **Architectural Decision Records (ADRs)**.
+
+|**Evaluation Metrics**
+|The system must be evaluated on **Availability and Observability (Monitoring)** and **Testing Coverage**.
+|===
+
+=== Conventions
+Conventions are the rules agreed upon by the team to ensure consistency.
+
+[cols="1,2"]
+|===
+|Convention |Description
+
+|**Language**
+|English is the mandatory language for code, documentation, and the API.
+
+|**API Documentation**
+|All endpoints must be fully documented.
+
+|**Modeling**
+|Diagrams must follow **UML standards** and be rendered using software such as PlantUML.
+
+|**Naming Conventions**
+|Follow standard TypeScript (camelCase) and Rust (snake_case) style guides respectively.
+|===
