@@ -452,7 +452,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_stakeholders">1.3. Stakeholders</a></li>
 </ul>
 </li>
-<li><a href="#section-architecture-constraints">2. Architecture Constraints</a></li>
+<li><a href="#section-constraints">2. Constraints</a>
+<ul class="sectlevel2">
+<li><a href="#_technical_constraints">2.1. Technical Constraints</a></li>
+<li><a href="#_architectural_constraints">2.2. Architectural Constraints</a></li>
+<li><a href="#_organizational_constraints">2.3. Organizational Constraints</a></li>
+<li><a href="#_conventions">2.4. Conventions</a></li>
+</ul>
+</li>
 <li><a href="#section-context-and-scope">3. Context and Scope</a>
 <ul class="sectlevel2">
 <li><a href="#_3_1_business_context">3.1. 3.1. Business Context</a></li>
@@ -477,8 +484,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#section-deployment-view">7. Deployment View</a>
 <ul class="sectlevel2">
-<li><a href="#_infrastructure_level_1">7.1. Infrastructure Level 1</a></li>
-<li><a href="#_infrastructure_level_2">7.2. Infrastructure Level 2</a></li>
+<li><a href="#_infrastructure_level_1_azure_cloud_environment">7.1. Infrastructure Level 1: Azure Cloud Environment</a></li>
+<li><a href="#_infrastructure_level_2_organization_in_containers_docker">7.2. Infrastructure Level 2: Organization in Containers (Docker)</a></li>
+<li><a href="#_infrastructure_level_3_data_persistence">7.3. Infrastructure Level 3: Data Persistence</a></li>
+<li><a href="#_network_and_connectivity">7.4. Network and Connectivity</a></li>
 </ul>
 </li>
 <li><a href="#section-concepts">8. Cross-cutting Concepts</a>
@@ -581,6 +590,54 @@ These include</p>
 </div>
 <div class="sect2">
 <h3 id="_requirements_overview">1.1. Requirements Overview</h3>
+<div class="paragraph">
+<p>The project aims to develop a full-stack web application for a game named YOVI,
+communicating human players and automated agents. The following high level specifications
+must be in the final version of the application:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Gameplay Engine:</strong> An front-end implementation based on the "Classic" version of Game Y.</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Player-vs-Machine:</strong> Mode with adjustable board dimensions.</p>
+</li>
+<li>
+<p><strong>Strategies:</strong> Selectable difficulty levels and logic.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>User Management:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Secure registration and authentication.</p>
+</li>
+<li>
+<p>Personal dashboards with win/loss statistics and match history.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Developer API:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Publicly accessible and fully documented.</p>
+</li>
+<li>
+<p>Support for <strong>YEN notation</strong> via a <code>/play</code> endpoint.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
 <div class="sidebarblock arc42help">
 <div class="content">
 <div class="paragraph">
@@ -611,6 +668,40 @@ If requirements documents exist this overview should refer to these documents.</
 </div>
 <div class="sect2">
 <h3 id="_quality_goals">1.2. Quality Goals</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Goal</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Availability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The application and its API must be publicly accessible and maintain high uptime for both web users and bot integrations.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Compatibility</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The API must strictly adhere to the <strong>YEN notation</strong> standard to ensure that any external bot can communicate with the game engine without formatting errors.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The frontend should be intuitive, allowing users to easily toggle between game strategies and view their statistics without a steep learning curve.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Scalability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend architecture should handle concurrent matches from both web users and API-based bots without significant latency.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Security</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User data and match histories must be protected via secure authentication, ensuring users can only manage their own profiles.</p></td>
+</tr>
+</tbody>
+</table>
 <div class="sidebarblock arc42help">
 <div class="content">
 <div class="paragraph">
@@ -694,14 +785,24 @@ These stakeholders determine the extent and the level of detail of your work and
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Role-1&gt;</em></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Contact-1&gt;</em></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Expectation-1&gt;</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Development team</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">yovi_en1a</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">To receive clear requirements and timely feedback on builds.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Role-2&gt;</em></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Contact-2&gt;</em></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Expectation-2&gt;</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Players</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">To get an engaging application of the game that is stable and intuitive.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Evaluators</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Archisoft</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">To ensure the architectural integrity between the frontend (TypeScript) and backend (Rust) via the YEN notation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Micrati</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">To receive a functional prototype that meets all predefined success criteria.</p></td>
 </tr>
 </tbody>
 </table>
@@ -710,33 +811,153 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-architecture-constraints">2. Architecture Constraints</h2>
+<h2 id="section-constraints">2. Constraints</h2>
 <div class="sectionbody">
-<div class="sidebarblock arc42help">
-<div class="content">
+<div class="sect2">
+<h3 id="_technical_constraints">2.1. Technical Constraints</h3>
 <div class="paragraph">
-<div class="title">Contents</div>
-<p>Any requirement that constraints software architects in their freedom of design and implementation decisions or decision about the development process. These constraints sometimes go beyond individual systems and are valid for whole organizations and companies.</p>
+<p>Technical constraints define the specific technologies and tools that must be used.</p>
 </div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Constraint</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Programming Languages</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Frontend must be <strong>TypeScript/React</strong>. The core Game Y logic (win verification/suggestions) must be <strong>Rust</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Data Exchange</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">All subsystem communication must use <strong>JSON</strong> formatted according to the <strong>YEN notation</strong> (size, turn, players, layout).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Deployment &amp; Runtime</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system must be containerized with <strong>Docker</strong> and run on an <strong>Ubuntu Linux</strong> environment (Microsoft Azure).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>External Connectivity</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system must expose a documented <strong>Web API</strong> accessible by third-party bots for automated gameplay.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_architectural_constraints">2.2. Architectural Constraints</h3>
 <div class="paragraph">
-<div class="title">Motivation</div>
-<p>Architects should know exactly where they are free in their design decisions and where they must adhere to constraints.
-Constraints must always be dealt with; they may be negotiable, though.</p>
+<p>Architectural constraints are the high-level design requirements that dictate the system&#8217;s structure.</p>
 </div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Constraint</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Subsystem Decoupling</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system must be split into at least <strong>two distinct subsystems</strong> (Web App and Rust Module). They must remain independent and communicate only via web services.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Stateless Logic</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Rust module should ideally operate as a <strong>stateless service</strong>, taking a YEN state as input and returning a move/verification without maintaining local session state.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Strategy Extensibility</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The architecture must support <strong>multiple AI strategies</strong> and difficulty levels, selectable by the user or the bot via the API.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Multi-Coordinate Support</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system must handle both <strong>Barycentric (x,y,z)</strong> and <strong>Index-based (0&#8230;&#8203;n)</strong> coordinate systems, ensuring correct mapping between the UI and the Engine.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_organizational_constraints">2.3. Organizational Constraints</h3>
 <div class="paragraph">
-<div class="title">Form</div>
-<p>Simple tables of constraints with explanations.
-If needed you can subdivide them into
-technical constraints, organizational and political constraints and
-conventions (e.g. programming or versioning guidelines, documentation or naming conventions)</p>
+<p>Organizational constraints relate to the project management and academic requirements.</p>
 </div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Constraint</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Academic Framework</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Must satisfy all criteria for the <strong>ASW assignment</strong>, including traceability and quality attributes.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Team Workflow</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Mandatory use of <strong>Git</strong> for version control, featuring documented <strong>Code Reviews</strong> and <strong>Issue Tracking</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Documentation Standard</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Architecture must be documented using the <strong>arc42 template</strong> and include <strong>Architectural Decision Records (ADRs)</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Evaluation Metrics</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system must be evaluated on <strong>Availability and Observability (Monitoring)</strong> and <strong>Testing Coverage</strong>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_conventions">2.4. Conventions</h3>
 <div class="paragraph">
-<div class="title">Further Information</div>
-<p>See <a href="https://docs.arc42.org/section-2/">Architecture Constraints</a> in the arc42 documentation.</p>
+<p>Conventions are the rules agreed upon by the team to ensure consistency.</p>
 </div>
-</div>
-</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Convention</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Language</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">English is the mandatory language for code, documentation, and the API.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>API Documentation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">All endpoints must be fully documented.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Modeling</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Diagrams must follow <strong>UML standards</strong> and be rendered using software such as PlantUML.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Naming Conventions</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Follow standard TypeScript (camelCase) and Rust (snake_case) style guides respectively.</p></td>
+</tr>
+</tbody>
+</table>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -750,9 +971,20 @@ conventions (e.g. programming or versioning guidelines, documentation or naming 
 <div class="paragraph">
 <p>The business context defines how YOVI_0 interacts with external entities. The system acts as a standardized provider for both human players and third-party bots, ensuring interoperability through the <strong>YEN notation</strong>.</p>
 </div>
-<div class="imageblock">
+<div class="listingblock">
 <div class="content">
-<img src="./images/context-diagram.png" alt="context diagram" width="442" height="378">
+<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
+@startuml
+skinparam componentStyle uml2
+actor "Human Player" as player
+component [YOVI_0 System] as yovi &lt;&lt;System&gt;&gt;
+entity "External Bot" as bot
+actor "Admin / Micrati Dev" as admin
+
+player &lt;--&gt; yovi : "Plays &amp; views stats (HTTPS)"
+bot &lt;--&gt; yovi : "Requests moves (REST/YEN)"
+yovi --&gt; admin : "Logs &amp; metrics"
+@enduml</pre>
 </div>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -906,9 +1138,21 @@ Refer to details in the following sections.</p>
 <div class="paragraph">
 <p>The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).</p>
 </div>
-<div class="imageblock">
+<div class="listingblock">
 <div class="content">
-<img src="./images/level1-whitebox.png" alt="level1 whitebox" width="358" height="265">
+<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
+@startuml
+skinparam componentStyle uml2
+
+package "YOVI_0 System" {
+    component [Webapp] as webapp &lt;&lt;React&gt;&gt;
+    component [User Service] as usersvc &lt;&lt;Node.js&gt;&gt;
+    component [GameY Engine] as gamey &lt;&lt;Rust&gt;&gt;
+}
+
+webapp --&gt; usersvc : "JSON/HTTP (Stats)"
+webapp --&gt; gamey : "JSON/YEN (Moves)"
+@enduml</pre>
 </div>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -943,9 +1187,21 @@ Refer to details in the following sections.</p>
 <div class="paragraph">
 <p>This level zooms into the <strong>GameY</strong> component, as it contains the most complex logic regarding YEN notation and game strategies.</p>
 </div>
-<div class="imageblock">
+<div class="listingblock">
 <div class="content">
-<img src="./images/gamey-whitebox.png" alt="gamey whitebox" width="391" height="355">
+<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
+@startuml
+package "GameY Engine (Rust)" {
+    [Web Interface] as web
+    [Core Logic] as core
+    [Bot Registry] as bot
+    [Notation Handler] as notation
+}
+
+web --&gt; core : "requests evaluation"
+core --&gt; notation : "parses/generates YEN"
+core --&gt; bot : "invokes AI strategy"
+@enduml</pre>
 </div>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -1095,9 +1351,17 @@ building block instances depicted in this diagram.&gt;</em></p>
 <div class="paragraph">
 <p>It is possible to use a sequence diagram:</p>
 </div>
-<div class="imageblock">
+<div class="listingblock">
 <div class="content">
-<img src="./images/Sequence%20diagram.png" alt="Sequence diagram" width="366" height="326">
+<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
+actor Alice
+actor Bob
+database Pod as "Bob's Pod"
+Alice -&gt; Bob: Authentication Request
+Bob --&gt; Alice: Authentication Response
+Alice  --&gt; Pod: Store route
+Alice -&gt; Bob: Another authentication Request
+Alice &lt;-- Bob: another authentication Response</pre>
 </div>
 </div>
 </div>
@@ -1118,142 +1382,227 @@ building block instances depicted in this diagram.&gt;</em></p>
 <div class="sect1">
 <h2 id="section-deployment-view">7. Deployment View</h2>
 <div class="sectionbody">
-<div class="sidebarblock arc42help">
-<div class="content">
-<div class="paragraph">
-<div class="title">Content</div>
-<p>The deployment view describes:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>technical infrastructure used to execute your system, with infrastructure elements like geographical locations, environments, computers, processors, channels and net topologies as well as other infrastructure elements and</p>
-</li>
-<li>
-<p>mapping of (software) building blocks to that infrastructure elements.</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>Often systems are executed in different environments, e.g. development environment, test environment, production environment. In such cases you should document all relevant environments.</p>
-</div>
-<div class="paragraph">
-<p>Especially document a deployment view if your software is executed as distributed system with more than one computer, processor, server or container or when you design and construct your own hardware processors and chips.</p>
-</div>
-<div class="paragraph">
-<p>From a software perspective it is sufficient to capture only those elements of an infrastructure that are needed to show a deployment of your building blocks. Hardware architects can go beyond that and describe an infrastructure to any level of detail they need to capture.</p>
-</div>
-<div class="paragraph">
-<div class="title">Motivation</div>
-<p>Software does not run without hardware.
-This underlying infrastructure can and will influence a system and/or some
-cross-cutting concepts. Therefore, there is a need to know the infrastructure.</p>
-</div>
-<div class="paragraph">
-<div class="title">Form</div>
-<p>Maybe a highest level deployment diagram is already contained in section 3.2. as
-technical context with your own infrastructure as ONE black box. In this section one can
-zoom into this black box using additional deployment diagrams:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>UML offers deployment diagrams to express that view. Use it, probably with nested diagrams,
-when your infrastructure is more complex.</p>
-</li>
-<li>
-<p>When your (hardware) stakeholders prefer other kinds of diagrams rather than a deployment diagram, let them use any kind that is able to show nodes and channels of the infrastructure.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<div class="title">Further Information</div>
-<p>See <a href="https://docs.arc42.org/section-7/">Deployment View</a> in the arc42 documentation.</p>
-</div>
-</div>
-</div>
 <div class="sect2">
-<h3 id="_infrastructure_level_1">7.1. Infrastructure Level 1</h3>
-<div class="sidebarblock arc42help">
+<h3 id="_infrastructure_level_1_azure_cloud_environment">7.1. Infrastructure Level 1: Azure Cloud Environment</h3>
+<div class="paragraph">
+<p>The high-level deployment consists of an Azure Virtual Machine hosting the containerized backend services. The frontend is a React application delivered to the user&#8217;s web browser.</p>
+</div>
+<div class="listingblock">
 <div class="content">
-<div class="paragraph">
-<p>Describe (usually in a combination of diagrams, tables, and text):</p>
+<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
+@startuml
+title YOVI Deployment Diagram - Level 1
+
+skinparam componentStyle uml2
+left to right direction
+
+node "User Device" &lt;&lt;device&gt;&gt; {
+    node "Web Browser" &lt;&lt;execution environment&gt;&gt; {
+        component [Webapp] as webapp &lt;&lt;React&gt;&gt;
+    }
+}
+
+node "Ubuntu Linux - Azure VM" &lt;&lt;device&gt;&gt; {
+    node "Docker Engine" &lt;&lt;runtime&gt;&gt; {
+        component [User Service] as usersvc &lt;&lt;Node.js&gt;&gt;
+        component [GameY Engine] as gamey &lt;&lt;Rust&gt;&gt;
+    }
+}
+
+webapp --&gt; usersvc : "JSON/HTTP :3000"
+webapp --&gt; gamey : "JSON/YEN :4000"
+@enduml</pre>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>distribution of a system to multiple locations, environments, computers, processors, .., as well as physical connections between them</p>
-</li>
-<li>
-<p>important justifications or motivations for this deployment structure</p>
-</li>
-<li>
-<p>quality and/or performance features of this infrastructure</p>
-</li>
-<li>
-<p>mapping of software artifacts to elements of this infrastructure</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>For multiple environments or alternative deployments please copy and adapt this section of arc42 for all relevant environments.</p>
-</div>
-</div>
-</div>
-<div class="paragraph">
-<p><em><strong>&lt;Overview Diagram&gt;</strong></em></p>
 </div>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Motivation</dt>
 <dd>
-<p><em>&lt;explanation in text form&gt;</em></p>
+<p>The YOVI system is hosted on <strong>Microsoft Azure</strong> using an IaaS model. This allows the system to run the high-performance Rust GameY Engine and the Node.js User Service in a unified Ubuntu environment, ensuring low latency between the game logic and the data management layer.</p>
 </dd>
 <dt class="hdlist1">Quality and/or Performance Features</dt>
 <dd>
-<p><em>&lt;explanation in text form&gt;</em></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Performance:</strong> The Rust-based GameY Engine provides native execution speed for strategy generation and win verification.</p>
+</li>
+<li>
+<p><strong>Accessibility:</strong> Services are exposed directly via their respective ports to allow bot interaction and direct Webapp communication.</p>
+</li>
+<li>
+<p><strong>Flexibility:</strong> Azure provides the vertical scaling necessary to handle greater board sizes than during complex game simulations.</p>
+</li>
+</ul>
+</div>
 </dd>
 <dt class="hdlist1">Mapping of Building Blocks to Infrastructure</dt>
+</dl>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Building Block</th>
+<th class="tableblock halign-left valign-top">Infrastructure Element</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Webapp</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User Web Browser</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Client-side application providing the UI for Game Y.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>User Service</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node.js Container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles user registration, participation history, and win/loss statistics.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>GameY Engine</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rust Container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Core logic for win verification and move suggestion via YEN notation.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="_infrastructure_level_2_organization_in_containers_docker">7.2. Infrastructure Level 2: Organization in Containers (Docker)</h3>
+<div class="paragraph">
+<p>This level describes how the internal components are isolated within the Ubuntu host to manage specific runtime dependencies.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>Failed to generate image: Could not load PlantUML. Either require 'asciidoctor-diagram-plantuml' or specify the location of the PlantUML JAR(s) using the 'DIAGRAM_PLANTUML_CLASSPATH' environment variable. Alternatively a PlantUML binary can be provided (plantuml-native in $PATH).
+@startuml
+title Level 2 - Docker Execution Environment
+
+node "Docker Host (Ubuntu)" {
+
+    node "yovi-network" &lt;&lt;network&gt;&gt; {
+        component "WebApp Container" as nodejs {
+            portout 3000
+        }
+        component "GameY Container" as rust {
+            portout 4000
+        }
+    }
+}
+
+node "Prometheus" as mon &lt;&lt;container&gt;&gt;
+
+rust ..&gt; mon : "Metrics :9091"
+nodejs ..&gt; mon : "Metrics :9090"
+@enduml</pre>
+</div>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Motivation</dt>
 <dd>
-<p><em>&lt;description of the mapping&gt;</em></p>
+<p>Docker ensures that the Rust toolchain and Node.js environment are encapsulated. This prevents version conflicts on the Azure host and simplifies the pipeline by ensuring the same image is used for testing and production.</p>
+</dd>
+<dt class="hdlist1">Quality and/or Performance Features</dt>
+<dd>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Isolation:</strong> If a specific Game Y strategy causes a memory leak in the engine, the Docker container limits prevent it from affecting the availability of the User Service.</p>
+</li>
+<li>
+<p><strong>Observability:</strong> Each container exposes a dedicated monitoring port to track performance metrics as required by the evaluation criteria.</p>
+</li>
+<li>
+<p><strong>Portability and Dependency Management</strong>: By using Docker to containerize the services, the system can run the Rust-based GameY Engine and Node.js User Service on any infrastructure (like the Azure VM) without requiring the host machine to have those specific runtimes or compilers installed manually. This ensures a consistent execution environment across development and production.</p>
+</li>
+</ul>
+</div>
 </dd>
 </dl>
 </div>
+<hr>
 </div>
 <div class="sect2">
-<h3 id="_infrastructure_level_2">7.2. Infrastructure Level 2</h3>
-<div class="sidebarblock arc42help">
+<h3 id="_infrastructure_level_3_data_persistence">7.3. Infrastructure Level 3: Data Persistence</h3>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Motivation</dt>
+<dd>
+<p>To satisfy the requirement of consulting participation history and metrics, a persistent storage layer is mapped to the Docker environment.</p>
+</dd>
+</dl>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 66.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Element</th>
+<th class="tableblock halign-left valign-top">Storage Strategy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>User Profiles &amp; Stats</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Volume mapped to the host filesystem to ensure participation data survives container restarts.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Move History</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Standardized logging within the GameY container for audit trails of YEN notation states.</p></td>
+</tr>
+</tbody>
+</table>
+<hr>
+</div>
+<div class="sect2">
+<h3 id="_network_and_connectivity">7.4. Network and Connectivity</h3>
+<div class="paragraph">
+<p>The following port configuration defines the boundaries and communication paths within the Ubuntu Virtual Machine:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Internal/External Service Ports:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Port 80:</strong> The public access for the Webapp containing Game Y.</p>
+</li>
+<li>
+<p><strong>Port 3000:</strong> The Webapp and external Bots communicate with the User Service for identity and statistics management.</p>
+</li>
+<li>
+<p><strong>Port 4000:</strong> The Webapp and external Bots send game moves to the GameY Engine using the <strong>JSON/YEN protocol</strong>.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Monitoring:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Port 9090/9091:</strong> Reserved for internal monitoring (Prometheus/Grafana) to track the health of the host and the individual microservices.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="imageblock">
 <div class="content">
-<div class="paragraph">
-<p>Here you can include the internal structure of (some) infrastructure elements from level 1.</p>
+<img src="./images/07_vm_ports.png" alt="Network Port Mapping">
 </div>
-<div class="paragraph">
-<p>Please copy the structure from level 1 for each selected element.</p>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_infrastructure_element_1">7.2.1. <em>&lt;Infrastructure Element 1&gt;</em></h4>
-<div class="paragraph">
-<p><em>&lt;diagram + explanation&gt;</em></p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_infrastructure_element_2">7.2.2. <em>&lt;Infrastructure Element 2&gt;</em></h4>
-<div class="paragraph">
-<p><em>&lt;diagram + explanation&gt;</em></p>
-</div>
-<div class="paragraph">
-<p>&#8230;&#8203;</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_infrastructure_element_n">7.2.3. <em>&lt;Infrastructure Element n&gt;</em></h4>
-<div class="paragraph">
-<p><em>&lt;diagram + explanation&gt;</em></p>
 </div>
 <div style="page-break-after: always;"></div>
-</div>
 </div>
 </div>
 </div>
@@ -1630,7 +1979,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-16 18:10:39 +0100
+Last updated 2026-02-12 18:21:15 +0100
 </div>
 </div>
 </body>
