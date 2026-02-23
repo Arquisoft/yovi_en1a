@@ -1,34 +1,26 @@
-ifndef::imagesdir[:imagesdir: ../images]
+== 4. Solution Strategy
 
-[[section-solution-strategy]]
-== Solution Strategy
+=== Technology Decisions
 
+As outlined in the Technical Context (Section 3), the core technology stack and infrastructure—Rust for the Logic Engine, React.js for the Frontend, Node.js for the User Service, YEN Notation for communication, and Docker for containerization were predefined constraints for this project. 
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Contents
-A short summary and explanation of the fundamental decisions and solution strategies, that shape system architecture. It includes
+Our primary architectural decisions focus on how to integrate these given constraints effectively and what supplementary technologies to employ to complete the system:
 
-* technology decisions
-* decisions about the top-level decomposition of the system, e.g. usage of an architectural pattern or design pattern
-* decisions on how to achieve key quality goals
-* relevant organizational decisions, e.g. selecting a development process or delegating certain tasks to third parties.
+|===
+| Decision | Technology | Motivation
+| **Database** | MongoDB | Document-based storage naturally fits the predefined YEN Notation (JSON) format seamlessly and allows for flexible player statistics without rigid schemas.
+|===
 
-.Motivation
-These decisions form the cornerstones for your architecture. They are the foundation for many other detailed decisions or implementation rules.
+=== Top-level Decomposition
 
-.Form
-Keep the explanations of such key decisions short.
+To effectively integrate the mandated technologies, the system follows a Microservices-oriented decomposition. This ensures a clean separation of concerns and independent scalability:
 
-Motivate what was decided and why it was decided that way,
-based upon problem statement, quality goals and key constraints.
-Refer to details in the following sections.
+* **Webapp (React):** Serves as the presentation layer and the primary entry point for human users.
+* **Logic Engine (Rust):** A stateless, isolated service dedicated purely to high-performance game rule validation and AI calculations (Port 4000).
+* **User Service (Node.js):** Acts as the orchestrator for user accounts and statistics, handling concurrent API requests and communicating directly with our chosen MongoDB cluster (Port 3000).
 
+=== Achievement of Quality Goals
 
-.Further Information
-
-See https://docs.arc42.org/section-4/[Solution Strategy] in the arc42 documentation.
-
-****
-endif::arc42help[]
+* **Interoperability:** By rigorously applying the mandated YEN Notation across our REST/JSON APIs, the system allows external bots (using different coordinate systems like Barycentric or Index) to integrate effortlessly with the Rust engine.
+* **Persistence & Flexibility:** Our strategic decision to use MongoDB ensures that as the game evolves (e.g., adding new bot metrics or match data), the system can dynamically adapt its data structures.
+* **Performance:** The architectural decoupling guarantees that the heavy computational hexagonal grid logic is strictly handled by the Rust Engine, while the Node.js service leverages its non-blocking I/O to handle user requests without bottlenecks.
