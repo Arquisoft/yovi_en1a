@@ -30,17 +30,21 @@ pub use error::ErrorResponse;
 pub use version::*;
 
 use crate::{GameYError, RandomBot, YBotRegistry, state::AppState};
+use tower_http::cors::CorsLayer;
 
 /// Creates the Axum router with the given state.
 ///
 /// This is useful for testing the API without binding to a network port.
 pub fn create_router(state: AppState) -> axum::Router {
+    let cors = CorsLayer::permissive();
+
     axum::Router::new()
         .route("/status", axum::routing::get(status))
         .route(
             "/{api_version}/ybot/choose/{bot_id}",
             axum::routing::post(choose::choose),
         )
+        .layer(cors)
         .with_state(state)
 }
 
