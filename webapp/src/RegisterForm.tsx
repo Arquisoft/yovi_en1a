@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const RegisterForm: React.FC = () => {
   const [username, setUsername] = useState('');
   const [responseMessage, setResponseMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const [gameyStatus, setGameyStatus] = useState<'checking' | 'ok' | 'error'>('checking');
+
+  useEffect(() => {
+    const checkGamey = async () => {
+      try {
+        const GAMEY_URL = import.meta.env.VITE_GAMEY_URL ?? 'http://localhost:4000';
+        const res = await fetch(`${GAMEY_URL}/status`);
+        if (res.ok) {
+          setGameyStatus('ok');
+        } else {
+          setGameyStatus('error');
+        }
+      } catch {
+        setGameyStatus('error');
+      }
+    };
+    checkGamey();
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -59,7 +78,11 @@ const RegisterForm: React.FC = () => {
 
       {responseMessage && (
         <div className="success-message" style={{ marginTop: 12, color: 'green' }}>
-          {responseMessage}
+          <p>{responseMessage}</p>
+          <p style={{ marginTop: 12, color: 'black' }}>
+            {gameyStatus === 'ok' && 'Game is ready'}
+            {gameyStatus === 'error' && 'Game is not ready'}
+          </p>
         </div>
       )}
 
