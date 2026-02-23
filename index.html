@@ -466,46 +466,49 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_3_2_technical_context">3.2. 3.2. Technical Context</a></li>
 </ul>
 </li>
-<li><a href="#section-solution-strategy">4. Solution Strategy</a></li>
+<li><a href="#_4_solution_strategy">4. 4. Solution Strategy</a>
+<ul class="sectlevel2">
+<li><a href="#_technology_decisions">4.1. Technology Decisions</a></li>
+<li><a href="#_top_level_decomposition">4.2. Top-level Decomposition</a></li>
+<li><a href="#_achievement_of_quality_goals">4.3. Achievement of Quality Goals</a></li>
+</ul>
+</li>
 <li><a href="#section-building-block-view">5. Building Block View</a>
 <ul class="sectlevel2">
 <li><a href="#_5_1_level_1_white_box_overall_system">5.1. 5.1. Level 1: White Box Overall System</a></li>
 <li><a href="#_5_2_level_2_white_box_gamey_logic_subsystem">5.2. 5.2. Level 2: White Box GameY (Logic Subsystem)</a></li>
 <li><a href="#_5_3_level_2_white_box_webapp_frontend_subsystem">5.3. 5.3. Level 2: White Box Webapp (Frontend Subsystem)</a></li>
+<li><a href="#_scenario_1_human_player_vs_ai_move_execution">5.4. Scenario 1: Human Player vs. AI (Move Execution)</a></li>
+<li><a href="#_scenario_2_human_player_vs_human_player_multiplayer_turn_execution">5.5. Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)</a></li>
+<li><a href="#_scenario_3_match_conclusion_and_statistics_persistance">5.6. Scenario 3: Match Conclusion and Statistics Persistance</a></li>
+<li><a href="#_scenario_4_user_authentication_and_login_flow">5.7. Scenario 4: User Authentication and Login Flow</a></li>
+<li><a href="#_scenario_5_error_handling_invalid_move_validation">5.8. Scenario 5: Error Handling - Invalid Move Validation</a></li>
 </ul>
 </li>
-<li><a href="#section-runtime-view">6. Runtime View</a>
+<li><a href="#section-deployment-view">6. Deployment View</a>
 <ul class="sectlevel2">
-<li><a href="#_runtime_scenario_1">6.1. &lt;Runtime Scenario 1&gt;</a></li>
-<li><a href="#_runtime_scenario_2">6.2. &lt;Runtime Scenario 2&gt;</a></li>
-<li><a href="#">6.3. &#8230;&#8203;</a></li>
-<li><a href="#_runtime_scenario_n">6.4. &lt;Runtime Scenario n&gt;</a></li>
+<li><a href="#_infrastructure_level_1_azure_cloud_environment">6.1. Infrastructure Level 1: Azure Cloud Environment</a></li>
+<li><a href="#_infrastructure_level_2_organization_in_containers_docker">6.2. Infrastructure Level 2: Organization in Containers (Docker)</a></li>
+<li><a href="#_infrastructure_level_3_data_persistence">6.3. Infrastructure Level 3: Data Persistence</a></li>
+<li><a href="#_network_and_connectivity">6.4. Network and Connectivity</a></li>
 </ul>
 </li>
-<li><a href="#section-deployment-view">7. Deployment View</a>
+<li><a href="#section-concepts">7. Cross-cutting Concepts</a>
 <ul class="sectlevel2">
-<li><a href="#_infrastructure_level_1_azure_cloud_environment">7.1. Infrastructure Level 1: Azure Cloud Environment</a></li>
-<li><a href="#_infrastructure_level_2_organization_in_containers_docker">7.2. Infrastructure Level 2: Organization in Containers (Docker)</a></li>
-<li><a href="#_infrastructure_level_3_data_persistence">7.3. Infrastructure Level 3: Data Persistence</a></li>
-<li><a href="#_network_and_connectivity">7.4. Network and Connectivity</a></li>
+<li><a href="#_concept_1">7.1. <em>&lt;Concept 1&gt;</em></a></li>
+<li><a href="#_concept_2">7.2. <em>&lt;Concept 2&gt;</em></a></li>
+<li><a href="#_concept_n">7.3. <em>&lt;Concept n&gt;</em></a></li>
 </ul>
 </li>
-<li><a href="#section-concepts">8. Cross-cutting Concepts</a>
+<li><a href="#section-design-decisions">8. Architecture Decisions</a></li>
+<li><a href="#section-quality-scenarios">9. Quality Requirements</a>
 <ul class="sectlevel2">
-<li><a href="#_concept_1">8.1. <em>&lt;Concept 1&gt;</em></a></li>
-<li><a href="#_concept_2">8.2. <em>&lt;Concept 2&gt;</em></a></li>
-<li><a href="#_concept_n">8.3. <em>&lt;Concept n&gt;</em></a></li>
+<li><a href="#_quality_tree">9.1. Quality Tree</a></li>
+<li><a href="#_quality_scenarios">9.2. Quality Scenarios</a></li>
 </ul>
 </li>
-<li><a href="#section-design-decisions">9. Architecture Decisions</a></li>
-<li><a href="#section-quality-scenarios">10. Quality Requirements</a>
-<ul class="sectlevel2">
-<li><a href="#_quality_tree">10.1. Quality Tree</a></li>
-<li><a href="#_quality_scenarios">10.2. Quality Scenarios</a></li>
-</ul>
-</li>
-<li><a href="#section-technical-risks">11. Risks and Technical Debts</a></li>
-<li><a href="#section-glossary">12. Glossary</a></li>
+<li><a href="#section-technical-risks">10. Risks and Technical Debts</a></li>
+<li><a href="#section-glossary">11. Glossary</a></li>
 </ul>
 </div>
 </div>
@@ -1070,50 +1073,72 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-solution-strategy">4. Solution Strategy</h2>
+<h2 id="_4_solution_strategy">4. 4. Solution Strategy</h2>
 <div class="sectionbody">
-<div class="sidebarblock arc42help">
-<div class="content">
+<div class="sect2">
+<h3 id="_technology_decisions">4.1. Technology Decisions</h3>
 <div class="paragraph">
-<div class="title">Contents</div>
-<p>A short summary and explanation of the fundamental decisions and solution strategies, that shape system architecture. It includes</p>
+<p>As outlined in the Technical Context (Section 3), the core technology stack and infrastructure—Rust for the Logic Engine, React.js for the Frontend, Node.js for the User Service, YEN Notation for communication, and Docker for containerization were predefined constraints for this project.</p>
+</div>
+<div class="paragraph">
+<p>Our primary architectural decisions focus on how to integrate these given constraints effectively and what supplementary technologies to employ to complete the system:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Technology</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Motivation</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Database</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MongoDB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Document-based storage naturally fits the predefined YEN Notation (JSON) format seamlessly and allows for flexible player statistics without rigid schemas.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_top_level_decomposition">4.2. Top-level Decomposition</h3>
+<div class="paragraph">
+<p>To effectively integrate the mandated technologies, the system follows a Microservices-oriented decomposition. This ensures a clean separation of concerns and independent scalability:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>technology decisions</p>
+<p><strong>Webapp (React):</strong> Serves as the presentation layer and the primary entry point for human users.</p>
 </li>
 <li>
-<p>decisions about the top-level decomposition of the system, e.g. usage of an architectural pattern or design pattern</p>
+<p><strong>Logic Engine (Rust):</strong> A stateless, isolated service dedicated purely to high-performance game rule validation and AI calculations (Port 4000).</p>
 </li>
 <li>
-<p>decisions on how to achieve key quality goals</p>
-</li>
-<li>
-<p>relevant organizational decisions, e.g. selecting a development process or delegating certain tasks to third parties.</p>
+<p><strong>User Service (Node.js):</strong> Acts as the orchestrator for user accounts and statistics, handling concurrent API requests and communicating directly with our chosen MongoDB cluster (Port 3000).</p>
 </li>
 </ul>
 </div>
-<div class="paragraph">
-<div class="title">Motivation</div>
-<p>These decisions form the cornerstones for your architecture. They are the foundation for many other detailed decisions or implementation rules.</p>
 </div>
-<div class="paragraph">
-<div class="title">Form</div>
-<p>Keep the explanations of such key decisions short.</p>
-</div>
-<div class="paragraph">
-<p>Motivate what was decided and why it was decided that way,
-based upon problem statement, quality goals and key constraints.
-Refer to details in the following sections.</p>
-</div>
-<div class="paragraph">
-<div class="title">Further Information</div>
-<p>See <a href="https://docs.arc42.org/section-4/">Solution Strategy</a> in the arc42 documentation.</p>
-</div>
-</div>
+<div class="sect2">
+<h3 id="_achievement_of_quality_goals">4.3. Achievement of Quality Goals</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Interoperability:</strong> By rigorously applying the mandated YEN Notation across our REST/JSON APIs, the system allows external bots (using different coordinate systems like Barycentric or Index) to integrate effortlessly with the Rust engine.</p>
+</li>
+<li>
+<p><strong>Persistence &amp; Flexibility:</strong> Our strategic decision to use MongoDB ensures that as the game evolves (e.g., adding new bot metrics or match data), the system can dynamically adapt its data structures.</p>
+</li>
+<li>
+<p><strong>Performance:</strong> The architectural decoupling guarantees that the heavy computational hexagonal grid logic is strictly handled by the Rust Engine, while the Node.js service leverages its non-blocking I/O to handle user requests without bottlenecks.</p>
+</li>
+</ul>
 </div>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1233,114 +1258,84 @@ Refer to details in the following sections.</p>
 </table>
 <div style="page-break-after: always;"></div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="section-runtime-view">6. Runtime View</h2>
-<div class="sectionbody">
-<div class="sidebarblock arc42help">
-<div class="content">
-<div class="paragraph">
-<div class="title">Contents</div>
-<p>The runtime view describes concrete behavior and interactions of the system’s building blocks in form of scenarios from the following areas:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>important use cases or features: how do building blocks execute them?</p>
-</li>
-<li>
-<p>interactions at critical external interfaces: how do building blocks cooperate with users and neighboring systems?</p>
-</li>
-<li>
-<p>operation and administration: launch, start-up, stop</p>
-</li>
-<li>
-<p>error and exception scenarios</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Remark: The main criterion for the choice of possible scenarios (sequences, workflows) is their <strong>architectural relevance</strong>. It is <strong>not</strong> important to describe a large number of scenarios. You should rather document a representative selection.</p>
-</div>
-<div class="paragraph">
-<div class="title">Motivation</div>
-<p>You should understand how (instances of) building blocks of your system perform their job and communicate at runtime.
-You will mainly capture scenarios in your documentation to communicate your architecture to stakeholders that are less willing or able to read and understand the static models (building block view, deployment view).</p>
-</div>
-<div class="paragraph">
-<div class="title">Form</div>
-<p>There are many notations for describing scenarios, e.g.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>numbered list of steps (in natural language)</p>
-</li>
-<li>
-<p>activity diagrams or flow charts</p>
-</li>
-<li>
-<p>sequence diagrams</p>
-</li>
-<li>
-<p>BPMN or EPCs (event process chains)</p>
-</li>
-<li>
-<p>state machines</p>
-</li>
-<li>
-<p>&#8230;&#8203;</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<div class="title">Further Information</div>
-<p>See <a href="https://docs.arc42.org/section-6/">Runtime View</a> in the arc42 documentation.</p>
-</div>
-</div>
-</div>
 <div class="sect2">
-<h3 id="_runtime_scenario_1">6.1. &lt;Runtime Scenario 1&gt;</h3>
-<div class="ulist">
-<ul>
-<li>
-<p><em>&lt;insert runtime diagram or textual description of the scenario&gt;</em></p>
-</li>
-<li>
-<p><em>&lt;insert description of the notable aspects of the interactions between the
-building block instances depicted in this diagram.&gt;</em></p>
-</li>
-</ul>
+<h3 id="_scenario_1_human_player_vs_ai_move_execution">5.4. Scenario 1: Human Player vs. AI (Move Execution)</h3>
+<div class="paragraph">
+<p><strong>Description:</strong> This scenario illustrates the core game loop when a human player interacts with the frontend to play against the system&#8217;s AI. It highlights the transformation of UI interactions into the standardized YEN notation and the delegation of logic to the high-performance Rust engine.</p>
 </div>
 <div class="paragraph">
-<p>It is possible to use a sequence diagram:</p>
+<p><strong>Notable Aspects:</strong> The Webapp acts as a pure presentation layer. It does not calculate game rules. All coordinate conversions (Barycentric/Index) and move validations are strictly handled by the <code>GameY Engine</code>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/Sequence%20diagram.png" alt="Sequence diagram" width="332" height="335">
+<img src="./images/human-vs-ai-move.png" alt="human vs ai move" width="687" height="587">
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_runtime_scenario_2">6.2. &lt;Runtime Scenario 2&gt;</h3>
-
+<h3 id="_scenario_2_human_player_vs_human_player_multiplayer_turn_execution">5.5. Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)</h3>
+<div class="paragraph">
+<p><strong>Description:</strong> This scenario illustrates the data flow of a single turn in a networked multiplayer match between two human players. It demonstrates how a move made by one player is validated, saved, and eventually displayed on the opponent&#8217;s screen.</p>
+</div>
+<div class="paragraph">
+<p><strong>Notable Aspects:</strong> Unlike the "Human vs. AI" scenario where the Rust engine immediately calculates a counter-move, here the <code>GameY Engine</code> is strictly used for rule validation. The <code>User Service</code> and <code>MongoDB</code> act as the central state managers, holding the updated board so the second player&#8217;s Webapp can retrieve it (either via polling or WebSockets).</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/human-vs-human.png" alt="human vs human" width="1233" height="766">
+</div>
+</div>
 </div>
 <div class="sect2">
-<h3 id="">6.3. &#8230;&#8203;</h3>
-
+<h3 id="_scenario_3_match_conclusion_and_statistics_persistance">5.6. Scenario 3: Match Conclusion and Statistics Persistance</h3>
+<div class="paragraph">
+<p><strong>Description:</strong> This scenario demonstrates the data flow when a game concludes (either by a win, loss, or draw). It shows the interaction between the Frontend, the Logic Engine, and the User Service to ensure persistent data storage.</p>
+</div>
+<div class="paragraph">
+<p><strong>Notable Aspects:</strong> The <code>GameY Engine</code> is stateless; it only validates the win. The responsibility of saving the match and updating user statistics is delegated to the <code>User Service</code>, which asynchronously communicates with <code>MongoDB</code>.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/match-conclusion.png" alt="match conclusion" width="917" height="519">
+</div>
+</div>
 </div>
 <div class="sect2">
-<h3 id="_runtime_scenario_n">6.4. &lt;Runtime Scenario n&gt;</h3>
+<h3 id="_scenario_4_user_authentication_and_login_flow">5.7. Scenario 4: User Authentication and Login Flow</h3>
+<div class="paragraph">
+<p><strong>Description:</strong> This scenario illustrates the security and session management architecture of the system. It details how the system handles a user login request, verifies credentials, and establishes a secure session for the player.</p>
+</div>
+<div class="paragraph">
+<p><strong>Notable Aspects:</strong> The <code>GameY Engine</code> is bypassed entirely for this process, as it is strictly dedicated to game logic. This interaction occurs purely between the Webapp (Frontend), the <code>User Service</code> (Node.js), and the Database (MongoDB). It demonstrates a clean separation of concerns where the User Service handles all identity and access management.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/auth-flow.png" alt="auth flow" width="690" height="544">
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_scenario_5_error_handling_invalid_move_validation">5.8. Scenario 5: Error Handling - Invalid Move Validation</h3>
+<div class="paragraph">
+<p><strong>Description:</strong> This exception scenario demonstrates system resilience. It shows what happens when an invalid move (for example, attempting to play on an already occupied coordinate) is submitted by the user.</p>
+</div>
+<div class="paragraph">
+<p><strong>Notable Aspects:</strong> The <code>GameY Engine</code> acts as the single source of truth for game rules. If a YEN payload violates these rules, the engine strictly rejects the state change. It returns an appropriate error code, which the Webapp must gracefully handle to warn the user without breaking or crashing the UI state.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/invalid-move.png" alt="invalid move" width="731" height="484">
+</div>
+</div>
 <div style="page-break-after: always;"></div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-deployment-view">7. Deployment View</h2>
+<h2 id="section-deployment-view">6. Deployment View</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_infrastructure_level_1_azure_cloud_environment">7.1. Infrastructure Level 1: Azure Cloud Environment</h3>
+<h3 id="_infrastructure_level_1_azure_cloud_environment">6.1. Infrastructure Level 1: Azure Cloud Environment</h3>
 <div class="paragraph">
 <p>The high-level deployment consists of an Azure Virtual Machine hosting the containerized backend services. The frontend is a React application delivered to the user&#8217;s web browser.</p>
 </div>
@@ -1408,7 +1403,7 @@ building block instances depicted in this diagram.&gt;</em></p>
 <hr>
 </div>
 <div class="sect2">
-<h3 id="_infrastructure_level_2_organization_in_containers_docker">7.2. Infrastructure Level 2: Organization in Containers (Docker)</h3>
+<h3 id="_infrastructure_level_2_organization_in_containers_docker">6.2. Infrastructure Level 2: Organization in Containers (Docker)</h3>
 <div class="paragraph">
 <p>This level describes how the internal components are isolated within the Ubuntu host to manage specific runtime dependencies.</p>
 </div>
@@ -1444,7 +1439,7 @@ building block instances depicted in this diagram.&gt;</em></p>
 <hr>
 </div>
 <div class="sect2">
-<h3 id="_infrastructure_level_3_data_persistence">7.3. Infrastructure Level 3: Data Persistence</h3>
+<h3 id="_infrastructure_level_3_data_persistence">6.3. Infrastructure Level 3: Data Persistence</h3>
 <div class="dlist">
 <dl>
 <dt class="hdlist1">Motivation</dt>
@@ -1478,7 +1473,7 @@ building block instances depicted in this diagram.&gt;</em></p>
 <hr>
 </div>
 <div class="sect2">
-<h3 id="_network_and_connectivity">7.4. Network and Connectivity</h3>
+<h3 id="_network_and_connectivity">6.4. Network and Connectivity</h3>
 <div class="paragraph">
 <p>The following port configuration defines the boundaries and communication paths within the Ubuntu Virtual Machine:</p>
 </div>
@@ -1522,7 +1517,7 @@ building block instances depicted in this diagram.&gt;</em></p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-concepts">8. Cross-cutting Concepts</h2>
+<h2 id="section-concepts">7. Cross-cutting Concepts</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
@@ -1624,13 +1619,13 @@ on this list.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_1">8.1. <em>&lt;Concept 1&gt;</em></h3>
+<h3 id="_concept_1">7.1. <em>&lt;Concept 1&gt;</em></h3>
 <div class="paragraph">
 <p><em>&lt;explanation&gt;</em></p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_2">8.2. <em>&lt;Concept 2&gt;</em></h3>
+<h3 id="_concept_2">7.2. <em>&lt;Concept 2&gt;</em></h3>
 <div class="paragraph">
 <p><em>&lt;explanation&gt;</em></p>
 </div>
@@ -1639,7 +1634,7 @@ on this list.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_n">8.3. <em>&lt;Concept n&gt;</em></h3>
+<h3 id="_concept_n">7.3. <em>&lt;Concept n&gt;</em></h3>
 <div class="paragraph">
 <p><em>&lt;explanation&gt;</em></p>
 </div>
@@ -1648,7 +1643,7 @@ on this list.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-design-decisions">9. Architecture Decisions</h2>
+<h2 id="section-design-decisions">8. Architecture Decisions</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
@@ -1698,7 +1693,7 @@ There you will find links and examples about ADR.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-quality-scenarios">10. Quality Requirements</h2>
+<h2 id="section-quality-scenarios">9. Quality Requirements</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
@@ -1723,7 +1718,7 @@ concrete and measurable.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_quality_tree">10.1. Quality Tree</h3>
+<h3 id="_quality_tree">9.1. Quality Tree</h3>
 <div class="sidebarblock arc42help">
 <div class="content">
 <div class="paragraph">
@@ -1755,7 +1750,7 @@ concrete and measurable.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_quality_scenarios">10.2. Quality Scenarios</h3>
+<h3 id="_quality_scenarios">9.2. Quality Scenarios</h3>
 <div class="sidebarblock arc42help">
 <div class="content">
 <div class="paragraph">
@@ -1799,7 +1794,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-technical-risks">11. Risks and Technical Debts</h2>
+<h2 id="section-technical-risks">10. Risks and Technical Debts</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
@@ -1828,7 +1823,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-glossary">12. Glossary</h2>
+<h2 id="section-glossary">11. Glossary</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
@@ -1894,7 +1889,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-12 18:21:15 +0100
+Last updated 2026-02-16 11:32:09 +0100
 </div>
 </div>
 </body>
