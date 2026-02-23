@@ -1,3 +1,6 @@
+[[section-runtime-view]]
+== Runtime View
+
 === Scenario 1: Human Player vs. AI (Move Execution)
 
 *Description:* This scenario illustrates the core game loop when a human player interacts with the frontend to play against the system's AI. It highlights the transformation of UI interactions into the standardized YEN notation and the delegation of logic to the high-performance Rust engine.
