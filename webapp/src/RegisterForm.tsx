@@ -5,23 +5,11 @@ const RegisterForm: React.FC = () => {
   const [responseMessage, setResponseMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [gameyStatus, setGameyStatus] = useState<'ok' | 'error' | null>(null);
-
-  const checkGamey = async () => {
-    try {
-      const GAMEY_URL = import.meta.env.VITE_GAMEY_URL ?? 'http://localhost:4000';
-      const res = await fetch(`${GAMEY_URL}/status`);
-      setGameyStatus(res.ok ? 'ok' : 'error');
-    } catch {
-      setGameyStatus('error');
-    }
-  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setResponseMessage(null);
     setError(null);
-    setGameyStatus(null);
 
     if (!username.trim()) {
       setError('Please enter a username.');
@@ -43,7 +31,6 @@ const RegisterForm: React.FC = () => {
       if (res.ok) {
         setResponseMessage(data.message);
         setUsername('');
-        checkGamey();
       } else {
         setError(data.error || 'Server error');
       }
@@ -72,11 +59,7 @@ const RegisterForm: React.FC = () => {
 
       {responseMessage && (
         <div className="success-message" style={{ marginTop: 12, color: 'green' }}>
-          <p>{responseMessage}</p>
-          <p style={{ marginTop: 12, color: 'black' }}>
-            {gameyStatus === 'ok' && 'Game is ready'}
-            {gameyStatus === 'error' && 'Game is not ready'}
-          </p>
+          {responseMessage}
         </div>
       )}
 
