@@ -3,7 +3,7 @@
 
 The Building Block View provides a static decomposition of the YOVI_0 system. It follows a hierarchical approach, starting from the overall system and zooming into individual components.
 
-=== 5.1. Level 1: White Box Overall System
+=== Level 1: White Box Overall System
 
 The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).
 
@@ -31,7 +31,7 @@ webapp --> gamey : "JSON/YEN (Moves)"
 |**GameY Engine** |The high-performance "brain" of the system. Written in Rust for computational efficiency, it implements the formal rules of Game Y and suggests moves based on different difficulty levels.
 |===
 
-=== 5.2. Level 2: White Box GameY (Logic Subsystem)
+=== Level 2: White Box GameY (Logic Subsystem)
 
 This level zooms into the **GameY** component, as it contains the most complex logic regarding YEN notation and game strategies.
 
@@ -60,7 +60,7 @@ core --> bot : "invokes AI strategy"
 |**Web Interface** |The entry point for the service, exposing endpoints like `/next-move` to the Webapp.
 |===
 
-=== 5.3. Level 2: White Box Webapp (Frontend Subsystem)
+=== Level 2: White Box Webapp (Frontend Subsystem)
 
 The Webapp manages the user's view and the external API for bots.
 
