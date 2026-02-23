@@ -39,8 +39,9 @@ yovi --> admin : "Logs & metrics"
 |===
 
 **External Domain Interfaces:**
-* **YEN Notation:** The primary domain language. It is a JSON-based representation ensuring interoperability between any external subsystem.
-* **Coordinate Systems:** Supports both **Barycentric (x,y,z)** and **Index-based** coordinates to accommodate different mathematical approaches by bot developers.
+
+- **YEN Notation:** The primary domain language. It is a JSON-based representation ensuring interoperability between any external subsystem.
+- **Coordinate Systems:** Supports both **Barycentric (x,y,z)** and **Index-based** coordinates to accommodate different mathematical approaches by bot developers.
 
 === Technical Context
 
