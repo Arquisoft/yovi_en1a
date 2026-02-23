@@ -462,8 +462,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#section-context-and-scope">3. Context and Scope</a>
 <ul class="sectlevel2">
-<li><a href="#_3_1_business_context">3.1. 3.1. Business Context</a></li>
-<li><a href="#_3_2_technical_context">3.2. 3.2. Technical Context</a></li>
+<li><a href="#_business_context">3.1. Business Context</a></li>
+<li><a href="#_technical_context">3.2. Technical Context</a></li>
 </ul>
 </li>
 <li><a href="#_4_solution_strategy">4. 4. Solution Strategy</a>
@@ -475,9 +475,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#section-building-block-view">5. Building Block View</a>
 <ul class="sectlevel2">
-<li><a href="#_5_1_level_1_white_box_overall_system">5.1. 5.1. Level 1: White Box Overall System</a></li>
-<li><a href="#_5_2_level_2_white_box_gamey_logic_subsystem">5.2. 5.2. Level 2: White Box GameY (Logic Subsystem)</a></li>
-<li><a href="#_5_3_level_2_white_box_webapp_frontend_subsystem">5.3. 5.3. Level 2: White Box Webapp (Frontend Subsystem)</a></li>
+<li><a href="#_level_1_white_box_overall_system">5.1. Level 1: White Box Overall System</a></li>
+<li><a href="#_level_2_white_box_gamey_logic_subsystem">5.2. Level 2: White Box GameY (Logic Subsystem)</a></li>
+<li><a href="#_level_2_white_box_webapp_frontend_subsystem">5.3. Level 2: White Box Webapp (Frontend Subsystem)</a></li>
 <li><a href="#_scenario_1_human_player_vs_ai_move_execution">5.4. Scenario 1: Human Player vs. AI (Move Execution)</a></li>
 <li><a href="#_scenario_2_human_player_vs_human_player_multiplayer_turn_execution">5.5. Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)</a></li>
 <li><a href="#_scenario_3_match_conclusion_and_statistics_persistance">5.6. Scenario 3: Match Conclusion and Statistics Persistance</a></li>
@@ -970,7 +970,7 @@ These stakeholders determine the extent and the level of detail of your work and
 <p>The YOVI_0 system (Game Y at UniOvi) is a distributed gaming platform designed to provide a competitive environment for both human players and automated agents. The system&#8217;s primary boundary lies between the user-facing web interface and the high-performance game logic engine implemented in Rust.</p>
 </div>
 <div class="sect2">
-<h3 id="_3_1_business_context">3.1. 3.1. Business Context</h3>
+<h3 id="_business_context">3.1. Business Context</h3>
 <div class="paragraph">
 <p>The business context defines how YOVI_0 interacts with external entities. The system acts as a standardized provider for both human players and third-party bots, ensuring interoperability through the <strong>YEN notation</strong>.</p>
 </div>
@@ -1011,13 +1011,21 @@ These stakeholders determine the extent and the level of detail of your work and
 </tbody>
 </table>
 <div class="paragraph">
-<p><strong>External Domain Interfaces:</strong>
-* <strong>YEN Notation:</strong> The primary domain language. It is a JSON-based representation ensuring interoperability between any external subsystem.
-* <strong>Coordinate Systems:</strong> Supports both <strong>Barycentric (x,y,z)</strong> and <strong>Index-based</strong> coordinates to accommodate different mathematical approaches by bot developers.</p>
+<p><strong>External Domain Interfaces:</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>YEN Notation:</strong> The primary domain language. It is a JSON-based representation ensuring interoperability between any external subsystem.</p>
+</li>
+<li>
+<p><strong>Coordinate Systems:</strong> Supports both <strong>Barycentric (x,y,z)</strong> and <strong>Index-based</strong> coordinates to accommodate different mathematical approaches by bot developers.</p>
+</li>
+</ul>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_3_2_technical_context">3.2. 3.2. Technical Context</h3>
+<h3 id="_technical_context">3.2. Technical Context</h3>
 <div class="paragraph">
 <p>The YOVI_0 architecture follows a microservices-inspired model. All communication between the React-based frontend and the specialized services is handled over network calls.</p>
 </div>
@@ -1148,7 +1156,7 @@ These stakeholders determine the extent and the level of detail of your work and
 <p>The Building Block View provides a static decomposition of the YOVI_0 system. It follows a hierarchical approach, starting from the overall system and zooming into individual components.</p>
 </div>
 <div class="sect2">
-<h3 id="_5_1_level_1_white_box_overall_system">5.1. 5.1. Level 1: White Box Overall System</h3>
+<h3 id="_level_1_white_box_overall_system">5.1. Level 1: White Box Overall System</h3>
 <div class="paragraph">
 <p>The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).</p>
 </div>
@@ -1185,7 +1193,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </table>
 </div>
 <div class="sect2">
-<h3 id="_5_2_level_2_white_box_gamey_logic_subsystem">5.2. 5.2. Level 2: White Box GameY (Logic Subsystem)</h3>
+<h3 id="_level_2_white_box_gamey_logic_subsystem">5.2. Level 2: White Box GameY (Logic Subsystem)</h3>
 <div class="paragraph">
 <p>This level zooms into the <strong>GameY</strong> component, as it contains the most complex logic regarding YEN notation and game strategies.</p>
 </div>
@@ -1226,7 +1234,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </table>
 </div>
 <div class="sect2">
-<h3 id="_5_3_level_2_white_box_webapp_frontend_subsystem">5.3. 5.3. Level 2: White Box Webapp (Frontend Subsystem)</h3>
+<h3 id="_level_2_white_box_webapp_frontend_subsystem">5.3. Level 2: White Box Webapp (Frontend Subsystem)</h3>
 <div class="paragraph">
 <p>The Webapp manages the user&#8217;s view and the external API for bots.</p>
 </div>
