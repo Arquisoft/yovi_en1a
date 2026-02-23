@@ -1,26 +1,16 @@
 == 4. Solution Strategy
 
-=== Technology Decisions
+The core architectural style (Microservices), the primary technology stack (Rust, React.js, Node.js), and the communication protocol (YEN Notation) were predefined as strict constraints for this project (as detailed in Sections 2 and 3). 
 
-As outlined in the Technical Context (Section 3), the core technology stack and infrastructure—Rust for the Logic Engine, React.js for the Frontend, Node.js for the User Service, YEN Notation for communication, and Docker for containerization were predefined constraints for this project. 
+Therefore, our solution strategy focuses exclusively on the actual architectural and organizational decisions our team made to complete and integrate the system.
 
-Our primary architectural decisions focus on how to integrate these given constraints effectively and what supplementary technologies to employ to complete the system:
+=== 4.1. Technology Decisions
 
 |===
 | Decision | Technology | Motivation
-| **Database** | MongoDB | Document-based storage naturally fits the predefined YEN Notation (JSON) format seamlessly and allows for flexible player statistics without rigid schemas.
+| **Database** | MongoDB | Document-based storage naturally fits the predefined YEN Notation (JSON) format seamlessly. It allows for flexible player statistics and game history storage without the need for rigid schema migrations.
 |===
 
-=== Top-level Decomposition
+=== 4.2. Achievement of Quality Goals
 
-To effectively integrate the mandated technologies, the system follows a Microservices-oriented decomposition. This ensures a clean separation of concerns and independent scalability:
-
-* **Webapp (React):** Serves as the presentation layer and the primary entry point for human users.
-* **Logic Engine (Rust):** A stateless, isolated service dedicated purely to high-performance game rule validation and AI calculations (Port 4000).
-* **User Service (Node.js):** Acts as the orchestrator for user accounts and statistics, handling concurrent API requests and communicating directly with our chosen MongoDB cluster (Port 3000).
-
-=== Achievement of Quality Goals
-
-* **Interoperability:** By rigorously applying the mandated YEN Notation across our REST/JSON APIs, the system allows external bots (using different coordinate systems like Barycentric or Index) to integrate effortlessly with the Rust engine.
-* **Persistence & Flexibility:** Our strategic decision to use MongoDB ensures that as the game evolves (e.g., adding new bot metrics or match data), the system can dynamically adapt its data structures.
-* **Performance:** The architectural decoupling guarantees that the heavy computational hexagonal grid logic is strictly handled by the Rust Engine, while the Node.js service leverages its non-blocking I/O to handle user requests without bottlenecks.
+* **Flexibility & Persistence:** By deliberately choosing **MongoDB** as our database, we ensure that as the game evolves (e.g., adding new bot metrics, different match data structures), the system can dynamically adapt to store these complex JSON objects efficiently.
