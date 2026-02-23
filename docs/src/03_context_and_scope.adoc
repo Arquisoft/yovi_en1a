@@ -3,7 +3,7 @@
 
 The YOVI_0 system (Game Y at UniOvi) is a distributed gaming platform designed to provide a competitive environment for both human players and automated agents. The system's primary boundary lies between the user-facing web interface and the high-performance game logic engine implemented in Rust.
 
-=== 3.1. Business Context
+=== Business Context
 
 The business context defines how YOVI_0 interacts with external entities. The system acts as a standardized provider for both human players and third-party bots, ensuring interoperability through the **YEN notation**.
 
@@ -42,7 +42,7 @@ yovi --> admin : "Logs & metrics"
 * **YEN Notation:** The primary domain language. It is a JSON-based representation ensuring interoperability between any external subsystem.
 * **Coordinate Systems:** Supports both **Barycentric (x,y,z)** and **Index-based** coordinates to accommodate different mathematical approaches by bot developers.
 
-=== 3.2. Technical Context
+=== Technical Context
 
 The YOVI_0 architecture follows a microservices-inspired model. All communication between the React-based frontend and the specialized services is handled over network calls.
 
