@@ -7,21 +7,6 @@ The Building Block View provides a static decomposition of the YOVI_0 system. It
 
 The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).
 
-[plantuml, level1-whitebox, svg]
-----
-@startuml
-skinparam componentStyle uml2
-
-package "YOVI_0 System" {
-    component [Webapp] as webapp <<React>>
-    component [User Service] as usersvc <<Node.js>>
-    component [GameY Engine] as gamey <<Rust>>
-}
-
-webapp --> usersvc : "JSON/HTTP (Stats)"
-webapp --> gamey : "JSON/YEN (Moves)"
-@enduml
-----
 
 [cols="1,3", options="header"]
 |===
