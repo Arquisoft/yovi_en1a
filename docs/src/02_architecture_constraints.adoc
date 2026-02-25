@@ -12,13 +12,13 @@ Technical constraints define the specific technologies and tools that must be us
 |Constraint |Description
 
 |**Programming Languages**
-|Frontend must be **TypeScript/React**. The core Game Y logic (win verification/suggestions) must be **Rust**.
+|Frontend must be **TypeScript**. The core Game Y logic (win verification/suggestions) must be **Rust**.
 
 |**Data Exchange**
 |All subsystem communication must use **JSON** formatted according to the **YEN notation** (size, turn, players, layout).
 
 |**Deployment & Runtime**
-|The system must be containerized with **Docker** and run on an **Ubuntu Linux** environment (Microsoft Azure).
+|The system must be containerized with **Docker** and run on an **Ubuntu Linux** environment.
 
 |**External Connectivity**
 |The system must expose a documented **Web API** accessible by third-party bots for automated gameplay.
@@ -33,9 +33,6 @@ Architectural constraints are the high-level design requirements that dictate th
 
 |**Subsystem Decoupling**
 |The system must be split into at least **two distinct subsystems** (Web App and Rust Module). They must remain independent and communicate only via web services.
-
-|**Stateless Logic**
-|The Rust module should ideally operate as a **stateless service**, taking a YEN state as input and returning a move/verification without maintaining local session state.
 
 |**Strategy Extensibility**
 |The architecture must support **multiple AI strategies** and difficulty levels, selectable by the user or the bot via the API.
