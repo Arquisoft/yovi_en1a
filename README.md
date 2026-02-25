@@ -1,10 +1,19 @@
-# YOVI_en1a - Game Y at UniOvi
-
+# YOVI - Game Y
 [![Release — Test, Build, Publish, Deploy](https://github.com/arquisoft/yovi_en1a/actions/workflows/release-deploy.yml/badge.svg)](https://github.com/arquisoft/yovi_en1a/actions/workflows/release-deploy.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en1a&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en1a)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en1a&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en1a)
 
-This project is a template with some basic functionality for the ASW labs.
+YOVI is a game based on the classic Game Y developed in the ASW course at Uniovi and requested by Micrati.
+
+## Group Members
+
+This project is currently being developed by:
+
+* [Olga Alonso Grela](https://github.com/uo288066)
+* [Clara Fernández Pérez](https://github.com/megu-hub)
+* [Emre Sen](https://github.com/emresen12)
+* [Donato Giuliano](https://github.com/donatogiuliano)
+* [Marvin Kickel](https://github.com/m8rvin)
 
 ## Project Structure
 
