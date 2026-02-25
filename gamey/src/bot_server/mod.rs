@@ -46,9 +46,9 @@ pub fn create_router(state: AppState) -> axum::Router {
 
 /// Creates the default application state with the standard bot registry.
 ///
-/// The default state includes the `RandomBot` which selects moves randomly.
+/// The default state includes the `GamerBot` which selects moves using a minimax algorithm.
 pub fn create_default_state() -> AppState {
-    let bots = YBotRegistry::new().with_bot(Arc::new(RandomBot));
+    let bots = YBotRegistry::new().with_bot(Arc::new(GamerBot));
     AppState::new(bots)
 }
 
