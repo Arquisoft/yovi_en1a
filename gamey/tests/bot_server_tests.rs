@@ -211,7 +211,7 @@ async fn test_choose_endpoint_with_missing_content_type() {
 #[tokio::test]
 async fn test_choose_with_custom_bot_registry() {
     // Create a custom registry with only the random bot
-    let bots = YBotRegistry::new().with_bot(Arc::new(RandomBot));
+    let bots = YBotRegistry::new().with_bot(Arc::new(GamerBot));
     let state = AppState::new(bots);
     let app = test_app_with_state(state);
 
