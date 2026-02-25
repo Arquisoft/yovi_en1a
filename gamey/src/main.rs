@@ -12,7 +12,7 @@
 //! # Play human vs human (default)
 //! gamey
 //!
-//! # Play against the bot
+//! # Play against the random bot
 //! gamey --mode computer
 //!
 //! # Start the bot server on port 3000

@@ -21,7 +21,7 @@ use crate::YBot;
 /// let registry = YBotRegistry::new()
 ///     .with_bot(Arc::new(RandomBot));
 ///
-/// let bot = registry.find("gamer_bot");
+/// let bot = registry.find("random_bot");
 /// assert!(bot.is_some());
 /// ```
 pub struct YBotRegistry {
@@ -66,7 +66,7 @@ impl Default for YBotRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Coordinates, GameY, GamerBot};
+    use crate::{Coordinates, GameY, RandomBot};
 
     /// A mock bot for testing purposes.
     struct MockBot {
@@ -129,10 +129,10 @@ mod tests {
     }
 
     #[test]
-    fn test_with_gamer_bot() {
-        let registry = YBotRegistry::new().with_bot(Arc::new(GamerBot));
+    fn test_with_random_bot() {
+        let registry = YBotRegistry::new().with_bot(Arc::new(RandomBot));
 
-        assert!(registry.find("gamer_bot").is_some());
+        assert!(registry.find("random_bot").is_some());
     }
 
     #[test]
