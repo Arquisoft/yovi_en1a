@@ -9,7 +9,7 @@ communicating human players and automated agents. The following high level speci
 must be in the final version of the application:
 
 
-=== User Management
+==== User Management
 [cols="1,4"]
 |===
 | ID | Description
@@ -24,7 +24,7 @@ must be in the final version of the application:
 | The system shall provide a dashboard for users to view their statistics, including win/loss ratios and total games played.
 |===
 
-=== Gameplay (Web Frontend)
+==== Gameplay (Web Frontend)
 [cols="1,4"]
 |===
 | ID | Description
@@ -42,7 +42,7 @@ must be in the final version of the application:
 | The frontend shall visualize the board using the coordinate systems (Barycentric or Index-based) defined in the YEN notation.
 |===
 
-=== Game Engine (Rust Module)
+==== Game Engine (Rust Module)
 [cols="1,4"]
 |===
 | ID | Description
@@ -57,7 +57,7 @@ must be in the final version of the application:
 | The engine shall implement at least two distinct move-generation strategies for the AI.
 |===
 
-=== External Bot API
+==== External Bot API
 [cols="1,4"]
 |===
 | ID | Description
@@ -72,7 +72,7 @@ must be in the final version of the application:
 | The API shall support parameters for bots to specify which game strategy the engine should utilize during a match.
 |===
 
-=== Data & Communication
+==== Data & Communication
 [cols="1,4"]
 |===
 | ID | Description

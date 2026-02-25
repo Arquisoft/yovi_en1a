@@ -8,28 +8,47 @@ The system is deployed on a single Azure Virtual Machine running Ubuntu. All com
 [plantuml, level1-whitebox, svg]
 ----
 @startuml
-title YOVI Deployment Diagram - Level 1 (Azure)
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #D6EAF8
+  BorderColor #2980B9
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #EBF5FB
+  BorderColor #2980B9
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+}
+skinparam ArrowColor #2980B9
 
-skinparam componentStyle uml2
+node "Azure Cloud" {
+  node "Azure Virtual Machine\n(Ubuntu 24.04 LTS)" as vm {
 
-node "User Device" <<device>> {
-  node "Web Browser" <<EE>> {
-    component [UI Runtime] as ui
+    component "webapp\n(Nginx + React/Vite)\n:80" as webapp
+    component "users\n(Node.js REST API)\n:3000" as users
+    component "gamey\n(Rust Game Engine)\n:4000" as gamey
+    component "prometheus\n(Metrics Scraper)\n:9090" as prometheus
+    component "grafana\n(Dashboards)\n:9091" as grafana
+    database  "mongodb\n(Document Store)\n:27017" as mongodb
+
   }
 }
 
-node "Ubuntu Linux - Azure VM" <<device>> {
-  rectangle "Docker Compose Stack" {
-    component [Webapp] as webapp <<Nginx/Static>>
-    component [User Service] as usersvc <<Node.js>>
-    component [GameY Engine] as gamey <<Rust>>
-    component [Monitoring] as mon <<Prometheus/Grafana>>
-  }
-}
+actor "End User\n(Browser)" as user
+actor "Admin / Ops" as admin
 
-ui --> webapp : "HTTP :80"
-ui --> usersvc : "JSON/HTTP :3000"
-ui --> gamey : "JSON/YEN :4000"
+user  --> webapp      : HTTP :80
+user  --> users       : HTTP :3000\n(API)
+user  --> gamey       : HTTP :4000\n(Game moves)
+admin --> prometheus  : HTTP :9090
+admin --> grafana     : HTTP :9091
+
+users --> mongodb     : read/write
+gamey --> mongodb     : read/write
+
 @enduml
 ----
 
@@ -40,31 +59,67 @@ The following diagram illustrates the internal monitor-net bridge network and ho
 [plantuml, level2-docker, svg]
 ----
 @startuml
-title Level 2 - Docker Execution Environment (monitor-net)
+skinparam backgroundColor #FAFAFA
+skinparam rectangle {
+  BackgroundColor #EBF5FB
+  BorderColor #2980B9
+  RoundCorner 12
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+}
+skinparam ArrowColor #2980B9
+skinparam NoteBorderColor #F39C12
+skinparam NoteBackgroundColor #FEF9E7
 
-node "Docker Host (Ubuntu)" {
+title Docker Compose — monitor-net bridge network
 
-  boundary "Public Interface" as PI
+rectangle "monitor-net (bridge)" {
 
-  node "monitor-net" <<bridge>> {
-    component "webapp" as web <<Container>>
-    component "users" as usvc <<Container>>
-    component "gamey" as engine <<Container>>
-    component "prometheus" as prom <<Container>>
-    component "grafana" as graf <<Container>>
-  }
+  rectangle "**webapp**\nghcr.io/arquisoft/yovi_en1a-webapp\nHost: 80 → Container: 80\nVITE_API_URL=http://localhost:3000\nVITE_GAMEY_URL=http://localhost:4000" as webapp
+
+  rectangle "**users**\nghcr.io/arquisoft/yovi_en1a-users\nHost: 3000 → Container: 3000" as users
+
+  rectangle "**gamey**\nghcr.io/arquisoft/yovi_en1a-gamey\nHost: 4000 → Container: 4000" as gamey
+
+  rectangle "**mongodb**\nmongo:7\nHost: 27017 → Container: 27017" as mongodb
+
+  rectangle "**prometheus**\nprom/prometheus\nHost: 9090 → Container: 9090" as prometheus
+
+  rectangle "**grafana**\ngrafana/grafana\nHost: 9091 → Container: 3000" as grafana
 
 }
 
-PI -- web : ":80"
-PI -- usvc : ":3000"
-PI -- engine : ":4000"
-PI -- prom : ":9090"
-PI -- graf : ":9091"
+database "Named Volume\nmongo-data\n→ /data/db" as mongovol
+database "Bind Mount\n./users/monitoring/prometheus\n→ /etc/prometheus" as pmount
+database "Bind Mount\n./users/monitoring/grafana/provisioning\n→ /etc/grafana/provisioning" as gmount
 
-usvc ..> prom : "metrics"
-engine ..> prom : "metrics"
-prom ..> graf : "data source"
+webapp     --> users      : depends_on\nREST :3000
+webapp     --> gamey      : REST :4000
+users      --> mongodb    : depends_on\nread/write :27017
+gamey      --> mongodb    : depends_on\nread/write :27017
+prometheus --> users      : scrape metrics\n(internal network)
+prometheus --> gamey      : scrape metrics\n(internal network)
+grafana    --> prometheus : query metrics\n:9090
+
+mongodb .. mongovol
+prometheus .. pmount
+grafana    .. gmount
+
+note right of grafana
+  Internal port 3000 re-mapped
+  to host port 9091 to avoid
+  conflict with the users service
+end note
+
+note right of mongodb
+  Port 27017 should NOT be
+  exposed on production;
+  only accessible inside
+  monitor-net
+end note
+
 @enduml
 ----
 
@@ -110,7 +165,7 @@ prom ..> graf : "data source"
 
 |User Data
 |Docker Volume
-|Persistence for user profiles and match history (recommended to add a named volume).
+|Persistence for user profiles and match history in MongoDB.
 |===
 
 === Network and Connectivity
