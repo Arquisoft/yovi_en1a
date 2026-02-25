@@ -3,7 +3,9 @@
 
 === Infrastructure Level 1: Azure Cloud Environment
 
-The system is deployed on a single Azure Virtual Machine running Ubuntu. All components, including the frontend, are containerized to ensure consistency between development and production.
+==== Motivation
+
+The system runs on a single Azure Virtual Machine (Ubuntu 24.04 LTS). Azure was chosen for its reliability and easy VM setup. A single VM keeps costs low while still resembling a real production environment. All components are containerized with Docker so that the setup works the same way in development and in production, and deployments via GitHub Actions stay simple.
 
 [plantuml, level1-whitebox, svg]
 ----
@@ -54,71 +56,39 @@ gamey --> mongodb     : read/write
 
 === Infrastructure Level 2: Container Orchestration (Docker Compose)
 
-The following diagram illustrates the internal monitor-net bridge network and how the containers interact. Note that the Webapp is served via a container on port 80, and Grafana maps internal port 3000 to external 9091.
+==== Motivation
+
+Docker Compose manages all containers in a single configuration file. All services run on a shared internal network (`monitor-net`) so they can talk to each other without exposing unnecessary ports to the outside. The Webapp is compiled with the backend URLs baked in at build time (`VITE_API_URL`, `VITE_GAMEY_URL`), so no extra runtime configuration is needed.
+
+The diagram below shows how containers are connected inside `monitor-net`. Grafana maps its internal port 3000 to host port 9091 to avoid clashing with the Users service.
 
 [plantuml, level2-docker, svg]
 ----
 @startuml
-skinparam backgroundColor #FAFAFA
-skinparam rectangle {
-  BackgroundColor #EBF5FB
-  BorderColor #2980B9
-  RoundCorner 12
-}
-skinparam database {
-  BackgroundColor #FEF9E7
-  BorderColor #F39C12
-}
-skinparam ArrowColor #2980B9
-skinparam NoteBorderColor #F39C12
-skinparam NoteBackgroundColor #FEF9E7
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
 
-title Docker Compose — monitor-net bridge network
+actor User
 
-rectangle "monitor-net (bridge)" {
+node "Docker Network: monitor-net" {
 
-  rectangle "**webapp**\nghcr.io/arquisoft/yovi_en1a-webapp\nHost: 80 → Container: 80\nVITE_API_URL=http://localhost:3000\nVITE_GAMEY_URL=http://localhost:4000" as webapp
-
-  rectangle "**users**\nghcr.io/arquisoft/yovi_en1a-users\nHost: 3000 → Container: 3000" as users
-
-  rectangle "**gamey**\nghcr.io/arquisoft/yovi_en1a-gamey\nHost: 4000 → Container: 4000" as gamey
-
-  rectangle "**mongodb**\nmongo:7\nHost: 27017 → Container: 27017" as mongodb
-
-  rectangle "**prometheus**\nprom/prometheus\nHost: 9090 → Container: 9090" as prometheus
-
-  rectangle "**grafana**\ngrafana/grafana\nHost: 9091 → Container: 3000" as grafana
+  component "webapp\n:80" as webapp
+  component "users\n:3000" as users
+  component "gamey\n:4000" as gamey
+  database  "mongodb\n:27017" as mongo #lightblue
+  component "prometheus\n:9090" as prometheus
+  component "grafana\n:9091" as grafana
 
 }
 
-database "Named Volume\nmongo-data\n→ /data/db" as mongovol
-database "Bind Mount\n./users/monitoring/prometheus\n→ /etc/prometheus" as pmount
-database "Bind Mount\n./users/monitoring/grafana/provisioning\n→ /etc/grafana/provisioning" as gmount
+User --> webapp : HTTP :80
 
-webapp     --> users      : depends_on\nREST :3000
-webapp     --> gamey      : REST :4000
-users      --> mongodb    : depends_on\nread/write :27017
-gamey      --> mongodb    : depends_on\nread/write :27017
-prometheus --> users      : scrape metrics\n(internal network)
-prometheus --> gamey      : scrape metrics\n(internal network)
-grafana    --> prometheus : query metrics\n:9090
+webapp --> users  : VITE_API_URL
+webapp --> gamey  : VITE_GAMEY_URL
+users  --> mongo  : store
 
-mongodb .. mongovol
-prometheus .. pmount
-grafana    .. gmount
-
-note right of grafana
-  Internal port 3000 re-mapped
-  to host port 9091 to avoid
-  conflict with the users service
-end note
-
-note right of mongodb
-  Port 27017 should NOT be
-  exposed on production;
-  only accessible inside
-  monitor-net
-end note
+prometheus --> users     : scrape metrics
+grafana    --> prometheus : query
 
 @enduml
 ----
@@ -141,39 +111,48 @@ end note
 |Docker Container (Rust)
 |Logic for Game Y moves and win validation. Accessible via Port 4000.
 
+|mongodb
+|Docker Container (MongoDB)
+|Persistent document store for user profiles and match history. Accessible internally on Port 27017.
+
 |prometheus
 |Docker Container
 |Scrapes metrics from the services via the internal network.
 
 |grafana
 |Docker Container
-|Visualizes metrics. Mapped to Port 9091 to avoid conflict with User Service.
+|Visualizes metrics. Mapped to Port 9091 to avoid conflict with the Users service.
 |===
 
 === Infrastructure Level 3: Data Persistence
 
+==== Motivation
+
+The application requires its data to survive when containers restart. Prometheus and Grafana use bind mounts so their configuration files live directly in the repository and are version-controlled like any other code. MongoDB uses a named Docker volume so that user and game data persists across `docker-compose down` and `up` cycles without any manual intervention.
+
+[cols="1,2,2"]
 |===
-|Element |Storage Strategy |Configuration Path
+|Element |Storage Strategy |Path
 
-|Metrics & Config
+|Metrics Config
 |Docker Bind Mount
-|./users/monitoring/prometheus mapped to /etc/prometheus
+|`./users/monitoring/prometheus` → `/etc/prometheus`
 
-|Dashboards
+|Grafana Dashboards
 |Docker Bind Mount
-|./users/monitoring/grafana/provisioning for automated setup.
+|`./users/monitoring/grafana/provisioning` → `/etc/grafana/provisioning`
 
-|User Data
-|Docker Volume
-|Persistence for user profiles and match history in MongoDB.
+|User & Game Data
+|Docker Named Volume (`mongodb_data`)
+|Managed by Docker. Data survives restarts and redeployments independently of the container image.
 |===
 
 === Network and Connectivity
 
-- Port 80: Entry point for the web application.
+All containers communicate over the `monitor-net` bridge network. Only the following ports are exposed to the host:
 
-- Port 3000: API endpoint for User/History management (used by Webapp and Bots).
-
-- Port 4000: API endpoint for Game Engine moves (YEN notation).
-
-- Port 9090/9091: Administrative access for system observability (Prometheus and Grafana respectively).
+- *Port 80*: Web application entry point.
+- *Port 3000*: Users REST API (used by Webapp and Bots).
+- *Port 4000*: Game Engine API (YEN notation).
+- *Port 27017*: MongoDB — internal only, not exposed to the host.
+- *Port 9090 / 9091*: Prometheus and Grafana for system observability.
