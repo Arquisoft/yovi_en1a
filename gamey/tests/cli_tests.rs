@@ -277,7 +277,7 @@ fn test_cli_args_default_values() {
     let args = CliArgs::try_parse_from(["gamey"]).unwrap();
     assert_eq!(args.size, 7);
     assert_eq!(args.mode, Mode::Human);
-    assert_eq!(args.bot, "random_bot");
+    assert_eq!(args.bot, "gamer_bot");
     assert_eq!(args.port, 3000);
 }
 

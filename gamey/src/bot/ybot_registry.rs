@@ -66,7 +66,7 @@ impl Default for YBotRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Coordinates, GameY, RandomBot};
+    use crate::{Coordinates, GameY, GamerBot};
 
     /// A mock bot for testing purposes.
     struct MockBot {

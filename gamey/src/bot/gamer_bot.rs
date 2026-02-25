@@ -140,13 +140,13 @@ mod tests {
     use crate::{Movement, PlayerId};
 
     #[test]
-    fn test_gamer_bo_name() {
+    fn test_gamer_bot_name() {
         let bot = GamerBot;
         assert_eq!(bot.name(), "gamer_bot");
     }
 
     #[test]
-    fn test_gamer_bo_returns_move_on_empty_board() {
+    fn test_gamer_bot_returns_move_on_empty_board() {
         let bot = GamerBot;
         let game = GameY::new(5);
 
@@ -155,7 +155,7 @@ mod tests {
     }
 
     #[test]
-    fn test_gamer_bo_returns_valid_coordinates() {
+    fn test_gamer_bot_returns_valid_coordinates() {
         let bot = GamerBot;
         let game = GameY::new(5);
 
@@ -168,7 +168,7 @@ mod tests {
     }
 
     #[test]
-    fn test_gamer_bo_returns_none_on_full_board() {
+    fn test_gamer_bot_returns_none_on_full_board() {
         let bot = GamerBot;
         let mut game = GameY::new(2);
 
@@ -199,7 +199,7 @@ mod tests {
     }
 
     #[test]
-    fn test_gamer_bo_chooses_from_available_cells() {
+    fn test_gamer_bot_chooses_from_available_cells() {
         let bot = GamerBot;
         let mut game = GameY::new(3);
 
@@ -218,7 +218,7 @@ mod tests {
     }
 
     #[test]
-    fn test_gamer_bo_multiple_calls_return_valid_moves() {
+    fn test_gamer_bot_multiple_calls_return_valid_moves() {
         let bot = GamerBot;
         let game = GameY::new(7);
 

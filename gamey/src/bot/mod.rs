@@ -7,9 +7,9 @@
 //! - [`YBotRegistry`] - A registry for managing multiple bot implementations
 //! - [`GamerBot`] - A specific bot implementation that uses a minimax algorithm to choose moves
 
-pub mod gamer_bot;
 pub mod ybot;
 pub mod ybot_registry;
-pub use gamer_bot::*;
+pub mod gamer_bot;
 pub use ybot::*;
 pub use ybot_registry::*;
+pub use gamer_bot::*;
