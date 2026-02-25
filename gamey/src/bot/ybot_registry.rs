@@ -130,9 +130,9 @@ mod tests {
 
     #[test]
     fn test_with_random_bot() {
-        let registry = YBotRegistry::new().with_bot(Arc::new(GamerBot));
+        let registry = YBotRegistry::new().with_bot(Arc::new(RandomBot));
 
-        assert!(registry.find("gamer_bot").is_some());
+        assert!(registry.find("random_bot").is_some());
     }
 
     #[test]
