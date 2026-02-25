@@ -21,7 +21,7 @@ use crate::YBot;
 /// let registry = YBotRegistry::new()
 ///     .with_bot(Arc::new(RandomBot));
 ///
-/// let bot = registry.find("random_bot");
+/// let bot = registry.find("gamer_bot");
 /// assert!(bot.is_some());
 /// ```
 pub struct YBotRegistry {
@@ -129,10 +129,10 @@ mod tests {
     }
 
     #[test]
-    fn test_with_random_bot() {
-        let registry = YBotRegistry::new().with_bot(Arc::new(RandomBot));
+    fn test_with_gamer_bot() {
+        let registry = YBotRegistry::new().with_bot(Arc::new(GamerBot));
 
-        assert!(registry.find("random_bot").is_some());
+        assert!(registry.find("gamer_bot").is_some());
     }
 
     #[test]

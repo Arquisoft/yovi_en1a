@@ -5,11 +5,11 @@
 //!
 //! - [`YBot`] - A trait that defines the interface for all bots
 //! - [`YBotRegistry`] - A registry for managing multiple bot implementations
-//! - [`RandomBot`] - A simple bot that makes random valid moves
+//! - [`GamerBot`] - A specific bot implementation that uses a minimax algorithm to choose moves
 
-pub mod random;
+pub mod gamer_bot;
 pub mod ybot;
 pub mod ybot_registry;
-pub use random::*;
+pub use gamer_bot::*;
 pub use ybot::*;
 pub use ybot_registry::*;
