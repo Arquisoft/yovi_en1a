@@ -39,6 +39,22 @@ app.post('/createuser', async (req, res) => {
   }
 });
 
+app.post('/login', async (req, res) => {
+  const username = req.body && req.body.username;
+  const email = req.body && req.body.email;
+  const password = req.body && req.body.password;
+  try {
+    // Simulate a 1 second delay to mimic processing/network latency
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    //The password is ignored. Every login is successful
+    const message = `Login successful for ${username}`;
+    res.json({ message });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 
 if (require.main === module) {
   app.listen(port, () => {
