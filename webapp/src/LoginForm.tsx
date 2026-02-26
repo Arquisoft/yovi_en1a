@@ -52,6 +52,7 @@ const LoginForm: React.FC = () => {
           className="form-input"
           value={username}
           onChange={e => setUsername(e.target.value)}
+          required
         />
       </div>
       <div className="form-group">
@@ -62,6 +63,7 @@ const LoginForm: React.FC = () => {
           className="form-input"
           value={email}
           onChange={e => setEmail(e.target.value)}
+          required
         />
       </div>
       <div className="form-group">
@@ -72,6 +74,7 @@ const LoginForm: React.FC = () => {
           className="form-input"
           value={password}
           onChange={e => setPassword(e.target.value)}
+          required
         />
       </div>
       <button type="submit" className="submit-button" disabled={loading}>
