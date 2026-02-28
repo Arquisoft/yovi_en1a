@@ -5,8 +5,12 @@ services:
     image: ghcr.io/arquisoft/yovi_en1a-users:latest
     ports:
       - "3000:3000"
+    depends_on:
+      - mongodb
     networks:
       - monitor-net
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/yovi
 
   webapp:
     build:
@@ -52,6 +56,21 @@ services:
     networks:
       - monitor-net
 
+  mongodb:
+    image: mongo:latest
+    container_name: yovi_mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - monitor-net
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+
 networks:
   monitor-net:
     driver: bridge
+
+volumes:
+  mongo_data:
