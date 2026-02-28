@@ -8,6 +8,30 @@ The Building Block View provides a hierarchical decomposition of the YOVI_0 syst
 Level 1 represents the highest level of abstraction, showing the main subsystems of the YOVI_0 system and their interactions. Each subsystem is responsible for a specific aspect of the system's functionality, and they communicate with each other to fulfill the requirements of the project.
 
 The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).
+[plantuml, level1-whitebox, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+package "YOVI_0 System" {
+    component [Webapp] as webapp <<React>>
+    component [User Service] as usersvc <<Node.js>>
+    component [GameY Engine] as gamey <<Rust>>
+    database "MongoDB" as db <<DBMS>>
+}
+
+' Connections
+webapp --> usersvc : "HTTPS / JSON (Auth & Stats)"
+webapp --> gamey : "HTTPS / YEN JSON (Game Logic)"
+usersvc --> db : "Mongoose / Binary JSON (Persistence)"
+
+note right of db
+  Stores User Profiles, 
+  Match History, and 
+  Bot Statistics.
+end note
+@enduml
+----
 
 [cols="1,3", options="header"]
 |===
@@ -97,3 +121,63 @@ Every action passes through the gamey_error module. If a player (or the Webapp) 
 
 4. **Serialization (YEN)**:
 The notation/yen.rs module ensures that complex triangular board states can be compressed into a single string. This is critical for the "Building Block" connection between the Webapp and GameY, as it minimizes the data payload sent over HTTP.
+
+=== Level 2: User Service 
+[plantuml, user-service-level3, png]
+----
+@startuml
+!include <C4/C4_Container>
+
+title Container Diagram for YOVI System (Level 3)
+
+Person(user, "End User", "Interacts with the web application via browser.")
+
+System_Boundary(c1, "YOVI Architecture") {
+    Container(webapp, "Web Application", "React/Vite", "Provides UI for user registration and game interaction.")
+    
+    Container(user_service, "User Service", "Node.js/Express", "Handles user creation and authentication logic.")
+    
+    Container(gamey_service, "GameY Service", "Custom Engine", "Handles game logic and status.")
+
+    ContainerDb(nosql, "Database", "MongoDB", "Stores user profiles and credentials securely.")
+
+    System_Boundary(observability, "Monitoring Stack") {
+        Container(prometheus, "Prometheus", "Time-series DB", "Scrapes and stores performance metrics.")
+        Container(grafana, "Grafana", "Visualization", "Displays metrics and system health dashboards.")
+    }
+}
+
+' Relationships
+Rel(user, webapp, "Uses", "HTTPS/80")
+Rel(webapp, user_service, "API Calls", "JSON/HTTP (Port 3000)")
+Rel(webapp, gamey_service, "API Calls", "JSON/HTTP (Port 4000)")
+
+Rel(user_service, nosql, "Reads/Writes", "MongoDB Wire Protocol")
+Rel(prometheus, user_service, "Scrapes /metrics", "HTTP")
+Rel(grafana, prometheus, "Queries metrics", "PromQL")
+
+@enduml
+----
+
+==== Component Responsibilities
+
+[cols="1,2,2"]
+|===
+| Component | Technology | Responsibility
+
+| **Express Entry Point**
+| Node.js / Express 5.x
+| Orchestrates the business logic for `/createuser`.
+
+| **Security Manager**
+| bcrypt
+| Ensures "Security by Design" by hashing passwords.
+
+| **Database Driver**
+| MongoDB Driver 7.x
+| Handles asynchronous communication with the `yovi` database.
+
+| **Metrics Provider**
+| express-prom-bundle
+| Bridges the application to the Prometheus monitoring instance.
+|===
