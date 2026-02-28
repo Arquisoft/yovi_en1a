@@ -3,34 +3,86 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-introduction-and-goals]]
 == Introduction and Goals
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-Describes the relevant requirements and the driving forces that software architects and development team must consider. 
-These include
-
-* underlying business goals, 
-* essential features, 
-* essential functional requirements, 
-* quality goals for the architecture and
-* relevant stakeholders and their expectations
-****
-endif::arc42help[]
-
 === Requirements Overview
 The project aims to develop a full-stack web application for a game named YOVI,
 communicating human players and automated agents. The following high level specifications
 must be in the final version of the application:
 
-* **Gameplay Engine:** An front-end implementation based on the "Classic" version of Game Y.
-** **Player-vs-Machine:** Mode with adjustable board dimensions.
-** **Strategies:** Selectable difficulty levels and logic.
-* **User Management:**
-** Secure registration and authentication.
-** Personal dashboards with win/loss statistics and match history.
-* **Developer API:**
-** Publicly accessible and fully documented.
-** Support for **YEN notation** via a `/play` endpoint.
+
+==== User Management
+[cols="1,4"]
+|===
+| ID | Description
+
+| FR-01
+| The system shall allow users to register and authenticate (login/logout) to manage their personal profiles.
+
+| FR-02
+| The system shall maintain a persistent history of matches played by each registered user.
+
+| FR-03
+| The system shall provide a dashboard for users to view their statistics, including win/loss ratios and total games played.
+|===
+
+==== Gameplay (Web Frontend)
+[cols="1,4"]
+|===
+| ID | Description
+
+| FR-04
+| The frontend shall implement the "Classic Version" of Game Y in a Player-vs-Machine (AI) mode.
+
+| FR-05
+| The system shall support variable board sizes, allowing the player to define the dimensions before starting a match.
+
+| FR-06
+| The UI shall allow the player to select from multiple game strategies or difficulty levels provided by the AI.
+
+| FR-07
+| The frontend shall visualize the board using the coordinate systems (Barycentric or Index-based) defined in the YEN notation.
+|===
+
+==== Game Engine (Rust Module)
+[cols="1,4"]
+|===
+| ID | Description
+
+| FR-08
+| The module shall provide a web service interface to receive game states and return move calculations.
+
+| FR-09
+| The engine shall validate the current board state to determine if a match has been won, lost, or is still in progress.
+
+| FR-10
+| The engine shall implement at least two distinct move-generation strategies for the AI.
+|===
+
+==== External Bot API
+[cols="1,4"]
+|===
+| ID | Description
+
+| FR-11
+| The API shall expose a `play` method that accepts a board state in YEN notation and returns the AI's next move.
+
+| FR-12
+| The API shall provide endpoints for bots to retrieve user information and historical game data.
+
+| FR-13
+| The API shall support parameters for bots to specify which game strategy the engine should utilize during a match.
+|===
+
+==== Data & Communication
+[cols="1,4"]
+|===
+| ID | Description
+
+| FR-14
+| All communication between the TypeScript frontend and the Rust backend shall be conducted via JSON messages.
+
+| FR-15
+| The system shall strictly adhere to the YEN notation for representing board layouts, player turns, and piece positions.
+|===
 
 ifdef::arc42help[]
 [role="arc42help"]
@@ -64,19 +116,16 @@ endif::arc42help[]
 | Goal | Description
 
 | *Availability*
-| The application and its API must be publicly accessible and maintain high uptime for both web users and bot integrations.
-
-| *Compatibility*
-| The API must strictly adhere to the **YEN notation** standard to ensure that any external bot can communicate with the game engine without formatting errors.
+| The application and its API must be publicly accessible and *maintain high uptime* for both web users and bot integrations.
 
 | *Usability*
 | The frontend should be intuitive, allowing users to easily toggle between game strategies and view their statistics without a steep learning curve.
 
-| *Scalability*
-| The backend architecture should handle concurrent matches from both web users and API-based bots without significant latency.
+| *Performance*
+| The backend architecture should handle concurrent matches from both web users and API-based bots *without significant latency*.
 
 | *Security*
-| User data and match histories must be protected via secure authentication, ensuring users can only manage their own profiles.
+| User data and match histories must be protected via secure authentication, ensuring *users can only manage their own profiles*.
 |===
 ifdef::arc42help[]
 [role="arc42help"]

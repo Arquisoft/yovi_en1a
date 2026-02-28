@@ -1,4 +1,5 @@
-== 4. Solution Strategy
+[[section-solution-strategy]]
+== Solution Strategy
 
 === Technology Decisions
 

@@ -1,133 +1,158 @@
-ifndef::imagesdir[:imagesdir: ../images]
-
 [[section-deployment-view]]
 == Deployment View
 
 === Infrastructure Level 1: Azure Cloud Environment
 
-The high-level deployment consists of an Azure Virtual Machine hosting the containerized backend services. The frontend is a React application delivered to the user's web browser.
+==== Motivation
+
+The system runs on a single Azure Virtual Machine (Ubuntu 24.04 LTS). Azure was chosen for its reliability and easy VM setup. A single VM keeps costs low while still resembling a real production environment. All components are containerized with Docker so that the setup works the same way in development and in production, and deployments via GitHub Actions stay simple.
 
 [plantuml, level1-whitebox, svg]
 ----
 @startuml
-title YOVI Deployment Diagram - Level 1
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #D6EAF8
+  BorderColor #2980B9
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #EBF5FB
+  BorderColor #2980B9
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+}
+skinparam ArrowColor #2980B9
 
-skinparam componentStyle uml2
-left to right direction
+node "Azure Cloud" {
+  node "Azure Virtual Machine\n(Ubuntu 24.04 LTS)" as vm {
 
-node "User Device" <<device>> {
-    node "Web Browser" <<execution environment>> {
-        component [Webapp] as webapp <<React>>
-    }
+    component "webapp\n(Nginx + React/Vite)\n:80" as webapp
+    component "users\n(Node.js REST API)\n:3000" as users
+    component "gamey\n(Rust Game Engine)\n:4000" as gamey
+    component "prometheus\n(Metrics Scraper)\n:9090" as prometheus
+    component "grafana\n(Dashboards)\n:9091" as grafana
+    database  "mongodb\n(Document Store)\n:27017" as mongodb
+
+  }
 }
 
-node "Ubuntu Linux - Azure VM" <<device>> {
-    node "Docker Engine" <<runtime>> {
-        component [User Service] as usersvc <<Node.js>>
-        component [GameY Engine] as gamey <<Rust>>
-    }
-}
+actor "End User\n(Browser)" as user
+actor "Admin / Ops" as admin
 
-webapp --> usersvc : "JSON/HTTP :3000"
-webapp --> gamey : "JSON/YEN :4000"
+user  --> webapp      : HTTP :80
+user  --> users       : HTTP :3000\n(API)
+user  --> gamey       : HTTP :4000\n(Game moves)
+admin --> prometheus  : HTTP :9090
+admin --> grafana     : HTTP :9091
+
+users --> mongodb     : read/write
+gamey --> mongodb     : read/write
+
 @enduml
 ----
 
-Motivation::
-The YOVI system is hosted on **Microsoft Azure** using an IaaS model. This allows the system to run the high-performance Rust GameY Engine and the Node.js User Service in a unified Ubuntu environment, ensuring low latency between the game logic and the data management layer.
+=== Infrastructure Level 2: Container Orchestration (Docker Compose)
 
-Quality and/or Performance Features::
-* **Performance:** The Rust-based GameY Engine provides native execution speed for strategy generation and win verification.
-* **Accessibility:** Services are exposed directly via their respective ports to allow bot interaction and direct Webapp communication.
-* **Flexibility:** Azure provides the vertical scaling necessary to handle greater board sizes than during complex game simulations.
+==== Motivation
 
-Mapping of Building Blocks to Infrastructure::
-[cols="1,2,2"]
-|===
-|Building Block |Infrastructure Element |Description
+Docker Compose manages all containers in a single configuration file. All services run on a shared internal network (`monitor-net`) so they can talk to each other without exposing unnecessary ports to the outside. The Webapp is compiled with the backend URLs baked in at build time (`VITE_API_URL`, `VITE_GAMEY_URL`), so no extra runtime configuration is needed.
 
-|**Webapp**
-|User Web Browser
-|Client-side application providing the UI for Game Y.
-
-|**User Service**
-|Node.js Container
-|Handles user registration, participation history, and win/loss statistics.
-
-|**GameY Engine**
-|Rust Container
-|Core logic for win verification and move suggestion via YEN notation.
-|===
-
-'''
-
-=== Infrastructure Level 2: Organization in Containers (Docker)
-
-This level describes how the internal components are isolated within the Ubuntu host to manage specific runtime dependencies.
+The diagram below shows how containers are connected inside `monitor-net`. Grafana maps its internal port 3000 to host port 9091 to avoid clashing with the Users service.
 
 [plantuml, level2-docker, svg]
 ----
 @startuml
-title Level 2 - Docker Execution Environment
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
 
-node "Docker Host (Ubuntu)" {
+actor User
 
-    node "yovi-network" <<network>> {
-        component "WebApp Container" as nodejs {
-            portout 3000
-        }
-        component "GameY Container" as rust {
-            portout 4000
-        }
-    }
+node "Docker Network: monitor-net" {
+
+  component "webapp\n:80" as webapp
+  component "users\n:3000" as users
+  component "gamey\n:4000" as gamey
+  database  "mongodb\n:27017" as mongo #lightblue
+  component "prometheus\n:9090" as prometheus
+  component "grafana\n:9091" as grafana
+
 }
 
-node "Prometheus" as mon <<container>>
+User --> webapp : HTTP :80
 
-rust ..> mon : "Metrics :9091"
-nodejs ..> mon : "Metrics :9090"
+webapp --> users  : VITE_API_URL
+webapp --> gamey  : VITE_GAMEY_URL
+users  --> mongo  : store
+
+prometheus --> users     : scrape metrics
+grafana    --> prometheus : query
+
 @enduml
 ----
 
-Motivation::
-Docker ensures that the Rust toolchain and Node.js environment are encapsulated. This prevents version conflicts on the Azure host and simplifies the pipeline by ensuring the same image is used for testing and production.
+=== Mapping of Building Blocks to Infrastructure
 
-Quality and/or Performance Features::
-* **Isolation:** If a specific Game Y strategy causes a memory leak in the engine, the Docker container limits prevent it from affecting the availability of the User Service.
-* **Observability:** Each container exposes a dedicated monitoring port to track performance metrics as required by the evaluation criteria.
-* **Portability and Dependency Management**: By using Docker to containerize the services, the system can run the Rust-based GameY Engine and Node.js User Service on any infrastructure (like the Azure VM) without requiring the host machine to have those specific runtimes or compilers installed manually. This ensures a consistent execution environment across development and production.
+[cols="1,2,2"]
+|===
+|Building Block |Infrastructure Element |Description
 
+|webapp
+|Docker Container (Nginx)
+|Serves the React/Vite frontend. Accessible via Port 80.
 
+|users
+|Docker Container (Node.js)
+|Handles identity, history, and stats. Accessible via Port 3000.
 
-'''
+|gamey
+|Docker Container (Rust)
+|Logic for Game Y moves and win validation. Accessible via Port 4000.
+
+|mongodb
+|Docker Container (MongoDB)
+|Persistent document store for user profiles and match history. Accessible internally on Port 27017.
+
+|prometheus
+|Docker Container
+|Scrapes metrics from the services via the internal network.
+
+|grafana
+|Docker Container
+|Visualizes metrics. Mapped to Port 9091 to avoid conflict with the Users service.
+|===
 
 === Infrastructure Level 3: Data Persistence
 
-Motivation::
-To satisfy the requirement of consulting participation history and metrics, a persistent storage layer is mapped to the Docker environment.
+==== Motivation
 
-[cols="1,2"]
+The application requires its data to survive when containers restart. Prometheus and Grafana use bind mounts so their configuration files live directly in the repository and are version-controlled like any other code. MongoDB uses a named Docker volume so that user and game data persists across `docker-compose down` and `up` cycles without any manual intervention.
+
+[cols="1,2,2"]
 |===
-|Element |Storage Strategy
+|Element |Storage Strategy |Path
 
-|**User Profiles & Stats**
-|Docker Volume mapped to the host filesystem to ensure participation data survives container restarts.
+|Metrics Config
+|Docker Bind Mount
+|`./users/monitoring/prometheus` → `/etc/prometheus`
 
-|**Move History**
-|Standardized logging within the GameY container for audit trails of YEN notation states.
+|Grafana Dashboards
+|Docker Bind Mount
+|`./users/monitoring/grafana/provisioning` → `/etc/grafana/provisioning`
+
+|User & Game Data
+|Docker Named Volume (`mongodb_data`)
+|Managed by Docker. Data survives restarts and redeployments independently of the container image.
 |===
-
-'''
 
 === Network and Connectivity
 
-The following port configuration defines the boundaries and communication paths within the Ubuntu Virtual Machine:
+All containers communicate over the `monitor-net` bridge network. Only the following ports are exposed to the host:
 
-* **Internal/External Service Ports:**
-** **Port 80:** The public access for the Webapp containing Game Y.
-** **Port 3000:** The Webapp and external Bots communicate with the User Service for identity and statistics management.
-** **Port 4000:** The Webapp and external Bots send game moves to the GameY Engine using the **JSON/YEN protocol**.
-* **Monitoring:**
-** **Port 9090/9091:** Reserved for internal monitoring (Prometheus/Grafana) to track the health of the host and the individual microservices.
-
-image::07_vm_ports.png[Network Port Mapping]
+- *Port 80*: Web application entry point.
+- *Port 3000*: Users REST API (used by Webapp and Bots).
+- *Port 4000*: Game Engine API (YEN notation).
+- *Port 27017*: MongoDB — internal only, not exposed to the host.
+- *Port 9090 / 9091*: Prometheus and Grafana for system observability.
