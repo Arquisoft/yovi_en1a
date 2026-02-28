@@ -1,3 +1,5 @@
+ifndef::imagesdir[:imagesdir: ../images]
+
 [[section-building-block-view]]
 == Building Block View
 
@@ -32,7 +34,44 @@ note right of db
 end note
 @enduml
 ----
+==== Component Descriptions
+[cols="1,3", options="header"]
+|===
+|Name |Responsibility
+|**Webapp** |The central UI and gateway. Manages hexagonal grid rendering and provides the documented API for external bots.
+|**User Service** |Handles administrative logic: user registration, session management, and persists match statistics to the DBMS.
+|**GameY Engine** |The high-performance "brain." Written in Rust for memory safety and speed; it validates game rules and provides AI moves via YEN notation.
+|**MongoDB** |The Document-based DBMS. It persists all non-transient data, chosen for its native support of JSON-like structures (perfect for YEN payloads).
+|===
 
+//==============================================================================
+=== Level 2: Webapp (Frontend Subsystem)
+The Webapp is a Single Page Application (SPA) built with React and Vite. It acts as the primary user interface and the orchestrator of requests between the User Service and the GameY Engine.
+
+[plantuml, webapp-level2, png]
+----
+@startuml
+package "Webapp (src/)" {
+[main.tsx] as main
+[App.tsx] as app
+[RegisterForm.tsx] as form
+[env.d.ts] as env
+}
+
+node "External Services" {
+[User Service (Port 3000)] as usersvc
+[GameY Engine (Port 4000)] as gamey
+}
+
+main --> app : "Renders"
+app --> form : "Includes"
+form ..> env : "Uses Environment Vars"
+form --> usersvc : "POST /createuser"
+form --> gamey : "GET /status"
+@enduml
+----
+
+==== Component Descriptions
 [cols="1,3", options="header"]
 |===
 |Component |Detailed Responsibility
@@ -41,6 +80,8 @@ end note
 |RegisterForm.tsx |The Interaction Hub. This is the most complex component in this module. It manages local state for input data, loading animations, and error handling. It is responsible for the sequence: Submit → User Creation → Game Status Check.
 |env.d.ts |The Configuration Schema. It defines the ImportMetaEnv interface. This ensures that the TypeScript compiler recognizes custom environment variables used for service discovery, preventing runtime crashes.
 |===
+
+==== Internal dynamics and logic
 
 The internal behavior of this module is driven by the state within RegisterForm.tsx:
 
@@ -57,6 +98,7 @@ The internal behavior of this module is driven by the state within RegisterForm.
 
 3. **Resilience**: The UI is designed to be fail-safe. If the GameY engine is down, the user is still successfully registered, but the system displays a "Game is not ready" warning to manage user expectations.
 
+//==============================================================================
 === Level 2: GameY Engine (Logic Subsystem)
 
 The GameY Engine is a high-performance Rust subsystem responsible for the rules of the "Game of Y". It is structured as both a Library (lib.rs) for core logic and a Binary (main.rs) that provides a Command-Line Interface (CLI) and an HTTP Bot Server.
@@ -107,6 +149,7 @@ server --> notation : "Uses YEN for API" cli --> core : "Updates state" core -->
 |cli |Interactive Shell. Provides a rich terminal experience using rustyline. It supports board rendering, move history, and saving/loading game states to files.
 |gamey_error |Domain Safety. Defines the GameYError enum using thiserror. It strictly enforces game rules (e.g., Occupied, InvalidPlayerTurn) and ensures system resilience.
 |===
+
 ==== Internal dynamics and logic
 The GameY module operates through distinct execution patterns:
 
@@ -122,13 +165,14 @@ Every action passes through the gamey_error module. If a player (or the Webapp) 
 4. **Serialization (YEN)**:
 The notation/yen.rs module ensures that complex triangular board states can be compressed into a single string. This is critical for the "Building Block" connection between the Webapp and GameY, as it minimizes the data payload sent over HTTP.
 
+//==============================================================================
 === Level 2: User Service 
 [plantuml, user-service-level3, png]
 ----
 @startuml
 !include <C4/C4_Container>
 
-title Container Diagram for YOVI System (Level 3)
+title Container Diagram for YOVI System (Level 2: User Service)
 
 Person(user, "End User", "Interacts with the web application via browser.")
 
