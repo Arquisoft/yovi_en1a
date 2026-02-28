@@ -1,73 +1,180 @@
 [[section-building-block-view]]
 == Building Block View
 
-The Building Block View provides a static decomposition of the YOVI_0 system. It follows a hierarchical approach, starting from the overall system and zooming into individual components.
+The Building Block View provides a hierarchical decomposition of the YOVI_0 system. It describes the static structure, showing how the system is organized into subsystems and components, and how they interact with each other. This view is essential for understanding the overall architecture and the responsibilities of each part of the system.
 
-=== Level 1: White Box Overall System
+=== Level 1: Overall System
+
+Level 1 represents the highest level of abstraction, showing the main subsystems of the YOVI_0 system and their interactions. Each subsystem is responsible for a specific aspect of the system's functionality, and they communicate with each other to fulfill the requirements of the project.
 
 The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).
 
-[plantuml, level1-whitebox, svg]
+[plantuml, level1-whitebox, png]
+----
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+package "YOVI_0 System (Black Box)" {
+component [Webapp] as webapp <<React/Vite>>
+component [User Service] as usersvc <<Node.js/Express>>
+component [GameY Engine] as gamey <<Rust/Cargo>>
+database "MongoDB" as db <<DBMS>>
+}
+
+' Connections with explicit protocols
+webapp --> usersvc : "HTTPS / REST (JSON)"
+webapp --> gamey : "HTTPS / REST (YEN JSON)"
+usersvc <--> db : "TCP / MongoDB Wire Protocol"
+
+note bottom of db
+Primary DBMS for
+User Persistence &
+Match Statistics.
+end note
+
+@enduml
+----
+
+==== Component Descriptions
+[cols="1,3", options="header"]
+|===
+|Name |Description
+|Webapp |The frontend application. It serves as the primary interface for human players. It handles state management for the hexagonal grid and interacts with the backends via asynchronous HTTP requests.
+|User Service |A Node.js microservice responsible for the "Users" domain. It manages registration, authentication, and the aggregation of player statistics.
+|GameY Engine |The core computational engine. Written in Rust, it ensures high-speed validation of game rules and AI move generation. It is stateless and communicates via the YEN notation.
+|MongoDB |The persistent data layer. It stores semi-structured data such as user profiles and match history, facilitating horizontal scalability and flexible schema evolution.
+|===
+
+==== Interactions
+
+- **Frontend to Logic**: The Webapp sends the current board state to GameY and receives the next move.
+- **Frontend to User Management**: The Webapp sends registration/login data to the User Service.
+- **Data Persistence**: The User Service acts as the exclusive gatekeeper for MongoDB, ensuring data integrity through Mongoose-based schema validation.
+
+=== Level 2: Webapp (Frontend Subsystem)
+
+The WebApp is a Single Page Application (SPA) built with React and Vite. It serves as the entry point for users, managinf both the user interface and the game interface. The WebApp is responsible for rendering the hexagonal grid, handling user interactions, and communicating with the backend services.
+
+[plantuml, webapp-level2, png]
 ----
 @startuml
 skinparam componentStyle uml2
 
-package "YOVI_0 System" {
-    component [Webapp] as webapp <<React>>
-    component [User Service] as usersvc <<Node.js>>
-    component [GameY Engine] as gamey <<Rust>>
+package "Webapp Subsystem (src/)" {
+    [main.tsx] as main <<Entry>>
+    [App.tsx] as app <<Orchestrator>>
+    [RegisterForm.tsx] as form <<Logic/UI>>
+    [env.d.ts] as env <<Types>>
 }
 
-webapp --> usersvc : "JSON/HTTP (Stats)"
-webapp --> gamey : "JSON/YEN (Moves)"
+interface "Browser DOM" as DOM
+interface "User Service API" as API_USER
+interface "GameY Engine API" as API_GAME
+
+' Internal Flow
+main --> app : "Initializes"
+app --> form : "Renders"
+form ..> env : "Configuration"
+
+' External Flow
+main -down-> DOM : "Mounts 'root'"
+form --> API_USER : "POST /createuser"
+form --> API_GAME : "GET /status"
+
+note right of env
+  VITE_API_URL
+  VITE_GAMEY_URL
+end note
 @enduml
 ----
+==== Component Descriptions
 
 [cols="1,3", options="header"]
 |===
-|Name |Responsibility
-|**Webapp** |The central orchestrator. It handles the hexagonal grid rendering, user interaction, and provides the documented API for external bots to participate in matches.
-|**User Service** |A specialized service for administrative tasks. It simulates user persistence and provides the data necessary for the "Participation History" and "Statistics" requirements.
-|**GameY Engine** |The high-performance "brain" of the system. Written in Rust for computational efficiency, it implements the formal rules of Game Y and suggests moves based on different difficulty levels.
+|Component |Detailed Responsibility
+|main.tsx |The Bootstrap of the application. It utilizes the react-dom/client library to find the root element in the HTML and injects the React application. It implements StrictMode to identify potential problems during development.
+|App.tsx |The Layout Orchestrator. It imports the global CSS and provides the high-level UI structure. It acts as a container for the different views (currently the RegisterForm).
+|RegisterForm.tsx |The Interaction Hub. This is the most complex component in this module. It manages local state for input data, loading animations, and error handling. It is responsible for the sequence: Submit → User Creation → Game Status Check.
+|env.d.ts |The Configuration Schema. It defines the ImportMetaEnv interface. This ensures that the TypeScript compiler recognizes custom environment variables used for service discovery, preventing runtime crashes.
 |===
 
-=== Level 2: White Box GameY (Logic Subsystem)
+The internal behavior of this module is driven by the state within RegisterForm.tsx:
 
-This level zooms into the **GameY** component, as it contains the most complex logic regarding YEN notation and game strategies.
+1. **Service Discovery**: The module does not hardcode URLs. It uses an Environment-Aware approach:
 
-[plantuml, gamey-whitebox, svg]
+- It defaults to http://localhost:3000 (Users) and http://localhost:4000 (GameY) for local development.
+
+- It allows overrides via VITE_API_URL and VITE_GAMEY_URL for production/containerized environments.
+
+2. **Asynchronous Lifecycle**: 
+- **User Registration**: Initiates a fetch POST request with a JSON payload containing the username.
+
+- **Chained Validation**: Upon a successful (200 OK) response from the User Service, it triggers the checkGamey() function. This ensures that the player is only notified that "Game is ready" if the Rust engine is reachable.
+
+3. **Resilience**: The UI is designed to be fail-safe. If the GameY engine is down, the user is still successfully registered, but the system displays a "Game is not ready" warning to manage user expectations.
+
+=== Level 2: GameY Engine (Logic Subsystem)
+
+The GameY Engine is a high-performance Rust subsystem responsible for the rules of the "Game of Y". It is structured as both a Library (lib.rs) for core logic and a Binary (main.rs) that provides a Command-Line Interface (CLI) and an HTTP Bot Server.
+
+[plantuml, gamey-level2, png]
 ----
 @startuml
-package "GameY Engine (Rust)" {
-    [Web Interface] as web
-    [Core Logic] as core
-    [Bot Registry] as bot
-    [Notation Handler] as notation
+skinparam componentStyle uml2
+
+package "GameY Subsystem (gamey/)" {
+[main.rs] as main <<Entry>>
+[lib.rs] as lib <<Library Root>>
+
+package "Modules" {
+    [core] as core <<Rules>>
+    [bot_server] as server <<HTTP API>>
+    [bot] as bot <<AI Strategy>>
+    [notation] as notation <<YEN/YGN>>
+    [cli] as cli <<Terminal UI>>
+    [gamey_error] as error <<Error Handling>>
+}
 }
 
-web --> core : "requests evaluation"
-core --> notation : "parses/generates YEN"
-core --> bot : "invokes AI strategy"
+' Binary interactions
+main --> cli : "run_cli_game()"
+main --> server : "run_bot_server()"
+
+' Library internal relationships
+lib --> core
+lib --> server
+lib --> notation
+lib --> error
+
+server --> notation : "Uses YEN for API" cli --> core : "Updates state" core --> error : "Throws violations" 
 @enduml
 ----
 
+==== Component Descriptions
 [cols="1,3", options="header"]
 |===
-|Component |Description
-|**Core Logic** |The heart of the engine. It defines the board state and the connectivity logic (checking if a player has connected three edges).
-|**Bot Registry** |A modular registry for AI strategies. It satisfies the requirement for "more than one strategy" (e.g., Random vs. Advanced).
-|**Notation Handler** |Translates internal data structures into the **YEN Notation** format required for JSON communication.
-|**Web Interface** |The entry point for the service, exposing endpoints like `/next-move` to the Webapp.
+|Module |Detailed Responsibility
+|main.rs |Application Entry Point. Uses clap to parse CLI arguments. It determines the execution mode: Human (local CLI), Computer (local vs Bot), or Server (HTTP API for the Webapp).
+|lib.rs |Library Root. The central exported interface. It organizes the crate into public modules and provides the high-level GameY struct used to manipulate the triangular board.
+|core |The Rules Engine. Implements the triangular board mathematics, coordinate systems (Barycentric/Index), and the connection-based win conditions.
+|bot_server |The Gateway. Uses tokio to run an asynchronous HTTP server. It allows the Webapp to request moves via REST, serving as the bridge between the React frontend and the Rust logic.
+|bot |The Intelligence. Contains the GamerBot and the YBotRegistry. It implements the strategies used to calculate the next optimal move for a computer player.
+|notation |The Interoperability Layer. Implements YEN (Y Exchange Notation). It defines a JSON-serializable format for board layouts (e.g., "B/BR/.R."), inspired by chess's FEN.
+|cli |Interactive Shell. Provides a rich terminal experience using rustyline. It supports board rendering, move history, and saving/loading game states to files.
+|gamey_error |Domain Safety. Defines the GameYError enum using thiserror. It strictly enforces game rules (e.g., Occupied, InvalidPlayerTurn) and ensures system resilience.
 |===
+==== Internal dynamics and logic
+The GameY module operates through distinct execution patterns:
 
-=== Level 2: White Box Webapp (Frontend Subsystem)
+1. **Stateful CLI Loop**:
+In cli.rs, the run_cli_game function maintains an interactive loop. It captures user indices (e.g., "5"), converts them to coordinates, and applies moves to the GameY state. It supports "meta-commands" like save, load, and show_coords.
 
-The Webapp manages the user's view and the external API for bots.
+2. **Stateless Server Pattern**:
+When running in Mode::Server, the engine becomes a stateless API. It receives a YEN payload from the Webapp, reconstructs the game state momentarily in memory, calculates the AI's response via the bot module, and returns the new state.
 
-[cols="1,3", options="header"]
-|===
-|Component |Description
-|**Game Controller** |Manages the local game loop, turn-taking, and coordinate conversion (UI pixels to Barycentric/Index).
-|**Public Bot API Controller** |Specifically designed to meet the requirement of allowing bots to play. It accepts YEN positions and returns the engine's response.
-|**Statistics View** |Interfaces with the User Service to display the player's win/loss history.
-|===
+3. **Strict Error Enforcement**:
+Every action passes through the gamey_error module. If a player (or the Webapp) attempts an illegal move (such as placing a piece on an Occupied cell), the engine returns a specific error variant rather than allowing an inconsistent game state.
+
+4. **Serialization (YEN)**:
+The notation/yen.rs module ensures that complex triangular board states can be compressed into a single string. This is critical for the "Building Block" connection between the Webapp and GameY, as it minimizes the data payload sent over HTTP.
