@@ -52,9 +52,10 @@ app.post('/createuser', async (req, res) => {
 
   const { username, email, password } = req.body;
 
-  if (!username || !email || !password) {
-    return res.status(400).json({ error: 'Username, email and password are all required' });
-  }
+  // Validations
+  // if (!username || !email || !password) {
+  //   return res.status(400).json({ error: 'Username, email and password are all required' });
+  // }
 
   try {
     const usersCollection = db.collection('users');
@@ -79,7 +80,7 @@ app.post('/createuser', async (req, res) => {
 
   } catch (error) {
     console.error('Error creating user:', error);
-    if (error.code === 11000) { // MongoDB duplicate key error
+    if (error.code === 11000) { // duplicate key error
       return res.status(409).json({ error: 'Username or email already exists' });
     }
     res.status(500).json({ error: 'Internal server error' });
