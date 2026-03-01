@@ -43,7 +43,7 @@ const LoginForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="register-form">
+    <form onSubmit={handleSubmit} className="register-form" noValidate>
       {/* use same css classes like in register-form */}
       <div className="form-group">
         <label htmlFor="username">Username</label>
