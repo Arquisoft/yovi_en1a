@@ -14,10 +14,8 @@ describe('LoginForm', () => {
     render(<LoginForm />)
     const user = userEvent.setup()
 
-    await waitFor(async () => {
-      await user.click(screen.getByRole('button', { name: /login/i }))
-      expect(screen.getByText(/fill out all fields/i)).toBeInTheDocument()
-    })
+    await user.click(screen.getByRole('button', { name: /login/i }))
+    expect(await screen.findByText(/fill out all fields/i)).toBeInTheDocument()
   })
 
   test('submits credentials and displays success response', async () => {
@@ -30,14 +28,14 @@ describe('LoginForm', () => {
 
     render(<LoginForm />)
 
-    await waitFor(async () => {
-      await user.type(screen.getByLabelText(/username/i), 'Alice')
-      await user.type(screen.getByLabelText(/e‑mail/i), 'alice@example.com')
-      await user.type(screen.getByLabelText(/password/i), 'secret')
-      await user.click(screen.getByRole('button', { name: /login/i }))
+    await user.type(screen.getByLabelText(/username/i), 'Alice')
+    await user.type(screen.getByLabelText(/e‑mail/i), 'alice@example.com')
+    await user.type(screen.getByLabelText(/password/i), 'secret')
+    await user.click(screen.getByRole('button', { name: /login/i }))
 
-      expect(screen.getByText(/login successful for alice/i)).toBeInTheDocument()
-      // fields should have been cleared after success
+    expect(await screen.findByText(/login successful for alice/i)).toBeInTheDocument()
+    // fields should have been cleared after success
+    await waitFor(() => {
       expect(screen.getByLabelText(/username/i)).toHaveValue('')
       expect(screen.getByLabelText(/e‑mail/i)).toHaveValue('')
       expect(screen.getByLabelText(/password/i)).toHaveValue('')
@@ -54,13 +52,11 @@ describe('LoginForm', () => {
 
     render(<LoginForm />)
 
-    await waitFor(async () => {
-      await user.type(screen.getByLabelText(/username/i), 'Bob')
-      await user.type(screen.getByLabelText(/e‑mail/i), 'bob@example.com')
-      await user.type(screen.getByLabelText(/password/i), 'pw')
-      await user.click(screen.getByRole('button', { name: /login/i }))
+    await user.type(screen.getByLabelText(/username/i), 'Bob')
+    await user.type(screen.getByLabelText(/e‑mail/i), 'bob@example.com')
+    await user.type(screen.getByLabelText(/password/i), 'pw')
+    await user.click(screen.getByRole('button', { name: /login/i }))
 
-      expect(screen.getByText(/invalid/i)).toBeInTheDocument()
-    })
+    expect(await screen.findByText(/invalid/i)).toBeInTheDocument()
   })
 })
