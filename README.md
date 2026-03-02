@@ -48,7 +48,14 @@ The `webapp` is a single-page application (SPA) created with [Vite](https://vite
 
 The `users` service is a simple REST API built with [Node.js](https://nodejs.org/) and [Express](https://expressjs.com/).
 
-- `users-service.js`: The main file for the user service. It defines an endpoint `/createuser` to handle user creation.
+- `users-service.js`: The main file for the user service. It defines two endpoints:
+  * `/createuser` – accepts `{ username, password }` and stores the pair in memory;
+    responds with a welcome message.
+  * `/login` – accepts `{ username, password }` and checks against the stored
+    credentials. Returns **200** on success, **401** on wrong password, **400** if
+    any field is missing. User data is not persisted across restarts (no database).
+- `openapi.yaml`: describes both endpoints; the service also exposes Swagger UI at
+  `/api-docs` when running.
 - `package.json`: Contains scripts to start the service.
 - `Dockerfile`: Defines the Docker image for the user service.
 

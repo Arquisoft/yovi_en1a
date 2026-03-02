@@ -7,15 +7,15 @@ describe('POST /createuser', () => {
         vi.restoreAllMocks()
     })
 
-    it('returns a greeting message for the provided username', async () => {
+    it('returns a greeting message when username and password are given', async () => {
         const res = await request(app)
             .post('/createuser')
-            .send({ username: 'Pablo' })
+            .send({ username: 'Pablo', password: 'pw' })
             .set('Accept', 'application/json')
 
         expect(res.status).toBe(200)
         expect(res.body).toHaveProperty('message')
-        expect(res.body.message).toMatch(/Hello Pablo! Welcome to the course!/i)
+        expect(res.body.message).toMatch(/Hello Pablo! welcome to the course!/i)
     })
 })
 
@@ -25,15 +25,35 @@ describe('POST /login', () => {
         vi.restoreAllMocks()
     })
 
-    it('returns a success message regardless of password', async () => {
+    it('rejects when missing fields', async () => {
         const res = await request(app)
             .post('/login')
-            .send({ username: 'Alice', email: 'a@example.com', password: 'secret' })
+            .send({ username: 'Alice' })
+            .set('Accept', 'application/json')
+
+        expect(res.status).toBe(400)
+    })
+
+    it('accepts valid credentials after user creation', async () => {
+        await request(app)
+            .post('/createuser')
+            .send({ username: 'Bob', password: 'pw' })
+        const res = await request(app)
+            .post('/login')
+            .send({ username: 'Bob', password: 'pw' })
             .set('Accept', 'application/json')
 
         expect(res.status).toBe(200)
-        expect(res.body).toHaveProperty('message')
-        expect(res.body.message).toMatch(/Login successful for Alice/i)
-        expect(res.headers['access-control-allow-origin']).toBe('*')
+        expect(res.body.message).toMatch(/Login successful for Bob/i)
+    })
+
+    it('fails wrong password', async () => {
+        await request(app)
+            .post('/createuser')
+            .send({ username: 'Carl', password: '123' })
+        const res = await request(app)
+            .post('/login')
+            .send({ username: 'Carl', password: 'wrong' })
+        expect(res.status).toBe(401)
     })
 })

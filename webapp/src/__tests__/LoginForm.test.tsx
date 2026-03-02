@@ -29,7 +29,6 @@ describe('LoginForm', () => {
     render(<LoginForm />)
 
     await user.type(screen.getByLabelText(/username/i), 'Alice')
-    await user.type(screen.getByLabelText(/e‑mail/i), 'alice@example.com')
     await user.type(screen.getByLabelText(/password/i), 'secret')
     await user.click(screen.getByRole('button', { name: /login/i }))
 
@@ -37,7 +36,6 @@ describe('LoginForm', () => {
     // fields should have been cleared after success
     await waitFor(() => {
       expect(screen.getByLabelText(/username/i)).toHaveValue('')
-      expect(screen.getByLabelText(/e‑mail/i)).toHaveValue('')
       expect(screen.getByLabelText(/password/i)).toHaveValue('')
     })
   })
@@ -53,7 +51,6 @@ describe('LoginForm', () => {
     render(<LoginForm />)
 
     await user.type(screen.getByLabelText(/username/i), 'Bob')
-    await user.type(screen.getByLabelText(/e‑mail/i), 'bob@example.com')
     await user.type(screen.getByLabelText(/password/i), 'pw')
     await user.click(screen.getByRole('button', { name: /login/i }))
 

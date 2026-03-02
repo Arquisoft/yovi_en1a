@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 
 const LoginForm: React.FC = () => {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [responseMessage, setResponseMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -13,7 +12,7 @@ const LoginForm: React.FC = () => {
     setError(null);
     setResponseMessage(null);
 
-    if (!username.trim() || !email.trim() || !password) {
+    if (!username.trim() || !password) {
       setError('Fill out all fields');
       return;
     }
@@ -24,13 +23,12 @@ const LoginForm: React.FC = () => {
       const res = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, password }),
       });
       const data = await res.json();
       if (res.ok) {
         setResponseMessage(data.message);
         setUsername('');
-        setEmail('');
         setPassword('');
       } else {
         setError(data.error || 'Login failed');
@@ -52,17 +50,6 @@ const LoginForm: React.FC = () => {
           className="form-input"
           value={username}
           onChange={e => setUsername(e.target.value)}
-          required
-        />
-      </div>
-      <div className="form-group">
-        <label htmlFor="email">E‑Mail</label>
-        <input
-          id="email"
-          type="email"
-          className="form-input"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
           required
         />
       </div>

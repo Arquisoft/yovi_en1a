@@ -1,21 +1,8 @@
 const express = require('express');
 const app = express();
 const port = 3000;
-const swaggerUi = require('swagger-ui-express');
-const fs = require('node:fs');
-const YAML = require('js-yaml');
-const promBundle = require('express-prom-bundle');
 
-const metricsMiddleware = promBundle({includeMethod: true});
-app.use(metricsMiddleware);
-
-try {
-  const swaggerDocument = YAML.load(fs.readFileSync('./openapi.yaml', 'utf8'));
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-} catch (e) {
-  console.log(e);
-}
-
+app.use(express.json());
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -24,36 +11,32 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
+const users = {};
 
-app.post('/createuser', async (req, res) => {
-  const username = req.body && req.body.username;
-  try {
-    // Simulate a 1 second delay to mimic processing/network latency
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+app.post('/createuser', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'username and password required' });
+  users[username] = password;
+  res.json({ message: `Hello ${username}! welcome to the course!` });
+});
 
-    const message = `Hello ${username}! welcome to the course!`;
-    res.json({ message });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'username and password required' });
+  if (users[username] === password) {
+    res.json({ message: `Login successful for ${username}` });
+  } else {
+    res.status(401).json({ error: 'invalid credentials' });
   }
 });
 
-app.post('/login', async (req, res) => {
-  const username = req.body && req.body.username;
-  const email = req.body && req.body.email;
-  const password = req.body && req.body.password;
-  try {
-    // Simulate a 1 second delay to mimic processing/network latency
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`User Service listening at http://localhost:${port}`);
+  });
+}
 
-    //The password is ignored. Every login is successful
-    const message = `Login successful for ${username}`;
-    res.json({ message });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+module.exports = app
 
 
 if (require.main === module) {

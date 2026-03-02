@@ -7,7 +7,7 @@ paths:
   /createuser:
     post:
       summary: Creates a new user
-      description: Creates a new user with the given username.
+      description: Creates a new user with username and password.
       requestBody:
         required: true
         content:
@@ -16,10 +16,14 @@ paths:
               type: object
               required:
                 - username
+                - password
               properties:
                 username:
                   type: string
                   example: "testuser"
+                password:
+                  type: string
+                  example: "secret"
       responses:
         '200':
           description: User created successfully
@@ -33,3 +37,38 @@ paths:
                     example: "Hello testuser! welcome to the course!"
         '400':
           description: Error creating user
+  /login:
+    post:
+      summary: Perform login
+      description: Check username and password against memory.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: "testuser"
+                password:
+                  type: string
+                  example: "secret"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login successful for testuser"
+        '400':
+          description: Missing fields
+        '401':
+          description: Invalid credentials
