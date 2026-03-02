@@ -466,7 +466,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_technical_context">3.2. Technical Context</a></li>
 </ul>
 </li>
-<li><a href="#_4_solution_strategy">4. 4. Solution Strategy</a>
+<li><a href="#section-solution-strategy">4. Solution Strategy</a>
 <ul class="sectlevel2">
 <li><a href="#_technology_decisions">4.1. Technology Decisions</a></li>
 <li><a href="#_top_level_decomposition">4.2. Top-level Decomposition</a></li>
@@ -475,40 +475,46 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#section-building-block-view">5. Building Block View</a>
 <ul class="sectlevel2">
-<li><a href="#_level_1_white_box_overall_system">5.1. Level 1: White Box Overall System</a></li>
-<li><a href="#_level_2_white_box_gamey_logic_subsystem">5.2. Level 2: White Box GameY (Logic Subsystem)</a></li>
-<li><a href="#_level_2_white_box_webapp_frontend_subsystem">5.3. Level 2: White Box Webapp (Frontend Subsystem)</a></li>
-<li><a href="#_scenario_1_human_player_vs_ai_move_execution">5.4. Scenario 1: Human Player vs. AI (Move Execution)</a></li>
-<li><a href="#_scenario_2_human_player_vs_human_player_multiplayer_turn_execution">5.5. Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)</a></li>
-<li><a href="#_scenario_3_match_conclusion_and_statistics_persistance">5.6. Scenario 3: Match Conclusion and Statistics Persistance</a></li>
-<li><a href="#_scenario_4_user_authentication_and_login_flow">5.7. Scenario 4: User Authentication and Login Flow</a></li>
-<li><a href="#_scenario_5_error_handling_invalid_move_validation">5.8. Scenario 5: Error Handling - Invalid Move Validation</a></li>
+<li><a href="#_level_1_overall_system">5.1. Level 1: Overall System</a></li>
+<li><a href="#_level_2_webapp_frontend_subsystem">5.2. Level 2: Webapp (Frontend Subsystem)</a></li>
+<li><a href="#_level_2_gamey_engine_logic_subsystem">5.3. Level 2: GameY Engine (Logic Subsystem)</a></li>
+<li><a href="#_level_2_user_service">5.4. Level 2: User Service</a></li>
 </ul>
 </li>
-<li><a href="#section-deployment-view">6. Deployment View</a>
+<li><a href="#section-runtime-view">6. Runtime View</a>
 <ul class="sectlevel2">
-<li><a href="#_infrastructure_level_1_azure_cloud_environment">6.1. Infrastructure Level 1: Azure Cloud Environment</a></li>
-<li><a href="#_infrastructure_level_2_organization_in_containers_docker">6.2. Infrastructure Level 2: Organization in Containers (Docker)</a></li>
-<li><a href="#_infrastructure_level_3_data_persistence">6.3. Infrastructure Level 3: Data Persistence</a></li>
-<li><a href="#_network_and_connectivity">6.4. Network and Connectivity</a></li>
+<li><a href="#_scenario_1_human_player_vs_ai_move_execution">6.1. Scenario 1: Human Player vs. AI (Move Execution)</a></li>
+<li><a href="#_scenario_2_human_player_vs_human_player_multiplayer_turn_execution">6.2. Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)</a></li>
+<li><a href="#_scenario_3_match_conclusion_and_statistics_persistance">6.3. Scenario 3: Match Conclusion and Statistics Persistance</a></li>
+<li><a href="#_scenario_4_user_authentication_and_login_flow">6.4. Scenario 4: User Authentication and Login Flow</a></li>
+<li><a href="#_scenario_5_error_handling_invalid_move_validation">6.5. Scenario 5: Error Handling - Invalid Move Validation</a></li>
 </ul>
 </li>
-<li><a href="#section-concepts">7. Cross-cutting Concepts</a>
+<li><a href="#section-deployment-view">7. Deployment View</a>
 <ul class="sectlevel2">
-<li><a href="#_concept_1">7.1. <em>&lt;Concept 1&gt;</em></a></li>
-<li><a href="#_concept_2">7.2. <em>&lt;Concept 2&gt;</em></a></li>
-<li><a href="#_concept_n">7.3. <em>&lt;Concept n&gt;</em></a></li>
+<li><a href="#_infrastructure_level_1_azure_cloud_environment">7.1. Infrastructure Level 1: Azure Cloud Environment</a></li>
+<li><a href="#_infrastructure_level_2_container_orchestration_docker_compose">7.2. Infrastructure Level 2: Container Orchestration (Docker Compose)</a></li>
+<li><a href="#_mapping_of_building_blocks_to_infrastructure">7.3. Mapping of Building Blocks to Infrastructure</a></li>
+<li><a href="#_infrastructure_level_3_data_persistence">7.4. Infrastructure Level 3: Data Persistence</a></li>
+<li><a href="#_network_and_connectivity">7.5. Network and Connectivity</a></li>
 </ul>
 </li>
-<li><a href="#section-design-decisions">8. Architecture Decisions</a></li>
-<li><a href="#section-quality-scenarios">9. Quality Requirements</a>
+<li><a href="#section-concepts">8. Cross-cutting Concepts</a>
 <ul class="sectlevel2">
-<li><a href="#_quality_tree">9.1. Quality Tree</a></li>
-<li><a href="#_quality_scenarios">9.2. Quality Scenarios</a></li>
+<li><a href="#_concept_1">8.1. <em>&lt;Concept 1&gt;</em></a></li>
+<li><a href="#_concept_2">8.2. <em>&lt;Concept 2&gt;</em></a></li>
+<li><a href="#_concept_n">8.3. <em>&lt;Concept n&gt;</em></a></li>
 </ul>
 </li>
-<li><a href="#section-technical-risks">10. Risks and Technical Debts</a></li>
-<li><a href="#section-glossary">11. Glossary</a></li>
+<li><a href="#section-design-decisions">9. Architecture Decisions</a></li>
+<li><a href="#section-quality-scenarios">10. Quality Requirements</a>
+<ul class="sectlevel2">
+<li><a href="#_quality_tree">10.1. Quality Tree</a></li>
+<li><a href="#_quality_scenarios">10.2. Quality Scenarios</a></li>
+</ul>
+</li>
+<li><a href="#section-technical-risks">11. Risks and Technical Debts</a></li>
+<li><a href="#section-glossary">12. Glossary</a></li>
 </ul>
 </div>
 </div>
@@ -564,33 +570,6 @@ For documentation of your own system you use better the <em>plain</em> version.<
 <div class="sect1">
 <h2 id="section-introduction-and-goals">1. Introduction and Goals</h2>
 <div class="sectionbody">
-<div class="sidebarblock arc42help">
-<div class="content">
-<div class="paragraph">
-<p>Describes the relevant requirements and the driving forces that software architects and development team must consider.
-These include</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>underlying business goals,</p>
-</li>
-<li>
-<p>essential features,</p>
-</li>
-<li>
-<p>essential functional requirements,</p>
-</li>
-<li>
-<p>quality goals for the architecture and</p>
-</li>
-<li>
-<p>relevant stakeholders and their expectations</p>
-</li>
-</ul>
-</div>
-</div>
-</div>
 <div class="sect2">
 <h3 id="_requirements_overview">1.1. Requirements Overview</h3>
 <div class="paragraph">
@@ -598,49 +577,150 @@ These include</p>
 communicating human players and automated agents. The following high level specifications
 must be in the final version of the application:</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Gameplay Engine:</strong> An front-end implementation based on the "Classic" version of Game Y.</p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Player-vs-Machine:</strong> Mode with adjustable board dimensions.</p>
-</li>
-<li>
-<p><strong>Strategies:</strong> Selectable difficulty levels and logic.</p>
-</li>
-</ul>
+<div class="sect3">
+<h4 id="_user_management">1.1.1. User Management</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ID</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-01</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system shall allow users to register and authenticate (login/logout) to manage their personal profiles.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-02</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system shall maintain a persistent history of matches played by each registered user.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-03</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system shall provide a dashboard for users to view their statistics, including win/loss ratios and total games played.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
-</li>
-<li>
-<p><strong>User Management:</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p>Secure registration and authentication.</p>
-</li>
-<li>
-<p>Personal dashboards with win/loss statistics and match history.</p>
-</li>
-</ul>
+<div class="sect3">
+<h4 id="_gameplay_web_frontend">1.1.2. Gameplay (Web Frontend)</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ID</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-04</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The frontend shall implement the "Classic Version" of Game Y in a Player-vs-Machine (AI) mode.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-05</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system shall support variable board sizes, allowing the player to define the dimensions before starting a match.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-06</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The UI shall allow the player to select from multiple game strategies or difficulty levels provided by the AI.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-07</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The frontend shall visualize the board using the coordinate systems (Barycentric or Index-based) defined in the YEN notation.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
-</li>
-<li>
-<p><strong>Developer API:</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p>Publicly accessible and fully documented.</p>
-</li>
-<li>
-<p>Support for <strong>YEN notation</strong> via a <code>/play</code> endpoint.</p>
-</li>
-</ul>
+<div class="sect3">
+<h4 id="_game_engine_rust_module">1.1.3. Game Engine (Rust Module)</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ID</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-08</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The module shall provide a web service interface to receive game states and return move calculations.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-09</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The engine shall validate the current board state to determine if a match has been won, lost, or is still in progress.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-10</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The engine shall implement at least two distinct move-generation strategies for the AI.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
-</li>
-</ul>
+<div class="sect3">
+<h4 id="_external_bot_api">1.1.4. External Bot API</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ID</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The API shall expose a <code>play</code> method that accepts a board state in YEN notation and returns the AI&#8217;s next move.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The API shall provide endpoints for bots to retrieve user information and historical game data.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-13</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The API shall support parameters for bots to specify which game strategy the engine should utilize during a match.</p></td>
+</tr>
+</tbody>
+</table>
 </div>
+<div class="sect3">
+<h4 id="_data_communication">1.1.5. Data &amp; Communication</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ID</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-14</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">All communication between the TypeScript frontend and the Rust backend shall be conducted via JSON messages.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR-15</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system shall strictly adhere to the YEN notation for representing board layouts, player turns, and piece positions.</p></td>
+</tr>
+</tbody>
+</table>
 <div class="sidebarblock arc42help">
 <div class="content">
 <div class="paragraph">
@@ -669,6 +749,7 @@ If requirements documents exist this overview should refer to these documents.</
 </div>
 </div>
 </div>
+</div>
 <div class="sect2">
 <h3 id="_quality_goals">1.2. Quality Goals</h3>
 <table class="tableblock frame-all grid-all stretch">
@@ -685,23 +766,19 @@ If requirements documents exist this overview should refer to these documents.</
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Availability</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The application and its API must be publicly accessible and maintain high uptime for both web users and bot integrations.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Compatibility</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The API must strictly adhere to the <strong>YEN notation</strong> standard to ensure that any external bot can communicate with the game engine without formatting errors.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The application and its API must be publicly accessible and <strong>maintain high uptime</strong> for both web users and bot integrations.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usability</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The frontend should be intuitive, allowing users to easily toggle between game strategies and view their statistics without a steep learning curve.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Scalability</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The backend architecture should handle concurrent matches from both web users and API-based bots without significant latency.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Performance</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The backend architecture should handle concurrent matches from both web users and API-based bots <strong>without significant latency</strong>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Security</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">User data and match histories must be protected via secure authentication, ensuring users can only manage their own profiles.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User data and match histories must be protected via secure authentication, ensuring <strong>users can only manage their own profiles</strong>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -835,7 +912,7 @@ These stakeholders determine the extent and the level of detail of your work and
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Programming Languages</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Frontend must be <strong>TypeScript/React</strong>. The core Game Y logic (win verification/suggestions) must be <strong>Rust</strong>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Frontend must be <strong>TypeScript</strong>. The core Game Y logic (win verification/suggestions) must be <strong>Rust</strong>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Data Exchange</strong></p></td>
@@ -843,7 +920,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Deployment &amp; Runtime</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The system must be containerized with <strong>Docker</strong> and run on an <strong>Ubuntu Linux</strong> environment (Microsoft Azure).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The system must be containerized with <strong>Docker</strong> and run on an <strong>Ubuntu Linux</strong> environment.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>External Connectivity</strong></p></td>
@@ -872,10 +949,6 @@ These stakeholders determine the extent and the level of detail of your work and
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Subsystem Decoupling</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The system must be split into at least <strong>two distinct subsystems</strong> (Web App and Rust Module). They must remain independent and communicate only via web services.</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Stateless Logic</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The Rust module should ideally operate as a <strong>stateless service</strong>, taking a YEN state as input and returning a move/verification without maintaining local session state.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Strategy Extensibility</strong></p></td>
@@ -1081,7 +1154,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 </div>
 <div class="sect1">
-<h2 id="_4_solution_strategy">4. 4. Solution Strategy</h2>
+<h2 id="section-solution-strategy">4. Solution Strategy</h2>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_technology_decisions">4.1. Technology Decisions</h3>
@@ -1153,18 +1226,23 @@ These stakeholders determine the extent and the level of detail of your work and
 <h2 id="section-building-block-view">5. Building Block View</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The Building Block View provides a static decomposition of the YOVI_0 system. It follows a hierarchical approach, starting from the overall system and zooming into individual components.</p>
+<p>The Building Block View provides a hierarchical decomposition of the YOVI_0 system. It describes the static structure, showing how the system is organized into subsystems and components, and how they interact with each other. This view is essential for understanding the overall architecture and the responsibilities of each part of the system.</p>
 </div>
 <div class="sect2">
-<h3 id="_level_1_white_box_overall_system">5.1. Level 1: White Box Overall System</h3>
+<h3 id="_level_1_overall_system">5.1. Level 1: Overall System</h3>
+<div class="paragraph">
+<p>Level 1 represents the highest level of abstraction, showing the main subsystems of the YOVI_0 system and their interactions. Each subsystem is responsible for a specific aspect of the system&#8217;s functionality, and they communicate with each other to fulfill the requirements of the project.</p>
+</div>
 <div class="paragraph">
 <p>The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/level1-whitebox.svg" alt="level1 whitebox" width="315" height="233">
+<img src="./images/level1-whitebox.png" alt="level1 whitebox" width="597" height="354">
 </div>
 </div>
+<div class="sect3">
+<h4 id="_component_descriptions">5.1.1. Component Descriptions</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -1179,29 +1257,36 @@ These stakeholders determine the extent and the level of detail of your work and
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Webapp</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The central orchestrator. It handles the hexagonal grid rendering, user interaction, and provides the documented API for external bots to participate in matches.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The central UI and gateway. Manages hexagonal grid rendering and provides the documented API for external bots.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>User Service</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A specialized service for administrative tasks. It simulates user persistence and provides the data necessary for the "Participation History" and "Statistics" requirements.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles administrative logic: user registration, session management, and persists match statistics to the DBMS.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>GameY Engine</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The high-performance "brain" of the system. Written in Rust for computational efficiency, it implements the formal rules of Game Y and suggests moves based on different difficulty levels.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The high-performance "brain." Written in Rust for memory safety and speed; it validates game rules and provides AI moves via YEN notation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>MongoDB</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Document-based DBMS. It persists all non-transient data, chosen for its native support of JSON-like structures (perfect for YEN payloads).</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+</div>
 <div class="sect2">
-<h3 id="_level_2_white_box_gamey_logic_subsystem">5.2. Level 2: White Box GameY (Logic Subsystem)</h3>
+<h3 id="_level_2_webapp_frontend_subsystem">5.2. Level 2: Webapp (Frontend Subsystem)</h3>
 <div class="paragraph">
-<p>This level zooms into the <strong>GameY</strong> component, as it contains the most complex logic regarding YEN notation and game strategies.</p>
+<p>The Webapp is a Single Page Application (SPA) built with React and Vite. It acts as the primary user interface and the orchestrator of requests between the User Service and the GameY Engine.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/gamey-whitebox.svg" alt="gamey whitebox" width="329" height="303">
+<img src="./images/webapp-level2.png" alt="webapp level2" width="650" height="439">
 </div>
 </div>
+<div class="sect3">
+<h4 id="_component_descriptions_2">5.2.1. Component Descriptions</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -1210,34 +1295,81 @@ These stakeholders determine the extent and the level of detail of your work and
 <thead>
 <tr>
 <th class="tableblock halign-left valign-top">Component</th>
-<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Detailed Responsibility</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Core Logic</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The heart of the engine. It defines the board state and the connectivity logic (checking if a player has connected three edges).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">main.tsx</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Bootstrap of the application. It utilizes the react-dom/client library to find the root element in the HTML and injects the React application. It implements StrictMode to identify potential problems during development.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Bot Registry</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A modular registry for AI strategies. It satisfies the requirement for "more than one strategy" (e.g., Random vs. Advanced).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">App.tsx</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Layout Orchestrator. It imports the global CSS and provides the high-level UI structure. It acts as a container for the different views (currently the RegisterForm).</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Notation Handler</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Translates internal data structures into the <strong>YEN Notation</strong> format required for JSON communication.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RegisterForm.tsx</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Interaction Hub. This is the most complex component in this module. It manages local state for input data, loading animations, and error handling. It is responsible for the sequence: Submit → User Creation → Game Status Check.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Web Interface</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">The entry point for the service, exposing endpoints like <code>/next-move</code> to the Webapp.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">env.d.ts</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Configuration Schema. It defines the ImportMetaEnv interface. This ensures that the TypeScript compiler recognizes custom environment variables used for service discovery, preventing runtime crashes.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<div class="sect2">
-<h3 id="_level_2_white_box_webapp_frontend_subsystem">5.3. Level 2: White Box Webapp (Frontend Subsystem)</h3>
+<div class="sect3">
+<h4 id="_internal_dynamics_and_logic">5.2.2. Internal dynamics and logic</h4>
 <div class="paragraph">
-<p>The Webapp manages the user&#8217;s view and the external API for bots.</p>
+<p>The internal behavior of this module is driven by the state within RegisterForm.tsx:</p>
 </div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Service Discovery</strong>: The module does not hardcode URLs. It uses an Environment-Aware approach:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>It defaults to <a href="http://localhost:3000" class="bare">http://localhost:3000</a> (Users) and <a href="http://localhost:4000" class="bare">http://localhost:4000</a> (GameY) for local development.</p>
+</li>
+<li>
+<p>It allows overrides via VITE_API_URL and VITE_GAMEY_URL for production/containerized environments.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Asynchronous Lifecycle</strong>:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>User Registration</strong>: Initiates a fetch POST request with a JSON payload containing the username.</p>
+</li>
+<li>
+<p><strong>Chained Validation</strong>: Upon a successful (200 OK) response from the User Service, it triggers the checkGamey() function. This ensures that the player is only notified that "Game is ready" if the Rust engine is reachable.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Resilience</strong>: The UI is designed to be fail-safe. If the GameY engine is down, the user is still successfully registered, but the system displays a "Game is not ready" warning to manage user expectations.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_level_2_gamey_engine_logic_subsystem">5.3. Level 2: GameY Engine (Logic Subsystem)</h3>
+<div class="paragraph">
+<p>The GameY Engine is a high-performance Rust subsystem responsible for the rules of the "Game of Y". It is structured as both a Library (lib.rs) for core logic and a Binary (main.rs) that provides a Command-Line Interface (CLI) and an HTTP Bot Server.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/gamey-level2.png" alt="gamey level2" width="811" height="379">
+</div>
+</div>
+<div class="sect3">
+<h4 id="_component_descriptions_3">5.3.1. Component Descriptions</h4>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -1245,29 +1377,128 @@ These stakeholders determine the extent and the level of detail of your work and
 </colgroup>
 <thead>
 <tr>
-<th class="tableblock halign-left valign-top">Component</th>
-<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Module</th>
+<th class="tableblock halign-left valign-top">Detailed Responsibility</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Game Controller</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Manages the local game loop, turn-taking, and coordinate conversion (UI pixels to Barycentric/Index).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">main.rs</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Application Entry Point. Uses clap to parse CLI arguments. It determines the execution mode: Human (local CLI), Computer (local vs Bot), or Server (HTTP API for the Webapp).</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Public Bot API Controller</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Specifically designed to meet the requirement of allowing bots to play. It accepts YEN positions and returns the engine&#8217;s response.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">lib.rs</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Library Root. The central exported interface. It organizes the crate into public modules and provides the high-level GameY struct used to manipulate the triangular board.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Statistics View</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Interfaces with the User Service to display the player&#8217;s win/loss history.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">core</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Rules Engine. Implements the triangular board mathematics, coordinate systems (Barycentric/Index), and the connection-based win conditions.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bot_server</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Gateway. Uses tokio to run an asynchronous HTTP server. It allows the Webapp to request moves via REST, serving as the bridge between the React frontend and the Rust logic.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bot</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Intelligence. Contains the GamerBot and the YBotRegistry. It implements the strategies used to calculate the next optimal move for a computer player.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">notation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Interoperability Layer. Implements YEN (Y Exchange Notation). It defines a JSON-serializable format for board layouts (e.g., "B/BR/.R."), inspired by chess&#8217;s FEN.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">cli</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Interactive Shell. Provides a rich terminal experience using rustyline. It supports board rendering, move history, and saving/loading game states to files.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gamey_error</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Domain Safety. Defines the GameYError enum using thiserror. It strictly enforces game rules (e.g., Occupied, InvalidPlayerTurn) and ensures system resilience.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_internal_dynamics_and_logic_2">5.3.2. Internal dynamics and logic</h4>
+<div class="paragraph">
+<p>The GameY module operates through distinct execution patterns:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Stateful CLI Loop</strong>:
+In cli.rs, the run_cli_game function maintains an interactive loop. It captures user indices (e.g., "5"), converts them to coordinates, and applies moves to the GameY state. It supports "meta-commands" like save, load, and show_coords.</p>
+</li>
+<li>
+<p><strong>Stateless Server Pattern</strong>:
+When running in Mode::Server, the engine becomes a stateless API. It receives a YEN payload from the Webapp, reconstructs the game state momentarily in memory, calculates the AI&#8217;s response via the bot module, and returns the new state.</p>
+</li>
+<li>
+<p><strong>Strict Error Enforcement</strong>:
+Every action passes through the gamey_error module. If a player (or the Webapp) attempts an illegal move (such as placing a piece on an Occupied cell), the engine returns a specific error variant rather than allowing an inconsistent game state.</p>
+</li>
+<li>
+<p><strong>Serialization (YEN)</strong>:
+The notation/yen.rs module ensures that complex triangular board states can be compressed into a single string. This is critical for the "Building Block" connection between the Webapp and GameY, as it minimizes the data payload sent over HTTP.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_level_2_user_service">5.4. Level 2: User Service</h3>
+<div class="imageblock">
+<div class="content">
+<img src="./images/user-service-level3.png" alt="user service level3" width="650" height="918">
+</div>
+</div>
+<div class="sect3">
+<h4 id="_component_responsibilities">5.4.1. Component Responsibilities</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Component</th>
+<th class="tableblock halign-left valign-top">Technology</th>
+<th class="tableblock halign-left valign-top">Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Express Entry Point</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node.js / Express 5.x</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Orchestrates the business logic for <code>/createuser</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Security Manager</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bcrypt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ensures "Security by Design" by hashing passwords.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Database Driver</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MongoDB Driver 7.x</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles asynchronous communication with the <code>yovi</code> database.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Metrics Provider</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">express-prom-bundle</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bridges the application to the Prometheus monitoring instance.</p></td>
 </tr>
 </tbody>
 </table>
 <div style="page-break-after: always;"></div>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="section-runtime-view">6. Runtime View</h2>
+<div class="sectionbody">
 <div class="sect2">
-<h3 id="_scenario_1_human_player_vs_ai_move_execution">5.4. Scenario 1: Human Player vs. AI (Move Execution)</h3>
+<h3 id="_scenario_1_human_player_vs_ai_move_execution">6.1. Scenario 1: Human Player vs. AI (Move Execution)</h3>
 <div class="paragraph">
 <p><strong>Description:</strong> This scenario illustrates the core game loop when a human player interacts with the frontend to play against the system&#8217;s AI. It highlights the transformation of UI interactions into the standardized YEN notation and the delegation of logic to the high-performance Rust engine.</p>
 </div>
@@ -1281,7 +1512,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 </div>
 <div class="sect2">
-<h3 id="_scenario_2_human_player_vs_human_player_multiplayer_turn_execution">5.5. Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)</h3>
+<h3 id="_scenario_2_human_player_vs_human_player_multiplayer_turn_execution">6.2. Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)</h3>
 <div class="paragraph">
 <p><strong>Description:</strong> This scenario illustrates the data flow of a single turn in a networked multiplayer match between two human players. It demonstrates how a move made by one player is validated, saved, and eventually displayed on the opponent&#8217;s screen.</p>
 </div>
@@ -1295,7 +1526,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 </div>
 <div class="sect2">
-<h3 id="_scenario_3_match_conclusion_and_statistics_persistance">5.6. Scenario 3: Match Conclusion and Statistics Persistance</h3>
+<h3 id="_scenario_3_match_conclusion_and_statistics_persistance">6.3. Scenario 3: Match Conclusion and Statistics Persistance</h3>
 <div class="paragraph">
 <p><strong>Description:</strong> This scenario demonstrates the data flow when a game concludes (either by a win, loss, or draw). It shows the interaction between the Frontend, the Logic Engine, and the User Service to ensure persistent data storage.</p>
 </div>
@@ -1309,7 +1540,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 </div>
 <div class="sect2">
-<h3 id="_scenario_4_user_authentication_and_login_flow">5.7. Scenario 4: User Authentication and Login Flow</h3>
+<h3 id="_scenario_4_user_authentication_and_login_flow">6.4. Scenario 4: User Authentication and Login Flow</h3>
 <div class="paragraph">
 <p><strong>Description:</strong> This scenario illustrates the security and session management architecture of the system. It details how the system handles a user login request, verifies credentials, and establishes a secure session for the player.</p>
 </div>
@@ -1323,7 +1554,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 </div>
 <div class="sect2">
-<h3 id="_scenario_5_error_handling_invalid_move_validation">5.8. Scenario 5: Error Handling - Invalid Move Validation</h3>
+<h3 id="_scenario_5_error_handling_invalid_move_validation">6.5. Scenario 5: Error Handling - Invalid Move Validation</h3>
 <div class="paragraph">
 <p><strong>Description:</strong> This exception scenario demonstrates system resilience. It shows what happens when an invalid move (for example, attempting to play on an already occupied coordinate) is submitted by the user.</p>
 </div>
@@ -1340,43 +1571,41 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-deployment-view">6. Deployment View</h2>
+<h2 id="section-deployment-view">7. Deployment View</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_infrastructure_level_1_azure_cloud_environment">6.1. Infrastructure Level 1: Azure Cloud Environment</h3>
+<h3 id="_infrastructure_level_1_azure_cloud_environment">7.1. Infrastructure Level 1: Azure Cloud Environment</h3>
+<div class="sect3">
+<h4 id="_motivation">7.1.1. Motivation</h4>
 <div class="paragraph">
-<p>The high-level deployment consists of an Azure Virtual Machine hosting the containerized backend services. The frontend is a React application delivered to the user&#8217;s web browser.</p>
+<p>The system runs on a single Azure Virtual Machine (Ubuntu 24.04 LTS). Azure was chosen for its reliability and easy VM setup. A single VM keeps costs low while still resembling a real production environment. All components are containerized with Docker so that the setup works the same way in development and in production, and deployments via GitHub Actions stay simple.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/level1-whitebox.svg" alt="level1 whitebox" width="649" height="326">
+<img src="./images/level1-whitebox.svg" alt="level1 whitebox" width="906" height="499">
 </div>
 </div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1">Motivation</dt>
-<dd>
-<p>The YOVI system is hosted on <strong>Microsoft Azure</strong> using an IaaS model. This allows the system to run the high-performance Rust GameY Engine and the Node.js User Service in a unified Ubuntu environment, ensuring low latency between the game logic and the data management layer.</p>
-</dd>
-<dt class="hdlist1">Quality and/or Performance Features</dt>
-<dd>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Performance:</strong> The Rust-based GameY Engine provides native execution speed for strategy generation and win verification.</p>
-</li>
-<li>
-<p><strong>Accessibility:</strong> Services are exposed directly via their respective ports to allow bot interaction and direct Webapp communication.</p>
-</li>
-<li>
-<p><strong>Flexibility:</strong> Azure provides the vertical scaling necessary to handle greater board sizes than during complex game simulations.</p>
-</li>
-</ul>
 </div>
-</dd>
-<dt class="hdlist1">Mapping of Building Blocks to Infrastructure</dt>
-</dl>
 </div>
+<div class="sect2">
+<h3 id="_infrastructure_level_2_container_orchestration_docker_compose">7.2. Infrastructure Level 2: Container Orchestration (Docker Compose)</h3>
+<div class="sect3">
+<h4 id="_motivation_2">7.2.1. Motivation</h4>
+<div class="paragraph">
+<p>Docker Compose manages all containers in a single configuration file. All services run on a shared internal network (<code>monitor-net</code>) so they can talk to each other without exposing unnecessary ports to the outside. The Webapp is compiled with the backend URLs baked in at build time (<code>VITE_API_URL</code>, <code>VITE_GAMEY_URL</code>), so no extra runtime configuration is needed.</p>
+</div>
+<div class="paragraph">
+<p>The diagram below shows how containers are connected inside <code>monitor-net</code>. Grafana maps its internal port 3000 to host port 9091 to avoid clashing with the Users service.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/level2-docker.svg" alt="level2 docker" width="443" height="470">
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mapping_of_building_blocks_to_infrastructure">7.3. Mapping of Building Blocks to Infrastructure</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 20%;">
@@ -1392,140 +1621,108 @@ These stakeholders determine the extent and the level of detail of your work and
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Webapp</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">User Web Browser</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Client-side application providing the UI for Game Y.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">webapp</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (Nginx)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Serves the React/Vite frontend. Accessible via Port 80.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>User Service</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Node.js Container</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Handles user registration, participation history, and win/loss statistics.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">users</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (Node.js)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles identity, history, and stats. Accessible via Port 3000.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>GameY Engine</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Rust Container</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Core logic for win verification and move suggestion via YEN notation.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gamey</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (Rust)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Logic for Game Y moves and win validation. Accessible via Port 4000.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">mongodb</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (MongoDB)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent document store for user profiles and match history. Accessible internally on Port 27017.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">prometheus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scrapes metrics from the services via the internal network.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">grafana</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Visualizes metrics. Mapped to Port 9091 to avoid conflict with the Users service.</p></td>
 </tr>
 </tbody>
 </table>
-<hr>
 </div>
 <div class="sect2">
-<h3 id="_infrastructure_level_2_organization_in_containers_docker">6.2. Infrastructure Level 2: Organization in Containers (Docker)</h3>
+<h3 id="_infrastructure_level_3_data_persistence">7.4. Infrastructure Level 3: Data Persistence</h3>
+<div class="sect3">
+<h4 id="_motivation_3">7.4.1. Motivation</h4>
 <div class="paragraph">
-<p>This level describes how the internal components are isolated within the Ubuntu host to manage specific runtime dependencies.</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="./images/level2-docker.svg" alt="level2 docker" width="345" height="338">
-</div>
-</div>
-<div class="dlist">
-<dl>
-<dt class="hdlist1">Motivation</dt>
-<dd>
-<p>Docker ensures that the Rust toolchain and Node.js environment are encapsulated. This prevents version conflicts on the Azure host and simplifies the pipeline by ensuring the same image is used for testing and production.</p>
-</dd>
-<dt class="hdlist1">Quality and/or Performance Features</dt>
-<dd>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Isolation:</strong> If a specific Game Y strategy causes a memory leak in the engine, the Docker container limits prevent it from affecting the availability of the User Service.</p>
-</li>
-<li>
-<p><strong>Observability:</strong> Each container exposes a dedicated monitoring port to track performance metrics as required by the evaluation criteria.</p>
-</li>
-<li>
-<p><strong>Portability and Dependency Management</strong>: By using Docker to containerize the services, the system can run the Rust-based GameY Engine and Node.js User Service on any infrastructure (like the Azure VM) without requiring the host machine to have those specific runtimes or compilers installed manually. This ensures a consistent execution environment across development and production.</p>
-</li>
-</ul>
-</div>
-</dd>
-</dl>
-</div>
-<hr>
-</div>
-<div class="sect2">
-<h3 id="_infrastructure_level_3_data_persistence">6.3. Infrastructure Level 3: Data Persistence</h3>
-<div class="dlist">
-<dl>
-<dt class="hdlist1">Motivation</dt>
-<dd>
-<p>To satisfy the requirement of consulting participation history and metrics, a persistent storage layer is mapped to the Docker environment.</p>
-</dd>
-</dl>
+<p>The application requires its data to survive when containers restart. Prometheus and Grafana use bind mounts so their configuration files live directly in the repository and are version-controlled like any other code. MongoDB uses a named Docker volume so that user and game data persists across <code>docker-compose down</code> and <code>up</code> cycles without any manual intervention.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 66.6667%;">
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
 </colgroup>
 <thead>
 <tr>
 <th class="tableblock halign-left valign-top">Element</th>
 <th class="tableblock halign-left valign-top">Storage Strategy</th>
+<th class="tableblock halign-left valign-top">Path</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>User Profiles &amp; Stats</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Volume mapped to the host filesystem to ensure participation data survives container restarts.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Metrics Config</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Bind Mount</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>./users/monitoring/prometheus</code> → <code>/etc/prometheus</code></p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Move History</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Standardized logging within the GameY container for audit trails of YEN notation states.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grafana Dashboards</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Bind Mount</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>./users/monitoring/grafana/provisioning</code> → <code>/etc/grafana/provisioning</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User &amp; Game Data</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Named Volume (<code>mongodb_data</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Managed by Docker. Data survives restarts and redeployments independently of the container image.</p></td>
 </tr>
 </tbody>
 </table>
-<hr>
+</div>
 </div>
 <div class="sect2">
-<h3 id="_network_and_connectivity">6.4. Network and Connectivity</h3>
+<h3 id="_network_and_connectivity">7.5. Network and Connectivity</h3>
 <div class="paragraph">
-<p>The following port configuration defines the boundaries and communication paths within the Ubuntu Virtual Machine:</p>
+<p>All containers communicate over the <code>monitor-net</code> bridge network. Only the following ports are exposed to the host:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Internal/External Service Ports:</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Port 80:</strong> The public access for the Webapp containing Game Y.</p>
+<p><strong>Port 80</strong>: Web application entry point.</p>
 </li>
 <li>
-<p><strong>Port 3000:</strong> The Webapp and external Bots communicate with the User Service for identity and statistics management.</p>
+<p><strong>Port 3000</strong>: Users REST API (used by Webapp and Bots).</p>
 </li>
 <li>
-<p><strong>Port 4000:</strong> The Webapp and external Bots send game moves to the GameY Engine using the <strong>JSON/YEN protocol</strong>.</p>
+<p><strong>Port 4000</strong>: Game Engine API (YEN notation).</p>
+</li>
+<li>
+<p><strong>Port 27017</strong>: MongoDB — internal only, not exposed to the host.</p>
+</li>
+<li>
+<p><strong>Port 9090 / 9091</strong>: Prometheus and Grafana for system observability.</p>
 </li>
 </ul>
-</div>
-</li>
-<li>
-<p><strong>Monitoring:</strong></p>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Port 9090/9091:</strong> Reserved for internal monitoring (Prometheus/Grafana) to track the health of the host and the individual microservices.</p>
-</li>
-</ul>
-</div>
-</li>
-</ul>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="./images/07_vm_ports.png" alt="Network Port Mapping">
-</div>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-concepts">7. Cross-cutting Concepts</h2>
+<h2 id="section-concepts">8. Cross-cutting Concepts</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
@@ -1627,13 +1824,13 @@ on this list.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_1">7.1. <em>&lt;Concept 1&gt;</em></h3>
+<h3 id="_concept_1">8.1. <em>&lt;Concept 1&gt;</em></h3>
 <div class="paragraph">
 <p><em>&lt;explanation&gt;</em></p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_2">7.2. <em>&lt;Concept 2&gt;</em></h3>
+<h3 id="_concept_2">8.2. <em>&lt;Concept 2&gt;</em></h3>
 <div class="paragraph">
 <p><em>&lt;explanation&gt;</em></p>
 </div>
@@ -1642,7 +1839,7 @@ on this list.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_n">7.3. <em>&lt;Concept n&gt;</em></h3>
+<h3 id="_concept_n">8.3. <em>&lt;Concept n&gt;</em></h3>
 <div class="paragraph">
 <p><em>&lt;explanation&gt;</em></p>
 </div>
@@ -1651,7 +1848,7 @@ on this list.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-design-decisions">8. Architecture Decisions</h2>
+<h2 id="section-design-decisions">9. Architecture Decisions</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
@@ -1701,7 +1898,7 @@ There you will find links and examples about ADR.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-quality-scenarios">9. Quality Requirements</h2>
+<h2 id="section-quality-scenarios">10. Quality Requirements</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
@@ -1726,7 +1923,7 @@ concrete and measurable.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_quality_tree">9.1. Quality Tree</h3>
+<h3 id="_quality_tree">10.1. Quality Tree</h3>
 <div class="sidebarblock arc42help">
 <div class="content">
 <div class="paragraph">
@@ -1758,7 +1955,7 @@ concrete and measurable.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_quality_scenarios">9.2. Quality Scenarios</h3>
+<h3 id="_quality_scenarios">10.2. Quality Scenarios</h3>
 <div class="sidebarblock arc42help">
 <div class="content">
 <div class="paragraph">
@@ -1802,7 +1999,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-technical-risks">10. Risks and Technical Debts</h2>
+<h2 id="section-technical-risks">11. Risks and Technical Debts</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
@@ -1831,7 +2028,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-glossary">11. Glossary</h2>
+<h2 id="section-glossary">12. Glossary</h2>
 <div class="sectionbody">
 <div class="sidebarblock arc42help">
 <div class="content">
