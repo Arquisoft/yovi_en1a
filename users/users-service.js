@@ -11,15 +11,23 @@ const mongoUri = process.env.MONGODB_URI;
 const dbName = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
 let db, client;
 
-async function connectToMongo(uri = mongoUri) {
-  client = new MongoClient(uri);
+export async function connectToMongo(uri) {
+  // Implementation to connect to MongoDB
+  // Example:
+  const client = new MongoClient(uri);
   await client.connect();
-  db = client.db(dbName);
+  return client;
 }
 
-async function closeMongoConnection() {
-  await client?.close();
+export async function closeMongoConnection() {
+  // Implementation to close MongoDB connection
+  // Example:
+  if (mongoClient) {
+    await mongoClient.close();
+  }
 }
+
+export { app };
 
 app.post('/createuser', async (req, res) => {
   if (!db) return res.status(500).json({ error: 'Database not available' });
@@ -46,6 +54,8 @@ app.post('/createuser', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
 
 app.post('/login', async (req, res) => {
   const username = req.body && req.body.username;
