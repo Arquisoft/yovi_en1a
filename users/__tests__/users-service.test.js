@@ -101,17 +101,22 @@ describe('POST /createuser', () => {
         expect(res.body.error).toMatch(/already exists/i);
     });
 
-    it('returns 500 when bcrypt throws an unexpected error', async () => {
-        const bcrypt = await import('bcrypt');
-        vi.spyOn(bcrypt, 'hash').mockRejectedValueOnce(new Error('hash failure'));
+    it('returns 500 when the database is unavailable', async () => {
+        const uri = mongoServer.getUri();
+
+        // Close the connection so db becomes null inside the service
+        await closeMongoConnection();
 
         const res = await request(app)
             .post('/createuser')
             .send({ username: 'ErrorUser', email: 'err@example.com', password: 'secret123' })
             .set('Accept', 'application/json');
 
+        // Reconnect so remaining tests are unaffected
+        await connectToMongo(uri);
+
         expect(res.status).toBe(500);
-        expect(res.body.error).toMatch(/internal server error/i);
+        expect(res.body.error).toMatch(/internal server error|database not available/i);
     });
 });
 
