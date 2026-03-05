@@ -20,8 +20,8 @@
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.15",
+    "mongodb-memory-server": "^11.0.1",
     "supertest": "^7.1.4",
     "vitest": "^4.0.15"
   }
-
 }
