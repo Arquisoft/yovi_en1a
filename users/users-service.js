@@ -48,8 +48,7 @@ app.post('/createuser', async (req, res) => {
       createdAt: new Date()
     });
 
-    // ✅ Correct: Returns 201 status with the greeting message
-    res.status(201).json({
+    res.status(200).json({
       message: `Hello ${username}! Welcome to the course!`,
       userId: result.insertedId
     });
