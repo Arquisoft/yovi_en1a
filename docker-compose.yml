@@ -5,8 +5,13 @@ services:
     image: ghcr.io/arquisoft/yovi_en1a-users:latest
     ports:
       - "3000:3000"
+    depends_on:
+      mongodb:
+          condition: service_healthy
     networks:
       - monitor-net
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/yovi
 
   webapp:
     build:
@@ -52,6 +57,29 @@ services:
     networks:
       - monitor-net
 
+  mongodb:
+    image: mongo:latest
+    container_name: yovi_mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    networks:
+      - monitor-net
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+
 networks:
   monitor-net:
     driver: bridge
+
+volumes:
+  mongo_data:

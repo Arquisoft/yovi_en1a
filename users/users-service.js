@@ -1,41 +1,73 @@
 const express = require('express');
+const { MongoClient } = require('mongodb');
+const bcrypt = require('bcrypt');
+const cors = require('cors');  // Fixed: changed from import to require
+
 const app = express();
-const port = 3000;
-const swaggerUi = require('swagger-ui-express');
-const fs = require('node:fs');
-const YAML = require('js-yaml');
-const promBundle = require('express-prom-bundle');
 
-const metricsMiddleware = promBundle({includeMethod: true});
-app.use(metricsMiddleware);
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000'];
 
-try {
-  const swaggerDocument = YAML.load(fs.readFileSync('./openapi.yaml', 'utf8'));
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-} catch (e) {
-  console.log(e);
-}
-
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  if (req.method === 'OPTIONS') return res.sendStatus(204);
-  next();
-});
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 
 app.use(express.json());
 
-app.post('/createuser', async (req, res) => {
-  const username = req.body && req.body.username;
-  try {
-    // Simulate a 1 second delay to mimic processing/network latency
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+let db, client;
 
-    const message = `Hello ${username}! welcome to the course!`;
-    res.json({ message });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+async function connectToMongo(uri) {
+  client = new MongoClient(uri);
+  await client.connect();
+  db = client.db(process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi');
+  return client;
+}
+
+async function closeMongoConnection() {
+  if (client) {
+    await client.close();
+  }
+}
+
+module.exports = { app, connectToMongo, closeMongoConnection };  // Fixed: changed from export to module.exports
+
+app.post('/createuser', async (req, res) => {
+  if (!db) return res.status(500).json({ error: 'Database not available' });
+
+  const { username, email, password } = req.body;
+
+  if (!username || !email || !password) {
+    return res.status(400).json({
+      error: 'Missing required fields: username, email, and password are required'
+    });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const result = await db.collection('users').insertOne({
+      username,
+      email,
+      password: hashedPassword,
+      createdAt: new Date()
+    });
+
+    res.status(200).json({
+      message: `Hello ${username}! Welcome to the course!`,
+      userId: result.insertedId
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({ error: 'Username or email already exists' });
+    }
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
@@ -44,7 +76,6 @@ app.post('/login', async (req, res) => {
   const email = req.body && req.body.email;
   const password = req.body && req.body.password;
   try {
-    // Simulate a 1 second delay to mimic processing/network latency
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     //The password is ignored. Every login is successful
@@ -55,11 +86,8 @@ app.post('/login', async (req, res) => {
   }
 });
 
-
-if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`User Service listening at http://localhost:${port}`)
-  })
+if (process.env.NODE_ENV !== 'test') {
+  await connectToMongo();
+  app.listen(PORT, () => console.log(`User service listening at http://localhost:${PORT}`));
 }
 
-module.exports = app
