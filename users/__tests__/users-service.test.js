@@ -1,12 +1,17 @@
-vi.mock('bcrypt', async (importOriginal) => {
-    const actual = await importOriginal();
-    return { ...actual, hash: actual.hash };
-});
-
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { app, connectToMongo, closeMongoConnection } from '../users-service.js';
+
+vi.mock('bcrypt', async (importOriginal) => {
+    const actual = await importOriginal();
+    return {
+        default: actual,
+        hash: actual.hash,
+        compare: actual.compare,
+        genSalt: actual.genSalt,
+    };
+});
 
 let mongoServer;
 
@@ -15,7 +20,7 @@ beforeAll(async () => {
     const uri = mongoServer.getUri();
     await connectToMongo(uri);
 
-    // Create unique indexes so duplicate detection works in tests
+    // Create unique indexes so duplicate detection (409) works
     const { MongoClient } = await import('mongodb');
     const client = new MongoClient(uri);
     await client.connect();
@@ -62,7 +67,6 @@ describe('POST /createuser', () => {
             .set('Accept', 'application/json');
 
         expect(res.status).toBe(400);
-        expect(res.body).toHaveProperty('error');
         expect(res.body.error).toMatch(/missing required fields/i);
     });
 
@@ -89,16 +93,17 @@ describe('POST /createuser', () => {
     it('returns 409 when username or email already exists', async () => {
         const user = { username: 'Pablo', email: 'pablo@example.com', password: 'secret123' };
 
-        await request(app).post('/createuser').send(user);
-        const res = await request(app).post('/createuser').send(user);
+        const first = await request(app).post('/createuser').send(user);
+        expect(first.status).toBe(200);
 
+        const res = await request(app).post('/createuser').send(user);
         expect(res.status).toBe(409);
         expect(res.body.error).toMatch(/already exists/i);
     });
 
-    it('returns 500 when the database throws an unexpected error', async () => {
+    it('returns 500 when bcrypt throws an unexpected error', async () => {
         const bcrypt = await import('bcrypt');
-        bcrypt.hash = vi.fn().mockRejectedValueOnce(new Error('hash failure'));
+        vi.spyOn(bcrypt, 'hash').mockRejectedValueOnce(new Error('hash failure'));
 
         const res = await request(app)
             .post('/createuser')
@@ -107,10 +112,6 @@ describe('POST /createuser', () => {
 
         expect(res.status).toBe(500);
         expect(res.body.error).toMatch(/internal server error/i);
-
-        // Restore original
-        const { hash } = await vi.importActual('bcrypt');
-        bcrypt.hash = hash;
     });
 });
 
