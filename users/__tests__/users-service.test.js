@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach} from 'vitest';
-import request from 'supertest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';import request from 'supertest';
+
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { app, connectToMongo, closeMongoConnection } from '../users-service.js';
 
