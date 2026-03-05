@@ -1,91 +1,130 @@
-import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest'
-import request from 'supertest'
-import dotenv from 'dotenv'
-import { MongoMemoryServer } from 'mongodb-memory-server'
-import { MongoClient } from 'mongodb'
+import { describe, it, expect, beforeAll, afterAll, beforeEach} from 'vitest';
+import request from 'supertest';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import { app, connectToMongo, closeMongoConnection } from '../users-service.js';
 
-dotenv.config({ path: '.env.test' })
+let mongoServer;
 
-const { app, connectToMongo, closeMongoConnection } = await import('../users-service.js')
+beforeAll(async () => {
+    mongoServer = await MongoMemoryServer.create();
+    const uri = mongoServer.getUri();
+    await connectToMongo(uri);
+});
 
-vi.mock('bcrypt', () => ({
-    default: {
-        hash: vi.fn().mockResolvedValue('hashed_password')
-    }
-}))
+afterAll(async () => {
+    await closeMongoConnection();
+    await mongoServer.stop();
+});
+
+beforeEach(async () => {
+    // Clear users collection between tests to ensure isolation
+    const { MongoClient } = await import('mongodb');
+    const uri = mongoServer.getUri();
+    const client = new MongoClient(uri);
+    await client.connect();
+    const db = client.db('test_db');
+    await db.collection('users').deleteMany({});
+    await client.close();
+});
 
 describe('POST /createuser', () => {
-    let mongoServer
-    let mongoUri
+    const validUser = {
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'securepassword123',
+    };
 
-    beforeAll(async () => {
-        // Start in-memory MongoDB server
-        mongoServer = await MongoMemoryServer.create()
-        mongoUri = mongoServer.getUri()
+    it('should create a new user and return 201 with a welcome message', async () => {
+        const res = await request(app).post('/createuser').send(validUser);
 
-        // Override the MongoDB URI for tests
-        process.env.MONGODB_URI = mongoUri
+        expect(res.status).toBe(201);
+        expect(res.body.message).toBe(`Welcome ${validUser.username}! Your account was created.`);
+        expect(res.body.userId).toBeDefined();
+    });
 
-        // Connect to the in-memory database
-        await connectToMongo()
-    })
+    it('should store a hashed password, not the plain text password', async () => {
+        const { MongoClient } = await import('mongodb');
+        const { default: bcrypt } = await import('bcrypt');
 
-    afterAll(async () => {
-        // Clean up: close database connection
-        await closeMongoConnection()
-        // Stop in-memory MongoDB server
-        await mongoServer.stop()
-    })
+        await request(app).post('/createuser').send(validUser);
 
-    afterEach(async () => {
-        // Clear all mocks
-        vi.clearAllMocks()
+        const uri = mongoServer.getUri();
+        const client = new MongoClient(uri);
+        await client.connect();
+        const db = client.db('test_db');
+        const user = await db.collection('users').findOne({ username: validUser.username });
+        await client.close();
 
-        // Clear the users collection after each test
-        const client = new MongoClient(process.env.MONGODB_URI)
-        await client.connect()
-        const db = client.db('test_db')
-        await db.collection('users').deleteMany({})
-        await client.close()
-    })
+        expect(user).not.toBeNull();
+        expect(user.password).not.toBe(validUser.password);
+        const isMatch = await bcrypt.compare(validUser.password, user.password);
+        expect(isMatch).toBe(true);
+    });
 
-    it('returns a welcome message for the provided username', async () => {
-        const res = await request(app)
-            .post('/createuser')
-            .send({
-                username: 'Pablo',
-                email: 'pablo@test.com',
-                password: 'secret123'
-            })
-            .set('Accept', 'application/json')
+    it('should store a createdAt timestamp', async () => {
+        const { MongoClient } = await import('mongodb');
 
-        expect(res.status).toBe(201)
-        expect(res.body).toHaveProperty('message')
-        expect(res.body.message).toMatch(/Welcome Pablo! Your account was created\./i)
-        expect(res.body).toHaveProperty('userId')
-    })
+        await request(app).post('/createuser').send(validUser);
 
-    it('returns 409 when username already exists', async () => {
-        // First create a user
-        await request(app)
-            .post('/createuser')
-            .send({
-                username: 'Pablo',
-                email: 'pablo@test.com',
-                password: 'secret123'
-            })
+        const uri = mongoServer.getUri();
+        const client = new MongoClient(uri);
+        await client.connect();
+        const db = client.db('test_db');
+        const user = await db.collection('users').findOne({ username: validUser.username });
+        await client.close();
 
-        // Try to create the same user again
-        const res = await request(app)
-            .post('/createuser')
-            .send({
-                username: 'Pablo',
-                email: 'pablo@test.com',
-                password: 'secret123'
-            })
+        expect(user.createdAt).toBeInstanceOf(Date);
+    });
 
-        expect(res.status).toBe(409)
-        expect(res.body).toHaveProperty('error')
-        expect(res.body.error).toMatch(/Username or email already exists/i)
-    })
-})
+    it('should return 409 when username or email already exists', async () => {
+
+        await request(app).post('/createuser').send(validUser);
+
+        const { MongoClient } = await import('mongodb');
+        const uri = mongoServer.getUri();
+        const client = new MongoClient(uri);
+        await client.connect();
+        const db = client.db('test_db');
+        await db.collection('users').createIndex({ username: 1 }, { unique: true });
+        await client.close();
+
+        const res = await request(app).post('/createuser').send(validUser);
+
+        expect(res.status).toBe(409);
+        expect(res.body.error).toBe('Username or email already exists');
+    });
+
+    it('should return 500 when required fields are missing', async () => {
+        const res = await request(app).post('/createuser').send({
+            username: 'nopassword',
+            email: 'nopass@example.com',
+            // missing password
+        });
+
+        expect(res.status).toBe(500);
+        expect(res.body.error).toBe('Internal server error');
+    });
+
+    it('should return 500 when the database is not available', async () => {
+        // Temporarily break the db by closing connection
+        await closeMongoConnection();
+
+        const res = await request(app).post('/createuser').send(validUser);
+
+        expect(res.status).toBe(500);
+        expect(res.body.error).toMatch(/Database not available|Internal server error/);
+
+        // Reconnect for next tests
+        const uri = mongoServer.getUri();
+        await connectToMongo(uri);
+    });
+
+    it('should return correct JSON shape on success', async () => {
+        const res = await request(app).post('/createuser').send(validUser);
+
+        expect(res.headers['content-type']).toMatch(/json/);
+        expect(res.body).toHaveProperty('message');
+        expect(res.body).toHaveProperty('userId');
+        expect(typeof res.body.message).toBe('string');
+    });
+});

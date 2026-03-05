@@ -5,5 +5,6 @@ export default defineConfig({
     coverage: {
       reporter: ['text', 'lcov'],
     },
+    env: { NODE_ENV: 'test' }
   },
 })
