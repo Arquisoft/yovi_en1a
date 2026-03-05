@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest'
 import request from 'supertest'
 import dotenv from 'dotenv'
+import { MongoMemoryServer } from 'mongodb-memory-server'
+import { MongoClient } from 'mongodb'
 
-// environment diagrams
 dotenv.config({ path: '.env.test' })
 
 const { app, connectToMongo, closeMongoConnection } = await import('../users-service.js')
@@ -14,23 +15,33 @@ vi.mock('bcrypt', () => ({
 }))
 
 describe('POST /createuser', () => {
+    let mongoServer
+    let mongoUri
+
     beforeAll(async () => {
-        // Connect to the REAL test database
+        // Start in-memory MongoDB server
+        mongoServer = await MongoMemoryServer.create()
+        mongoUri = mongoServer.getUri()
+
+        // Override the MongoDB URI for tests
+        process.env.MONGODB_URI = mongoUri
+
+        // Connect to the in-memory database
         await connectToMongo()
     })
 
     afterAll(async () => {
         // Clean up: close database connection
         await closeMongoConnection()
+        // Stop in-memory MongoDB server
+        await mongoServer.stop()
     })
 
     afterEach(async () => {
         // Clear all mocks
         vi.clearAllMocks()
 
-        // Optional: Clear the users collection after each test
-        // This ensures each test starts with a clean database
-        const { MongoClient } = await import('mongodb')
+        // Clear the users collection after each test
         const client = new MongoClient(process.env.MONGODB_URI)
         await client.connect()
         const db = client.db('test_db')

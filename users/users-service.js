@@ -5,22 +5,25 @@ const bcrypt = require('bcrypt');
 const app = express();
 const port = 3000;
 
-
 app.use(express.json());
 
-const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/yovi';
-const dbName = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
+let mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/yovi';
+let dbName = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
 let db;
 let client;
 
-async function connectToMongo() {
+async function connectToMongo(uri = mongoUri) {
+  if (uri) {
+    mongoUri = uri;
+  }
+
   client = new MongoClient(mongoUri);
   await client.connect();
   console.log(`Connected successfully to MongoDB (${process.env.NODE_ENV || 'development'} mode)`);
   db = client.db(dbName);
+  return client;
 }
 
-// Optional: Function to close connection (useful for tests)
 async function closeMongoConnection() {
   if (client) {
     await client.close();
@@ -28,7 +31,6 @@ async function closeMongoConnection() {
   }
 }
 
-// Your /createuser endpoint (unchanged)
 app.post('/createuser', async (req, res) => {
   if (!db) {
     return res.status(500).json({ error: 'Database not available' });

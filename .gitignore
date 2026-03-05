@@ -6,4 +6,3 @@ docs/build
 .env
 webapp/.env
 .vscode/
-.env.test
