@@ -1,6 +1,9 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
 const bcrypt = require('bcrypt');
+import cors from 'cors';
+
+
 
 const app = express();
 const PORT = 3000;
@@ -77,3 +80,8 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   next();
 });
+
+app.use(cors({
+  origin: '*',
+  credentials: true
+}));
