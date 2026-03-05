@@ -1,3 +1,8 @@
+vi.mock('bcrypt', async (importOriginal) => {
+    const actual = await importOriginal();
+    return { ...actual, hash: actual.hash };
+});
+
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
@@ -9,6 +14,15 @@ beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     const uri = mongoServer.getUri();
     await connectToMongo(uri);
+
+    // Create unique indexes so duplicate detection works in tests
+    const { MongoClient } = await import('mongodb');
+    const client = new MongoClient(uri);
+    await client.connect();
+    const db = client.db('test_db');
+    await db.collection('users').createIndex({ username: 1 }, { unique: true });
+    await db.collection('users').createIndex({ email: 1 }, { unique: true });
+    await client.close();
 });
 
 afterAll(async () => {
@@ -83,16 +97,8 @@ describe('POST /createuser', () => {
     });
 
     it('returns 500 when the database throws an unexpected error', async () => {
-        const { MongoClient } = await import('mongodb');
-        vi.spyOn(MongoClient.prototype, 'db').mockImplementationOnce(() => ({
-            collection: () => ({
-                insertOne: async () => { throw new Error('Unexpected DB error'); }
-            })
-        }));
-
-        // Re-import after mock — easier to just hit the endpoint while db throws
         const bcrypt = await import('bcrypt');
-        vi.spyOn(bcrypt, 'hash').mockRejectedValueOnce(new Error('hash failure'));
+        bcrypt.hash = vi.fn().mockRejectedValueOnce(new Error('hash failure'));
 
         const res = await request(app)
             .post('/createuser')
@@ -101,6 +107,10 @@ describe('POST /createuser', () => {
 
         expect(res.status).toBe(500);
         expect(res.body.error).toMatch(/internal server error/i);
+
+        // Restore original
+        const { hash } = await vi.importActual('bcrypt');
+        bcrypt.hash = hash;
     });
 });
 
