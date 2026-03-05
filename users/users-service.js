@@ -7,23 +7,18 @@ const PORT = 3000;
 
 app.use(express.json());
 
-const mongoUri = process.env.MONGODB_URI;
-const dbName = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
 let db, client;
 
 export async function connectToMongo(uri) {
-  // Implementation to connect to MongoDB
-  // Example:
-  const client = new MongoClient(uri);
+  client = new MongoClient(uri);
   await client.connect();
+  db = client.db(process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi');
   return client;
 }
 
 export async function closeMongoConnection() {
-  // Implementation to close MongoDB connection
-  // Example:
-  if (mongoClient) {
-    await mongoClient.close();
+  if (client) {
+    await client.close();
   }
 }
 
@@ -44,7 +39,7 @@ app.post('/createuser', async (req, res) => {
     });
 
     res.status(201).json({
-      message: `Welcome ${username}! Your account was created.`,
+      message: `Hello ${username}! Welcome to the course!`,
       userId: result.insertedId
     });
   } catch (error) {
@@ -62,7 +57,6 @@ app.post('/login', async (req, res) => {
   const email = req.body && req.body.email;
   const password = req.body && req.body.password;
   try {
-    // Simulate a 1 second delay to mimic processing/network latency
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     //The password is ignored. Every login is successful
@@ -79,3 +73,7 @@ if (process.env.NODE_ENV !== 'test') {
     app.listen(PORT, () => console.log(`User service listening at http://localhost:${PORT}`));
   });
 }
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+});
