@@ -87,8 +87,7 @@ app.post('/login', async (req, res) => {
 });
 
 if (process.env.NODE_ENV !== 'test') {
-  connectToMongo().then(() => {
-    app.listen(PORT, () => console.log(`User service listening at http://localhost:${PORT}`));
-  });
+  await connectToMongo();
+  app.listen(PORT, () => console.log(`User service listening at http://localhost:${PORT}`));
 }
 
