@@ -32,7 +32,6 @@ app.post('/createuser', async (req, res) => {
 
   const { username, email, password } = req.body;
 
-  // ✅ Validation: Check if required fields are present
   if (!username || !email || !password) {
     return res.status(400).json({
       error: 'Missing required fields: username, email, and password are required'

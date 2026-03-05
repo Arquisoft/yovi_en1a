@@ -35,7 +35,7 @@ describe('POST /createuser', () => {
     it('returns a greeting message for the provided username', async () => {
         const res = await request(app)
             .post('/createuser')
-            .send({ username: 'Pablo' })
+            .send({ username: 'Pablo', email: 'pablo@example.com', password: 'secret123' })  // ← add email & password
             .set('Accept', 'application/json')
 
         expect(res.status).toBe(200)
