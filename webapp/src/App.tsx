@@ -1,8 +1,12 @@
+import React from 'react';
 import './App.css'
 import RegisterForm from './RegisterForm';
+import LoginForm from './LoginForm';
 import reactLogo from './assets/react.svg'
 
 function App() {
+  const [mode, setMode] = React.useState<'register' | 'login'>('register');
+
   return (
     <div className="App">
       <div>
@@ -15,7 +19,17 @@ function App() {
       </div>
 
       <h2>Welcome to the Software Arquitecture 2025-2026 course</h2>
-      <RegisterForm />
+
+      <div className="form-switch">
+        <button onClick={() => setMode('register')} disabled={mode === 'register'}>
+          Registrierung
+        </button>
+        <button onClick={() => setMode('login')} disabled={mode === 'login'}>
+          Login
+        </button>
+      </div>
+
+      {mode === 'register' ? <RegisterForm /> : <LoginForm />}
     </div>
   );
 }
