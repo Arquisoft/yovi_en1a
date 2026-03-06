@@ -1,12 +1,42 @@
 import React from 'react';
-import './App.css'
+import './App.css';
 import RegisterForm from './RegisterForm';
 import LoginForm from './LoginForm';
-import reactLogo from './assets/react.svg'
+import Lobby from './Lobby';
+import reactLogo from './assets/react.svg';
 
 function App() {
   const [mode, setMode] = React.useState<'register' | 'login'>('register');
 
+  // Logic to detect if we should be showing the Lobby "window"
+  // This looks for "?view=lobby" in the URL
+  const isLobbyWindow = window.location.search === '?view=lobby';
+
+  const handleGoToLobby = () => {
+    // This changes the URL to /?view=lobby and reloads the app into the Lobby view
+    window.location.href = window.location.pathname + '?view=lobby';
+  };
+
+  const handleGoHome = () => {
+    // This removes the parameter and takes us back to the login/register screen
+    window.location.href = window.location.pathname;
+  };
+
+  // --- LOBBY VIEW in App.tsx ---
+  if (isLobbyWindow) {
+    return (
+      <div className="App" style={{ backgroundColor: '#242424', minHeight: '100vh' }}>
+        {/* Remove the button from here entirely */}
+        <Lobby 
+          username="Guest User" 
+          onPlay={(selectedMode) => console.log("Starting game mode:", selectedMode)} 
+          onLogout={handleGoHome} // Pass the logout function to Lobby
+        />
+      </div>
+    );
+  }
+
+  // --- MAIN WINDOW VIEW (Login / Register) ---
   return (
     <div className="App">
       <div>
@@ -18,18 +48,32 @@ function App() {
         </a>
       </div>
 
-      <h2>Welcome to the Software Arquitecture 2025-2026 course</h2>
+      <h2>Welcome to the Software Architecture 2025-2026 course</h2>
 
       <div className="form-switch">
-        <button onClick={() => setMode('register')} disabled={mode === 'register'}>
-          Registrierung
+        <button 
+          onClick={() => setMode('register')} 
+          disabled={mode === 'register'}
+        >
+          Register
         </button>
-        <button onClick={() => setMode('login')} disabled={mode === 'login'}>
+        <button 
+          onClick={() => setMode('login')} 
+          disabled={mode === 'login'}
+        >
           Login
+        </button>
+        <button 
+          onClick={handleGoToLobby} 
+          style={{ backgroundColor: '#646cff', color: 'white' }}
+        >
+          Lobby
         </button>
       </div>
 
-      {mode === 'register' ? <RegisterForm /> : <LoginForm />}
+      <main style={{ marginTop: '20px' }}>
+        {mode === 'register' ? <RegisterForm /> : <LoginForm />}
+      </main>
     </div>
   );
 }
