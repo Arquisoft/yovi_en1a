@@ -79,3 +79,4 @@ describe('Coverage for New Logic', () => {
     // Verifies the Lobby rendered (covers the 'if (isLobbyWindow)' branch)
     expect(screen.getByText(/SELECT MODE:/i)).toBeDefined();
   });
+});
