@@ -32,13 +32,13 @@ describe('Coverage for New Logic', () => {
     expect(screen.getByText('Tester')).toBeDefined();
   });
 
-  it('App.tsx: Covers handleGoToLobby and isLobbyWindow logic', () => {
+it('App.tsx: Covers handleGoToLobby and isLobbyWindow logic', () => {
     // Render the initial registration/login state
     render(<App />);
     
-    // 1. FIX: Find the specific submit button to trigger navigation
-    // Using a regex that matches your "Lets go!" or "Login" button
-    const loginOrSubmitBtn = screen.queryByRole('button', { name: /Lets go!|Login/i }); 
+    // FIX: Target ONLY the "Lets go!" button specifically.
+    // This avoids the conflict with the "Login" tab button.
+    const loginOrSubmitBtn = screen.queryByRole('button', { name: /^Lets go!$/i }); 
     if (loginOrSubmitBtn) {
       fireEvent.click(loginOrSubmitBtn);
     }
@@ -46,37 +46,30 @@ describe('Coverage for New Logic', () => {
     // 2. Mock search to trigger the Lobby view branch
     vi.stubGlobal('location', {
       search: '?view=lobby',
-      pathname: '/test'
+      pathname: '/test',
+      href: '/test?view=lobby'
     });
     
-    // Render again with the new location mock
+    // Render again with the new location mock to cover the "if (isLobbyWindow)" branch
     render(<App />);
     
     // Verifies the Lobby rendered successfully
     expect(screen.getByText(/SELECT MODE:/i)).toBeDefined();
   });
 
-  it('App.tsx: Covers handleGoToLobby and isLobbyWindow logic', () => {
-    render(<App />);
-    
-    // FIX: Target ONLY the "Lets go!" button. 
-    // We use an exact regex to avoid hitting the "Login" tab button.
-    const submitBtn = screen.queryByRole('button', { name: /^Lets go!$/i }); 
-    
-    if (submitBtn) {
-      fireEvent.click(submitBtn);
-    }
-
-    // Mock search to trigger the Lobby view branch
+  it('App.tsx: Covers handleLogout', () => {
+    // Mock that we are currently in the lobby
     vi.stubGlobal('location', {
       search: '?view=lobby',
-      pathname: '/test',
-      href: '/test?view=lobby'
+      pathname: '/test'
     });
-    
+
     render(<App />);
+    // Target the specific Logout button
+    const logoutBtn = screen.getByRole('button', { name: /^Logout$/i });
+    fireEvent.click(logoutBtn); 
     
-    // Verifies the Lobby rendered (covers the 'if (isLobbyWindow)' branch)
-    expect(screen.getByText(/SELECT MODE:/i)).toBeDefined();
+    // Verifies the globalThis.location.href assignment was hit
+    expect(globalThis.location.href).toBeDefined();
   });
 });
