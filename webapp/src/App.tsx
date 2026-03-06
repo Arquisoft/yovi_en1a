@@ -8,17 +8,17 @@ import reactLogo from './assets/react.svg';
 function App() {
   const [mode, setMode] = React.useState<'register' | 'login'>('register');
 
-  // Logic to detect if we should be showing the Lobby "window"
+  // Logic to detect if we should be showing the Lobby "globalThis"
   // This looks for "?view=lobby" in the URL
-  const isLobbyWindow = window.location.search === '?view=lobby';
+  const isLobbyWindow = globalThis.location.search === '?view=lobby';
 
   const handleGoToLobby = () => {
     // This changes the URL to /?view=lobby and reloads the app into the Lobby view
-    window.location.href = window.location.pathname + '?view=lobby';
+    globalThis.location.href = globalThis.location.pathname + '?view=lobby';
   };
 
   const handleLogout = () => {
-    window.location.href = window.location.pathname; // Strips query params
+    globalThis.location.href = globalThis.location.pathname; // Strips query params
   };
 
   if (isLobbyWindow) {
@@ -33,7 +33,7 @@ function App() {
     );
   }
 
-  // --- MAIN WINDOW VIEW (Login / Register) ---
+  // --- MAIN globalThis VIEW (Login / Register) ---
   return (
     <div className="App">
       <div>
