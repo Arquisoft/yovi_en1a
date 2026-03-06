@@ -72,4 +72,20 @@ it('App.tsx: Covers handleGoToLobby and isLobbyWindow logic', () => {
     // Verifies the globalThis.location.href assignment was hit
     expect(globalThis.location.href).toBeDefined();
   });
+
+  it('Lobby.tsx: Covers all game modes', () => {
+    const onPlayMock = vi.fn();
+    render(<Lobby onPlay={onPlayMock} />);
+    
+    // Test PvP (Default)
+    const playBtn = screen.getByRole('button', { name: /^PLAY$/i });
+    fireEvent.click(playBtn);
+    expect(onPlayMock).toHaveBeenCalledWith('pvp');
+
+    // Test Difficult Mode
+    const diffBtn = screen.getByText(/DIFFICULT/i);
+    fireEvent.click(diffBtn);
+    fireEvent.click(playBtn);
+    expect(onPlayMock).toHaveBeenCalledWith('diff');
+  });
 });
