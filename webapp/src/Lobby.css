@@ -1,172 +1,189 @@
-* {
-  box-sizing: border-box;
+/* Lobby.css */
+html, body {
   margin: 0;
   padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden; 
 }
 
-body {
-  overflow: hidden;
-}
-
-/* Full page wrapper */
-.lobby-page-wrapper {
-  width: 100vw;
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;       
   min-height: 100vh;
+  display: block;     
+  max-width: none;    
+}
+
+.lobby-page-wrapper {
+  width: 100%;
+  height: 100vh;
   background-color: #1a1a1a;
   display: flex;
   flex-direction: column;
 }
 
-/* NAVBAR: GAME Y left, Logout right */
+/* NAVBAR: Spans 100% width with items pushed to corners */
 .lobby-navbar {
   width: 100%;
-  height: 60px;
+  height: 10vh;
   background-color: #242424;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; 
   align-items: center;
-  padding: 0 60px;
-  padding-bottom: 20px;
-  box-sizing: border-box;
-  border-bottom: 1px solid #333;
+  padding: 0 4%; /* Relative horizontal padding */
+  box-sizing: border-box; /* Ensures padding stays inside the 100% width */
+  border-bottom: 0.1rem solid #333;
 }
 
 .nav-logo {
-  font-size: 2.5rem;
+  font-size: 2.2rem;
   font-weight: bold;
-  color: #646cff; /* Purple Title */
+  color: #646cff;
 }
 
 .nav-logout-btn {
-  background: transparent;
-  border: 1px solid #555;
+  background: #333;
+  border: 0.1rem solid #555;
   color: #ccc;
-  padding: 10px 24px;
-  border-radius: 8px;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
   font-weight: bold;
-  cursor: pointer;
 }
 
-.nav-logout-btn:hover {
-  border-color: #646cff;
-  color: #fff;
-}
-
-/* MAIN AREA: Centers the layout container */
+/* MAIN CONTENT: Centered container scaling with screen width */
 .lobby-main-content {
   flex: 1;
   display: flex;
-  justify-content: center; /* Horizontally centers everything */
-  align-items: flex-start;
-  padding-top: 60px;
+  justify-content: center; 
+  align-items: center; 
+  padding: 2vh 0; 
+  box-sizing: border-box;
+  width: 100%; 
 }
 
 .lobby-layout-container {
   display: flex;
-  gap: 40px; /* Space between the two columns */
-  max-width: 1100px;
-  width: 100%;
-  padding: 0 20px;
-  box-sizing: border-box;
+  gap: 2rem; 
+  width: 100%; 
+  max-width: 1200px; 
+  padding: 0 5%; 
+  margin: 0 auto; 
 }
 
-/* Panels Styling */
+/* PANELS */
 .white-panel {
   background-color: #ffffff;
-  border-radius: 12px;
-  padding: 30px;
+  border-radius: 1rem;
+  padding: 2rem;
   color: #333;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.3);
 }
 
-.game-setup-column {
-  flex: 1.5;
-  display: flex;
-  flex-direction: column;
+.game-setup-column { 
+  flex: 1.5; 
+  display: flex; 
+  flex-direction: column; 
 }
 
+.mode-option-btn {
+  width: 100%;
+  padding: 1.2rem;
+  margin-bottom: 0.8rem;
+  border: 0.15rem solid #eee;
+  border-radius: 0.6rem;
+  background: #f9f9f9;
+  color: #646cff;
+  font-weight: bold;
+  text-align: left;
+}
+
+.mode-option-btn.active {
+  background-color: #646cff;
+  color: white;
+  border-color: #646cff;
+}
+
+.primary-play-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background-color: #646cff;
+  color: white;
+  border-radius: 0.8rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Sidebar column should take up the remaining height */
 .social-sidebar-column {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 2vh;
+  max-height: 80vh; /* Keeps the sidebar from growing infinitely */
 }
 
-/* Buttons inside the panel */
-.mode-options {
+/* User Profile specific fixes */
+.profile-info-container {
+  display: flex;
+  align-items: center; /* Vertically centers avatar and text */
+  gap: 12px;
+  text-align: left;
+}
+
+.profile-avatar {
+  font-size: 1.5rem;
+  width: 45px;
+  height: 45px;
+  background-color: #f0f0f0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0; /* Prevents avatar from squishing */
+}
+
+/* Friends Panel with Scrolling */
+.friends-panel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 15px;
+  flex: 1; /* Makes this panel fill the available sidebar space */
+  min-height: 0; /* Important for nested flex scrolling */
+  padding: 1.5rem 0 0 0 !important; /* Remove side padding to let separators touch edges */
 }
 
-.mode-option-btn {
-  padding: 18px;
-  text-align: left;
-  border: 2px solid #eee;
-  border-radius: 8px;
-  color: #646cff;
-  background: #f9f9f9;
-  font-weight: bold;
-  cursor: pointer;
+.friends-panel .panel-title {
+  padding: 0 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.mode-option-btn.active {
-  border-color: #646cff;
-  background-color: #646cff;
-  color: #f0f1ff;
+.friends-scroll-container {
+  overflow-y: auto;
+  flex: 1;
 }
 
-/* The primary PLAY button below the panel */
-.primary-play-btn {
-  width: 100%;
-  margin-top: 25px;
-  padding: 22px;
-  background-color: #646cff;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 1.4rem;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* Sidebar Specifics */
-.user-profile-panel {
-  text-align: center;
-}
-
-.profile-icon {
-  font-size: 3rem;
-  margin-bottom: 10px;
-}
-
-.friends-list-ui {
-  list-style: none;
-  padding: 0;
-  margin: 15px 0;
-}
-
+/* Friend Item with Separators */
 .friend-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
+  gap: 10px;
+  padding: 0.8rem 1.5rem;
+  border-bottom: 1px solid #f0f0f0; /* The separator line */
+  transition: background-color 0.2s;
 }
 
-.online-status-dot {
-  width: 10px;
-  height: 10px;
-  background-color: #4caf50;
-  border-radius: 50%;
-}
-
-.text-link-btn {
-  background: none;
-  border: none;
-  color: #646cff;
-  font-weight: bold;
+.friend-item:hover {
+  background-color: #f9f9f9;
   cursor: pointer;
-  padding: 0;
+}
+
+.friend-item:last-child {
+  border-bottom: none; /* No line after the last friend */
+}
+
+.status-dot.online {
+  color: #2ecc71; /* League-style green */
+  font-size: 0.8rem;
 }

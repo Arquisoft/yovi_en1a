@@ -17,20 +17,17 @@ function App() {
     window.location.href = window.location.pathname + '?view=lobby';
   };
 
-  const handleGoHome = () => {
-    // This removes the parameter and takes us back to the login/register screen
-    window.location.href = window.location.pathname;
+  const handleLogout = () => {
+    window.location.href = window.location.pathname; // Strips query params
   };
 
-  // --- LOBBY VIEW in App.tsx ---
   if (isLobbyWindow) {
     return (
-      <div className="App" style={{ backgroundColor: '#242424', minHeight: '100vh' }}>
-        {/* Remove the button from here entirely */}
+      <div className="App">
         <Lobby 
           username="Guest User" 
-          onPlay={(selectedMode) => console.log("Starting game mode:", selectedMode)} 
-          onLogout={handleGoHome} // Pass the logout function to Lobby
+          onPlay={(mode) => console.log("Starting:", mode)} 
+          onLogout={handleLogout} 
         />
       </div>
     );
