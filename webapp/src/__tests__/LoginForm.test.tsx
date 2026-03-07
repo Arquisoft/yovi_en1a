@@ -10,34 +10,32 @@ describe('LoginForm', () => {
   })
 
   test('shows validation error when any field is missing', async () => {
-    // Pass the required prop here
     render(<LoginForm onLoginSuccess={vi.fn()} />)
     const user = userEvent.setup()
 
     await user.click(screen.getByRole('button', { name: /login/i }))
-    expect(await screen.findByText(/fill out all fields/i)).toBeInTheDocument()
+    // Updated to match the new error message in LoginForm.tsx
+    expect(await screen.findByText(/please enter both username and password/i)).toBeInTheDocument()
   })
 
   test('submits credentials and displays success response', async () => {
     const user = userEvent.setup()
-    const mockSuccess = vi.fn() // Create a mock to track the call
+    const mockSuccess = vi.fn()
 
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
       json: async () => ({ message: 'Login successful for Alice' }),
     } as Response)
 
-    // Pass the mock here
     render(<LoginForm onLoginSuccess={mockSuccess} />)
 
     await user.type(screen.getByLabelText(/username/i), 'Alice')
-    await user.type(screen.getByLabelText(/e‑mail/i), 'alice@example.com')
+    // REMOVED: E-mail field interaction
     await user.type(screen.getByLabelText(/password/i), 'secret')
     await user.click(screen.getByRole('button', { name: /login/i }))
 
     expect(await screen.findByText(/login successful for alice/i)).toBeInTheDocument()
     
-    // Check that our callback was actually triggered
     await waitFor(() => {
       expect(mockSuccess).toHaveBeenCalledTimes(1)
     })
@@ -45,7 +43,7 @@ describe('LoginForm', () => {
     // fields should have been cleared after success
     await waitFor(() => {
       expect(screen.getByLabelText(/username/i)).toHaveValue('')
-      expect(screen.getByLabelText(/e‑mail/i)).toHaveValue('')
+      // REMOVED: E-mail field check
       expect(screen.getByLabelText(/password/i)).toHaveValue('')
     })
   })
@@ -58,11 +56,10 @@ describe('LoginForm', () => {
       json: async () => ({ error: 'Invalid' }),
     } as Response)
 
-    // Pass the required prop here
     render(<LoginForm onLoginSuccess={vi.fn()} />)
 
     await user.type(screen.getByLabelText(/username/i), 'Bob')
-    await user.type(screen.getByLabelText(/e‑mail/i), 'bob@example.com')
+    // REMOVED: E-mail field interaction
     await user.type(screen.getByLabelText(/password/i), 'pw')
     await user.click(screen.getByRole('button', { name: /login/i }))
 

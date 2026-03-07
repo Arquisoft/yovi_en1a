@@ -10,41 +10,49 @@ describe('RegisterForm', () => {
   })
 
   test('shows validation error when username is empty', async () => {
-    // Pass the required prop here
+    // Pass the required callback prop
     render(<RegisterForm onRegisterSuccess={vi.fn()} />)
     const user = userEvent.setup()
 
-    await waitFor(async () => {
-      await user.click(screen.getByRole('button', { name: /lets go!/i }))
-      expect(screen.getByText(/please enter a username/i)).toBeInTheDocument()
-    })
+    await user.click(screen.getByRole('button', { name: /lets go!/i }))
+    
+    // Matches your error state: setError('Please enter a username.')
+    expect(await screen.findByText(/please enter a username/i)).toBeInTheDocument()
   })
 
-  test('submits username and displays response', async () => {
+  test('submits username and displays response with game status', async () => {
     const user = userEvent.setup()
-    const mockSuccess = vi.fn() // To track if success callback is called
+    const mockSuccess = vi.fn()
 
-    // Mock fetch for the registration call
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ message: 'Hello Pablo! Welcome to the course!' }),
-    } as Response)
+    // 1. Mock the User Service (Registration)
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'Welcome Pablo!' }),
+      } as Response)
+      // 2. Mock the Gamey Service (Status check)
+      .mockResolvedValueOnce({
+        ok: true,
+      } as Response)
 
-    // Pass the mock prop here
     render(<RegisterForm onRegisterSuccess={mockSuccess} />)
 
-    // Interaction + assertion
+    // Using your new label: "Whats your name?"
     await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
     await user.click(screen.getByRole('button', { name: /lets go!/i }))
 
     // Check for success message
-    expect(
-      await screen.findByText(/hello pablo! welcome to the course!/i)
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/welcome pablo!/i)).toBeInTheDocument()
+    
+    // Check for game status message
+    expect(await screen.findByText(/game is ready/i)).toBeInTheDocument()
 
-    // Verify the redirect callback was triggered (after your timeout in the component)
+    // Verify localStorage was set
+    expect(localStorage.getItem('username')).toBe('Pablo')
+
+    // Wait for the setTimeout(..., 1500) to trigger the success callback
     await waitFor(() => {
       expect(mockSuccess).toHaveBeenCalled()
-    }, { timeout: 2000 }) // Giving it extra time for the 1500ms timeout in your code
+    }, { timeout: 2000 })
   })
 })
