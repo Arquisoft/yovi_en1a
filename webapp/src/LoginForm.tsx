@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 
-const LoginForm: React.FC = () => {
+interface LoginFormProps {
+  onLoginSuccess: () => void;
+}
+
+const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
+  // Removed email state
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [responseMessage, setResponseMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -13,8 +17,9 @@ const LoginForm: React.FC = () => {
     setError(null);
     setResponseMessage(null);
 
-    if (!username.trim() || !email.trim() || !password) {
-      setError('Fill out all fields');
+    // Only check for username and password
+    if (!username.trim() || !password) {
+      setError('Please enter both username and password');
       return;
     }
 
@@ -24,19 +29,22 @@ const LoginForm: React.FC = () => {
       const res = await fetch(`${API_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password }),
+        // Only send username and password to the backend
+        body: JSON.stringify({ username, password }),
       });
+      
       const data = await res.json();
+      
       if (res.ok) {
         setResponseMessage(data.message);
-        setUsername('');
-        setEmail('');
-        setPassword('');
+        localStorage.setItem('username', username);
+        setTimeout(() => onLoginSuccess(), 1000);
       } else {
         setError(data.error || 'Login failed');
       }
-    } catch (err: any) {
-      setError(err.message || 'Network error');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -44,7 +52,6 @@ const LoginForm: React.FC = () => {
 
   return (
     <form onSubmit={handleSubmit} className="register-form" noValidate>
-      {/* use same css classes like in register-form */}
       <div className="form-group">
         <label htmlFor="username">Username</label>
         <input
@@ -52,20 +59,11 @@ const LoginForm: React.FC = () => {
           className="form-input"
           value={username}
           onChange={e => setUsername(e.target.value)}
+          placeholder="Enter your username"
           required
         />
       </div>
-      <div className="form-group">
-        <label htmlFor="email">E‑Mail</label>
-        <input
-          id="email"
-          type="email"
-          className="form-input"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-        />
-      </div>
+      
       <div className="form-group">
         <label htmlFor="password">Password</label>
         <input
@@ -74,14 +72,25 @@ const LoginForm: React.FC = () => {
           className="form-input"
           value={password}
           onChange={e => setPassword(e.target.value)}
+          placeholder="Enter your password"
           required
         />
       </div>
+
       <button type="submit" className="submit-button" disabled={loading}>
         {loading ? 'Logging in...' : 'Login'}
       </button>
-      {responseMessage && <div className="success-message">{responseMessage}</div>}
-      {error && <div className="error-message">{error}</div>}
+
+      {responseMessage && (
+        <div className="success-message" style={{ color: 'green', marginTop: '10px' }}>
+          {responseMessage}
+        </div>
+      )}
+      {error && (
+        <div className="error-message" style={{ color: 'red', marginTop: '10px' }}>
+          {error}
+        </div>
+      )}
     </form>
   );
 };

@@ -7,7 +7,7 @@ const app = express();
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:3000'];
+    : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -86,8 +86,20 @@ app.post('/login', async (req, res) => {
   }
 });
 
+const PORT = process.env.PORT || 3000;
+
 if (process.env.NODE_ENV !== 'test') {
-  await connectToMongo();
-  app.listen(PORT, () => console.log(`User service listening at http://localhost:${PORT}`));
+  (async () => {
+    try {
+      await connectToMongo(process.env.MONGODB_URI); 
+      
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`User service listening at http://localhost:${PORT}`);
+      });
+    } catch (err) {
+      console.error("Failed to connect to MongoDB:", err);
+      process.exit(1);
+    }
+  })();
 }
 
