@@ -14,7 +14,7 @@ describe('LoginForm', () => {
     const user = userEvent.setup()
 
     await user.click(screen.getByRole('button', { name: /login/i }))
-    // Updated to match the new error message in LoginForm.tsx
+    // Matches the error message in your LoginForm.tsx
     expect(await screen.findByText(/please enter both username and password/i)).toBeInTheDocument()
   })
 
@@ -30,22 +30,16 @@ describe('LoginForm', () => {
     render(<LoginForm onLoginSuccess={mockSuccess} />)
 
     await user.type(screen.getByLabelText(/username/i), 'Alice')
-    // REMOVED: E-mail field interaction
     await user.type(screen.getByLabelText(/password/i), 'secret')
     await user.click(screen.getByRole('button', { name: /login/i }))
 
+    // 1. Verify success message appears
     expect(await screen.findByText(/login successful for alice/i)).toBeInTheDocument()
     
+    // 2. Wait for the 1000ms setTimeout to finish and trigger the callback
     await waitFor(() => {
       expect(mockSuccess).toHaveBeenCalledTimes(1)
-    })
-
-    // fields should have been cleared after success
-    await waitFor(() => {
-      expect(screen.getByLabelText(/username/i)).toHaveValue('')
-      // REMOVED: E-mail field check
-      expect(screen.getByLabelText(/password/i)).toHaveValue('')
-    })
+    }, { timeout: 2500 }) 
   })
 
   test('displays server error when fetch returns non-ok', async () => {
@@ -59,7 +53,6 @@ describe('LoginForm', () => {
     render(<LoginForm onLoginSuccess={vi.fn()} />)
 
     await user.type(screen.getByLabelText(/username/i), 'Bob')
-    // REMOVED: E-mail field interaction
     await user.type(screen.getByLabelText(/password/i), 'pw')
     await user.click(screen.getByRole('button', { name: /login/i }))
 

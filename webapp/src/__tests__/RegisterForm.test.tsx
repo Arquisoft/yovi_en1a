@@ -1,64 +1,52 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import LoginForm from '../LoginForm'
+import RegisterForm from '../RegisterForm'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom'
 
-describe('LoginForm', () => {
+describe('RegisterForm', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+    localStorage.clear()
   })
 
-  test('shows validation error when any field is missing', async () => {
-    render(<LoginForm onLoginSuccess={vi.fn()} />)
+  test('shows validation error when username is empty', async () => {
+    render(<RegisterForm onRegisterSuccess={vi.fn()} />)
     const user = userEvent.setup()
 
-    await user.click(screen.getByRole('button', { name: /login/i }))
-    // Updated to match your new error message
-    expect(await screen.findByText(/please enter both username and password/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /lets go!/i }))
+    expect(await screen.findByText(/please enter a username/i)).toBeInTheDocument()
   })
 
-  test('submits credentials and displays success response', async () => {
+  test('submits username and displays response with game status', async () => {
     const user = userEvent.setup()
     const mockSuccess = vi.fn()
 
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ message: 'Login successful for Alice' }),
-    } as Response)
+    // Mock User Service (Registration) and then Gamey Status check
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'Welcome Pablo!' }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+      } as Response)
 
-    render(<LoginForm onLoginSuccess={mockSuccess} />)
+    render(<RegisterForm onRegisterSuccess={mockSuccess} />)
 
-    await user.type(screen.getByLabelText(/username/i), 'Alice')
-    // email field is removed here
-    await user.type(screen.getByLabelText(/password/i), 'secret')
-    await user.click(screen.getByRole('button', { name: /login/i }))
+    // Matches your label: "Whats your name?"
+    await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
+    await user.click(screen.getByRole('button', { name: /lets go!/i }))
 
-    expect(await screen.findByText(/login successful for alice/i)).toBeInTheDocument()
-    
+    expect(await screen.findByText(/welcome pablo!/i)).toBeInTheDocument()
+    expect(await screen.findByText(/game is ready/i)).toBeInTheDocument()
+
+    // Check localStorage
+    expect(localStorage.getItem('username')).toBe('Pablo')
+
+    // Wait for the 1500ms setTimeout to trigger onRegisterSuccess
     await waitFor(() => {
       expect(mockSuccess).toHaveBeenCalledTimes(1)
-    })
-
-    await waitFor(() => {
-      expect(screen.getByLabelText(/username/i)).toHaveValue('')
-      expect(screen.getByLabelText(/password/i)).toHaveValue('')
-    })
-  })
-
-  test('displays server error when fetch returns non-ok', async () => {
-    const user = userEvent.setup()
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: false,
-      json: async () => ({ error: 'Invalid' }),
-    } as Response)
-
-    render(<LoginForm onLoginSuccess={vi.fn()} />)
-
-    await user.type(screen.getByLabelText(/username/i), 'Bob')
-    await user.type(screen.getByLabelText(/password/i), 'pw')
-    await user.click(screen.getByRole('button', { name: /login/i }))
-
-    expect(await screen.findByText(/invalid/i)).toBeInTheDocument()
+    }, { timeout: 3000 })
   })
 })
