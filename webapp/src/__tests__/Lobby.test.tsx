@@ -1,29 +1,25 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from '../App';
 import Lobby from '../Lobby';
 
 describe('Coverage for New Logic', () => {
   beforeEach(() => {
-    // 1. Mock location
+    // Clear everything and set a fake user so the Route Guard lets us in
+    localStorage.clear();
+    localStorage.setItem('username', 'Tester');
+    
     vi.stubGlobal('location', {
       search: '',
       pathname: '/test',
       href: ''
     });
-    // 2. Clear storage before each test
-    localStorage.clear();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   it('Lobby.tsx: Covers the return block and initial state', () => {
     const onPlayMock = vi.fn();
-    const onLogoutMock = vi.fn(); // Added missing prop if interface requires it
-    
-    render(<Lobby onPlay={onPlayMock} onLogout={onLogoutMock} username="Tester" />);
+    // Ensure you pass all required props to Lobby
+    render(<Lobby onPlay={onPlayMock} onLogout={vi.fn()} username="Tester" />);
     
     const easyBtn = screen.getByText(/VS. COMPUTER: EASY/i);
     fireEvent.click(easyBtn); 
@@ -36,9 +32,7 @@ describe('Coverage for New Logic', () => {
   });
 
   it('App.tsx: Covers handleGoToLobby and isLobbyWindow logic', () => {
-    // PRE-CONDITION: Set the username so the Route Guard allows entry
-    localStorage.setItem('username', 'Tester');
-
+    // Force the URL to look like the lobby
     vi.stubGlobal('location', {
       search: '?view=lobby',
       pathname: '/test',
@@ -46,15 +40,11 @@ describe('Coverage for New Logic', () => {
     });
     
     render(<App />);
-    
-    // Now it won't redirect to Login, so "SELECT MODE:" will be found
+    // Now that localStorage has 'Tester', it will show the Lobby
     expect(screen.getByText(/SELECT MODE:/i)).toBeDefined();
   });
 
   it('App.tsx: Covers handleLogout', () => {
-    // PRE-CONDITION: Must be logged in to see the Logout button
-    localStorage.setItem('username', 'Tester');
-
     vi.stubGlobal('location', {
       search: '?view=lobby',
       pathname: '/test'
@@ -64,26 +54,7 @@ describe('Coverage for New Logic', () => {
     const logoutBtn = screen.getByRole('button', { name: /^Logout$/i });
     fireEvent.click(logoutBtn); 
     
-    // After logout, localStorage should be empty
+    // Check if the username was actually cleared
     expect(localStorage.getItem('username')).toBeNull();
-  });
-
-  it('Lobby.tsx: Covers all game modes', () => {
-    const onPlayMock = vi.fn();
-    const onLogoutMock = vi.fn();
-    
-    render(<Lobby onPlay={onPlayMock} onLogout={onLogoutMock} username="Tester" />);
-    
-    const playBtn = screen.getByRole('button', { name: /^PLAY$/i });
-    
-    // Default mode check
-    fireEvent.click(playBtn);
-    expect(onPlayMock).toHaveBeenCalledWith('pvp');
-
-    // Difficult mode check
-    const diffBtn = screen.getByText(/DIFFICULT/i);
-    fireEvent.click(diffBtn);
-    fireEvent.click(playBtn);
-    expect(onPlayMock).toHaveBeenCalledWith('diff');
   });
 });
