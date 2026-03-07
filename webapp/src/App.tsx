@@ -6,26 +6,37 @@ import Lobby from './Lobby';
 import reactLogo from './assets/react.svg';
 
 function App() {
-  const [mode, setMode] = React.useState<'register' | 'login'>('register');
+  const [mode, setMode] = React.useState<'register' | 'login'>('login');
 
-  // Logic to detect if we should be showing the Lobby "globalThis"
-  // This looks for "?view=lobby" in the URL
+  // 1. Check for the user in storage
+  const storedUsername = localStorage.getItem('username');
+  
+  // 2. Determine if they are trying to see the lobby
   const isLobbyWindow = globalThis.location.search === '?view=lobby';
 
+  // 3. SECURITY CHECK: 
+  // If they want the lobby but aren't logged in, send them home immediately.
+  React.useEffect(() => {
+    if (isLobbyWindow && !storedUsername) {
+      globalThis.location.href = globalThis.location.pathname;
+    }
+  }, [isLobbyWindow, storedUsername]);
+
   const handleGoToLobby = () => {
-    // This changes the URL to /?view=lobby and reloads the app into the Lobby view
     globalThis.location.href = globalThis.location.pathname + '?view=lobby';
   };
 
   const handleLogout = () => {
-    globalThis.location.href = globalThis.location.pathname; // Strips query params
+    localStorage.removeItem('username');
+    globalThis.location.href = globalThis.location.pathname;
   };
 
-  if (isLobbyWindow) {
+  // 4. Only show the Lobby if the URL is right AND we have a user
+  if (isLobbyWindow && storedUsername) {
     return (
       <div className="App">
         <Lobby 
-          username="Guest User" 
+          username={storedUsername} 
           onPlay={(mode) => console.log("Starting:", mode)} 
           onLogout={handleLogout} 
         />
@@ -33,7 +44,6 @@ function App() {
     );
   }
 
-  // --- MAIN globalThis VIEW (Login / Register) ---
   return (
     <div className="App">
       <div>
@@ -48,28 +58,16 @@ function App() {
       <h2>Welcome to the Software Architecture 2025-2026 course</h2>
 
       <div className="form-switch">
-        <button 
-          onClick={() => setMode('register')} 
-          disabled={mode === 'register'}
-        >
-          Register
-        </button>
-        <button 
-          onClick={() => setMode('login')} 
-          disabled={mode === 'login'}
-        >
-          Login
-        </button>
-        <button 
-          onClick={handleGoToLobby} 
-          style={{ backgroundColor: '#646cff', color: 'white' }}
-        >
-          Lobby
-        </button>
+        <button onClick={() => setMode('register')} disabled={mode === 'register'}>Register</button>
+        <button onClick={() => setMode('login')} disabled={mode === 'login'}>Login</button>
       </div>
 
       <main style={{ marginTop: '20px' }}>
-        {mode === 'register' ? <RegisterForm /> : <LoginForm />}
+        {mode === 'register' ? (
+          <RegisterForm onRegisterSuccess={handleGoToLobby} />
+        ) : (
+          <LoginForm onLoginSuccess={handleGoToLobby} />
+        )}
       </main>
     </div>
   );
