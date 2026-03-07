@@ -3,12 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from '../App';
 import Lobby from '../Lobby';
 
-describe('Coverage for New Logic', () => {
+describe('App & Lobby Coverage Booster', () => {
   beforeEach(() => {
-    // Clear everything and set a fake user so the Route Guard lets us in
     localStorage.clear();
-    localStorage.setItem('username', 'Tester');
-    
     vi.stubGlobal('location', {
       search: '',
       pathname: '/test',
@@ -16,23 +13,42 @@ describe('Coverage for New Logic', () => {
     });
   });
 
-  it('Lobby.tsx: Covers the return block and initial state', () => {
+  // --- LOBBY COMPONENT TESTS ---
+
+  it('Lobby: Covers all game mode selections', () => {
     const onPlayMock = vi.fn();
-    // Ensure you pass all required props to Lobby
     render(<Lobby onPlay={onPlayMock} onLogout={vi.fn()} username="Tester" />);
     
-    const easyBtn = screen.getByText(/VS. COMPUTER: EASY/i);
-    fireEvent.click(easyBtn); 
-    
     const playBtn = screen.getByRole('button', { name: /^PLAY$/i });
+
+    // Test EASY mode
+    fireEvent.click(screen.getByText(/VS. COMPUTER: EASY/i));
     fireEvent.click(playBtn);
-    
-    expect(onPlayMock).toHaveBeenCalledWith('easy');
-    expect(screen.getByText('Tester')).toBeDefined();
+    expect(onPlayMock).toHaveBeenLastCalledWith('easy');
+
+    // Test DIFFICULT mode
+    fireEvent.click(screen.getByText(/VS. COMPUTER: DIFFICULT/i));
+    fireEvent.click(playBtn);
+    expect(onPlayMock).toHaveBeenLastCalledWith('diff');
+
+    // Test PVP (Default/Manual selection)
+    fireEvent.click(screen.getByText(/PLAYER VS PLAYER/i));
+    fireEvent.click(playBtn);
+    expect(onPlayMock).toHaveBeenLastCalledWith('pvp');
   });
 
-  it('App.tsx: Covers handleGoToLobby and isLobbyWindow logic', () => {
-    // Force the URL to look like the lobby
+  it('Lobby: Displays the provided username', () => {
+    render(<Lobby onPlay={vi.fn()} onLogout={vi.fn()} username="MasterPlayer" />);
+    expect(screen.getByText(/MasterPlayer/i)).toBeInTheDocument();
+  });
+
+  // --- APP COMPONENT TESTS (ROUTE GUARDS & LOGIC) ---
+
+  it('App: Blocks Lobby access if NOT logged in (Covers redirect branch)', () => {
+    // 1. Ensure localStorage is empty
+    localStorage.clear();
+    
+    // 2. Try to visit lobby URL
     vi.stubGlobal('location', {
       search: '?view=lobby',
       pathname: '/test',
@@ -40,11 +56,26 @@ describe('Coverage for New Logic', () => {
     });
     
     render(<App />);
-    // Now that localStorage has 'Tester', it will show the Lobby
-    expect(screen.getByText(/SELECT MODE:/i)).toBeDefined();
+    
+    // 3. Verify Lobby is NOT rendered (Should show login instead)
+    expect(screen.queryByText(/SELECT MODE:/i)).toBeNull();
+    expect(screen.getByText(/Welcome to the Software Architecture/i)).toBeInTheDocument();
   });
 
-  it('App.tsx: Covers handleLogout', () => {
+  it('App: Allows Lobby access if logged in', () => {
+    localStorage.setItem('username', 'AuthorizedUser');
+    vi.stubGlobal('location', {
+      search: '?view=lobby',
+      pathname: '/test',
+      href: '/test?view=lobby'
+    });
+    
+    render(<App />);
+    expect(screen.getByText(/SELECT MODE:/i)).toBeInTheDocument();
+  });
+
+  it('App: handleLogout clears storage and redirects', () => {
+    localStorage.setItem('username', 'UserToDelete');
     vi.stubGlobal('location', {
       search: '?view=lobby',
       pathname: '/test'
@@ -54,7 +85,16 @@ describe('Coverage for New Logic', () => {
     const logoutBtn = screen.getByRole('button', { name: /^Logout$/i });
     fireEvent.click(logoutBtn); 
     
-    // Check if the username was actually cleared
     expect(localStorage.getItem('username')).toBeNull();
+  });
+
+  it('App: Handles view navigation to Home', () => {
+    vi.stubGlobal('location', {
+      search: '', // No query params = Home
+      pathname: '/test'
+    });
+
+    render(<App />);
+    expect(screen.getByText(/Register/i)).toBeInTheDocument();
   });
 });

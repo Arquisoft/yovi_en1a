@@ -14,7 +14,6 @@ describe('LoginForm', () => {
     const user = userEvent.setup()
 
     await user.click(screen.getByRole('button', { name: /login/i }))
-    // Matches the error message in your LoginForm.tsx
     expect(await screen.findByText(/please enter both username and password/i)).toBeInTheDocument()
   })
 
@@ -33,44 +32,67 @@ describe('LoginForm', () => {
     await user.type(screen.getByLabelText(/password/i), 'secret')
     await user.click(screen.getByRole('button', { name: /login/i }))
 
-    // 1. Verify success message appears
     expect(await screen.findByText(/login successful for alice/i)).toBeInTheDocument()
     
-    // 2. Wait for the 1000ms setTimeout to finish and trigger the callback
     await waitFor(() => {
       expect(mockSuccess).toHaveBeenCalledTimes(1)
     }, { timeout: 2500 }) 
   })
 
-  test('displays server error when fetch returns non-ok', async () => {
+  test('displays specific server error when fetch returns non-ok', async () => {
     const user = userEvent.setup()
-
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,
-      json: async () => ({ error: 'Invalid' }),
+      json: async () => ({ error: 'Invalid Credentials' }),
     } as Response)
 
     render(<LoginForm onLoginSuccess={vi.fn()} />)
-
     await user.type(screen.getByLabelText(/username/i), 'Bob')
     await user.type(screen.getByLabelText(/password/i), 'pw')
     await user.click(screen.getByRole('button', { name: /login/i }))
 
-    expect(await screen.findByText(/invalid/i)).toBeInTheDocument()
+    expect(await screen.findByText(/invalid credentials/i)).toBeInTheDocument()
   })
 
-  test('covers network failure catch block', async () => {
+  // COVERAGE BOOSTER: Tests the "|| 'Login failed'" fallback
+  test('displays default error when server returns non-ok without message', async () => {
+    const user = userEvent.setup()
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({}), // Empty response
+    } as Response)
+
+    render(<LoginForm onLoginSuccess={vi.fn()} />)
+    await user.type(screen.getByLabelText(/username/i), 'Bob')
+    await user.type(screen.getByLabelText(/password/i), 'pw')
+    await user.click(screen.getByRole('button', { name: /login/i }))
+
+    expect(await screen.findByText(/login failed/i)).toBeInTheDocument()
+  })
+
+  test('covers network failure catch block with Error object', async () => {
     const user = userEvent.setup();
-    // Simulate a total network failure
     global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network request failed'));
 
     render(<LoginForm onLoginSuccess={vi.fn()} />);
-
     await user.type(screen.getByLabelText(/username/i), 'Alice');
     await user.type(screen.getByLabelText(/password/i), 'secret');
     await user.click(screen.getByRole('button', { name: /login/i }));
 
     expect(await screen.findByText(/network request failed/i)).toBeInTheDocument();
   });
-  
+
+  // COVERAGE BOOSTER: Tests the "err instanceof Error" fallback
+  test('covers network failure with a non-Error object rejection', async () => {
+    const user = userEvent.setup();
+    global.fetch = vi.fn().mockRejectedValueOnce("Total Shutdown"); // String instead of Error object
+
+    render(<LoginForm onLoginSuccess={vi.fn()} />);
+    await user.type(screen.getByLabelText(/username/i), 'Alice');
+    await user.type(screen.getByLabelText(/password/i), 'secret');
+    await user.click(screen.getByRole('button', { name: /login/i }));
+
+    // This triggers the ': "Network error"' part of your ternary operator
+    expect(await screen.findByText(/network error/i)).toBeInTheDocument();
+  });
 })
