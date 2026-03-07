@@ -58,4 +58,19 @@ describe('LoginForm', () => {
 
     expect(await screen.findByText(/invalid/i)).toBeInTheDocument()
   })
+
+  test('covers network failure catch block', async () => {
+    const user = userEvent.setup();
+    // Simulate a total network failure
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network request failed'));
+
+    render(<LoginForm onLoginSuccess={vi.fn()} />);
+
+    await user.type(screen.getByLabelText(/username/i), 'Alice');
+    await user.type(screen.getByLabelText(/password/i), 'secret');
+    await user.click(screen.getByRole('button', { name: /login/i }));
+
+    expect(await screen.findByText(/network request failed/i)).toBeInTheDocument();
+  });
+  
 })

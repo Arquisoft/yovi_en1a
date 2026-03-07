@@ -43,7 +43,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess }) => {
         setError(data.error || 'Login failed');
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Network error';
+      const errorMessage = err instanceof Error ? err.message : 'Login failed';
       setError(errorMessage);
     } finally {
       setLoading(false);

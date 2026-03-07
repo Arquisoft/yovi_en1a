@@ -49,4 +49,23 @@ describe('RegisterForm', () => {
       expect(mockSuccess).toHaveBeenCalledTimes(1)
     }, { timeout: 3000 })
   })
+
+  test('displays "not ready" when gamey service fails', async () => {
+    const user = userEvent.setup();
+    
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce({ // Registration success
+        ok: true,
+        json: async () => ({ message: 'User created' }),
+      } as Response)
+      .mockResolvedValueOnce({ // Gamey status failure
+        ok: false, 
+      } as Response);
+
+    render(<RegisterForm onRegisterSuccess={vi.fn()} />);
+    await user.type(screen.getByLabelText(/whats your name\?/i), 'Bob');
+    await user.click(screen.getByRole('button', { name: /lets go!/i }));
+
+    expect(await screen.findByText(/game is not ready/i)).toBeInTheDocument();
+  });
 })
