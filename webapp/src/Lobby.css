@@ -1,0 +1,189 @@
+/* Lobby.css */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden; 
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100vw;       
+  min-height: 100vh;
+  display: block;     
+  max-width: none;    
+}
+
+.lobby-page-wrapper {
+  width: 100%;
+  height: 100vh;
+  background-color: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+}
+
+/* NAVBAR: Spans 100% width with items pushed to corners */
+.lobby-navbar {
+  width: 100%;
+  height: 10vh;
+  background-color: #242424;
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  padding: 0 4%; /* Relative horizontal padding */
+  box-sizing: border-box; /* Ensures padding stays inside the 100% width */
+  border-bottom: 0.1rem solid #333;
+}
+
+.nav-logo {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #483dff;
+}
+
+.nav-logout-btn {
+  background: #333;
+  border: 0.1rem solid #555;
+  color: #ccc;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: bold;
+}
+
+/* MAIN CONTENT: Centered container scaling with screen width */
+.lobby-main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center; 
+  align-items: center; 
+  padding: 2vh 0; 
+  box-sizing: border-box;
+  width: 100%; 
+}
+
+.lobby-layout-container {
+  display: flex;
+  gap: 2rem; 
+  width: 100%; 
+  max-width: 1200px; 
+  padding: 0 5%; 
+  margin: 0 auto; 
+}
+
+/* PANELS */
+.white-panel {
+  background-color: #ffffff;
+  border-radius: 1rem;
+  padding: 2rem;
+  color: #333;
+  box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.3);
+}
+
+.game-setup-column { 
+  flex: 1.5; 
+  display: flex; 
+  flex-direction: column; 
+}
+
+.mode-option-btn {
+  width: 100%;
+  padding: 1.2rem;
+  margin-bottom: 0.8rem;
+  border: 0.15rem solid #eee;
+  border-radius: 0.6rem;
+  background: #f9f9f9;
+  color: #483dff;
+  font-weight: bold;
+  text-align: left;
+}
+
+.mode-option-btn.active {
+  background-color: #483dff;
+  color: white;
+  border-color: #483dff;
+}
+
+.primary-play-btn {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background-color: #483dff;
+  color: white;
+  border-radius: 0.8rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* Sidebar column should take up the remaining height */
+.social-sidebar-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+  max-height: 80vh; /* Keeps the sidebar from growing infinitely */
+}
+
+/* User Profile specific fixes */
+.profile-info-container {
+  display: flex;
+  align-items: center; /* Vertically centers avatar and text */
+  gap: 12px;
+  text-align: left;
+}
+
+.profile-avatar {
+  font-size: 1.5rem;
+  width: 45px;
+  height: 45px;
+  background-color: #f0f0f0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0; /* Prevents avatar from squishing */
+}
+
+/* Friends Panel with Scrolling */
+.friends-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1; /* Makes this panel fill the available sidebar space */
+  min-height: 0; /* Important for nested flex scrolling */
+  padding: 1.5rem 0 0 0 !important; /* Remove side padding to let separators touch edges */
+}
+
+.friends-panel .panel-title {
+  padding: 0 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.friends-scroll-container {
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Friend Item with Separators */
+.friend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.8rem 1.5rem;
+  border-bottom: 1px solid #f0f0f0; /* The separator line */
+  transition: background-color 0.2s;
+}
+
+.friend-item:hover {
+  background-color: #f9f9f9;
+  cursor: pointer;
+}
+
+.friend-item:last-child {
+  border-bottom: none; /* No line after the last friend */
+}
+
+.status-dot.online {
+  color: #2ecc71; /* League-style green */
+  font-size: 0.8rem;
+}

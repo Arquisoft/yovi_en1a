@@ -1,12 +1,39 @@
 import React from 'react';
-import './App.css'
+import './App.css';
 import RegisterForm from './RegisterForm';
 import LoginForm from './LoginForm';
-import reactLogo from './assets/react.svg'
+import Lobby from './Lobby';
+import reactLogo from './assets/react.svg';
 
 function App() {
   const [mode, setMode] = React.useState<'register' | 'login'>('register');
 
+  // Logic to detect if we should be showing the Lobby "globalThis"
+  // This looks for "?view=lobby" in the URL
+  const isLobbyWindow = globalThis.location.search === '?view=lobby';
+
+  const handleGoToLobby = () => {
+    // This changes the URL to /?view=lobby and reloads the app into the Lobby view
+    globalThis.location.href = globalThis.location.pathname + '?view=lobby';
+  };
+
+  const handleLogout = () => {
+    globalThis.location.href = globalThis.location.pathname; // Strips query params
+  };
+
+  if (isLobbyWindow) {
+    return (
+      <div className="App">
+        <Lobby 
+          username="Guest User" 
+          onPlay={(mode) => console.log("Starting:", mode)} 
+          onLogout={handleLogout} 
+        />
+      </div>
+    );
+  }
+
+  // --- MAIN globalThis VIEW (Login / Register) ---
   return (
     <div className="App">
       <div>
@@ -18,18 +45,32 @@ function App() {
         </a>
       </div>
 
-      <h2>Welcome to the Software Arquitecture 2025-2026 course</h2>
+      <h2>Welcome to the Software Architecture 2025-2026 course</h2>
 
       <div className="form-switch">
-        <button onClick={() => setMode('register')} disabled={mode === 'register'}>
-          Registrierung
+        <button 
+          onClick={() => setMode('register')} 
+          disabled={mode === 'register'}
+        >
+          Register
         </button>
-        <button onClick={() => setMode('login')} disabled={mode === 'login'}>
+        <button 
+          onClick={() => setMode('login')} 
+          disabled={mode === 'login'}
+        >
           Login
+        </button>
+        <button 
+          onClick={handleGoToLobby} 
+          style={{ backgroundColor: '#646cff', color: 'white' }}
+        >
+          Lobby
         </button>
       </div>
 
-      {mode === 'register' ? <RegisterForm /> : <LoginForm />}
+      <main style={{ marginTop: '20px' }}>
+        {mode === 'register' ? <RegisterForm /> : <LoginForm />}
+      </main>
     </div>
   );
 }
