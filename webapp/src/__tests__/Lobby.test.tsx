@@ -13,21 +13,28 @@ describe('App & Lobby Coverage Booster', () => {
       href: ''
     });
   });
-
+  
   it('Lobby: Covers all game mode selections', () => {
-    const onPlayMock = vi.fn();
-    render(<Lobby onPlay={onPlayMock} onLogout={vi.fn()} username="Tester" />);
-    
-    const playBtn = screen.getByRole('button', { name: /PLAY/i });
+      const onPlayMock = vi.fn();
+      render(<Lobby onPlay={onPlayMock} onLogout={vi.fn()} username="Tester" />);
+      
+      // FIXED: Using ^PLAY$ ensure we don't accidentally match "PLAYER VS. PLAYER"
+      const playBtn = screen.getByRole('button', { name: /^PLAY$/i });
 
-    // FIXED: Added the dot after "VS." to match your HTML exactly
-    fireEvent.click(screen.getByText(/PLAYER VS\. PLAYER/i));
-    fireEvent.click(playBtn);
-    expect(onPlayMock).toHaveBeenLastCalledWith('pvp');
+      // Test PVP (Click the mode button, then the exact PLAY button)
+      fireEvent.click(screen.getByText(/PLAYER VS\. PLAYER/i));
+      fireEvent.click(playBtn);
+      expect(onPlayMock).toHaveBeenLastCalledWith('pvp');
 
-    fireEvent.click(screen.getByText(/VS\. COMPUTER: EASY/i));
-    fireEvent.click(playBtn);
-    expect(onPlayMock).toHaveBeenLastCalledWith('easy');
+      // Test EASY
+      fireEvent.click(screen.getByText(/VS\. COMPUTER: EASY/i));
+      fireEvent.click(playBtn);
+      expect(onPlayMock).toHaveBeenLastCalledWith('easy');
+
+      // Test DIFFICULT
+      fireEvent.click(screen.getByText(/VS\. COMPUTER: DIFFICULT/i));
+      fireEvent.click(playBtn);
+      expect(onPlayMock).toHaveBeenLastCalledWith('diff');
   });
 
   it('Lobby: Displays the provided username', () => {
