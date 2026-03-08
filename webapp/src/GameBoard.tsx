@@ -79,7 +79,7 @@ export function getTurnPanelSubtext(gameStatus: GameStatus, currentTurn: PlayerT
 }
 
 export function applyMovesToBoard(moves: GameSession['moves']): CellValue[] {
-  const newBoard: CellValue[] = new Array(TOTAL_CELLS).fill('.'); // FIX: new Array()
+  const newBoard: CellValue[] = new Array(TOTAL_CELLS).fill('.');
   for (const m of moves) {
     const idx = coordsToIndex(m.x, m.y);
     newBoard[idx] = m.player === 0 ? 'B' : 'R';
@@ -90,7 +90,7 @@ export function applyMovesToBoard(moves: GameSession['moves']): CellValue[] {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function GameBoard() {
-  const [board, setBoard] = useState<CellValue[]>(new Array(TOTAL_CELLS).fill('.')); // FIX: new Array()
+  const [board, setBoard] = useState<CellValue[]>(new Array(TOTAL_CELLS).fill('.'));
   const [currentTurn, setCurrentTurn] = useState<PlayerTurn>('P1');
   const [session, setSession] = useState<GameSession | null>(null);
   const [gameStatus, setGameStatus] = useState<GameStatus>('idle');
@@ -117,7 +117,7 @@ export default function GameBoard() {
   const handleStartGame = async () => {
     setErrorMsg(null);
     setWinner(null);
-    setBoard(new Array(TOTAL_CELLS).fill('.')); // FIX: new Array()
+    setBoard(new Array(TOTAL_CELLS).fill('.'));
     setCurrentTurn('P1');
     try {
       const data = await apiPost<GameSession>('/game/create', {
@@ -153,7 +153,7 @@ export default function GameBoard() {
       );
       syncFromSession(data);
     } catch (e: unknown) {
-      // FIX: Use functional updater to avoid referencing stale `board` state variable
+
       setBoard(prev => prev.map((v, i) => (i === index ? '.' : v)));
       setErrorMsg(`Move failed: ${(e as Error).message}`);
     } finally {
@@ -190,7 +190,7 @@ export default function GameBoard() {
     if (!session) return handleStartGame();
     try {
       const data = await apiPost<GameSession>(`/game/${session.gameId}/rematch`, {});
-      setBoard(new Array(TOTAL_CELLS).fill('.')); // FIX: new Array()
+      setBoard(new Array(TOTAL_CELLS).fill('.'));
       setWinner(null);
       setErrorMsg(null);
       syncFromSession(data);
@@ -234,7 +234,6 @@ export default function GameBoard() {
     );
   };
 
-  // FIX: Cognitive complexity reduced from 21 → ~8 by extracting helpers above
   const renderBoard = () => {
     const hexWidth = 'clamp(30px, 8.5vmin, 130px)';
     const isInteractive = gameStatus === 'ongoing' && !isBotThinking;
@@ -247,7 +246,6 @@ export default function GameBoard() {
     return rows;
   };
 
-  // FIX: Nested ternaries extracted into independent statements (lines 270, 277)
   const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, currentTurn);
   const turnPanelSubtext = getTurnPanelSubtext(gameStatus, currentTurn);
   const p2Label = selectedMode === 'hvb' ? 'P2 (Bot)' : 'P2: USERN.';
