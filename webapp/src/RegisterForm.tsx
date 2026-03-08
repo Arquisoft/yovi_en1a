@@ -115,7 +115,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         </div>
 
         <button type="submit" className="submit-button" disabled={loading}>
-          {loading ? 'WAITING...' : (mode === 'login' ? 'LOGIN' : 'REGISTER')}
+          {loading && 'WAITING...'}
+          {!loading && mode === 'login' && 'LOGIN'}
+          {!loading && mode === 'register' && 'REGISTER'}
         </button>
 
         <div className="error-message-container">
@@ -135,9 +137,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
             onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
             onMouseOut={(e) => e.currentTarget.style.color = '#aaa'}
           >
-            {mode === 'login'
-              ? "Don't have an account? Register here"
-              : "Already have an account? Login here"}
+            {mode === 'login' && "Don't have an account? Register here"}
+            {mode === 'register' && "Already have an account? Login here"}
           </span>
         </div>
       </form>
