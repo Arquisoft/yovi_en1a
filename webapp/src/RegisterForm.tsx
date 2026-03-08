@@ -54,7 +54,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         setError(data.error || 'Server error occurred');
       }
     } catch (err) {
-      setError('Network error. Is the server running?');
+      console.error("Authentication request failed:", err);
+      setError('Network error.');
     } finally {
       setLoading(false);
     }
