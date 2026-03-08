@@ -1,0 +1,269 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Main container: Dark theme background and full viewport size */
+.game-container {
+  background-color: #1a1a1a; 
+  height: 100vh;
+  width: 100vw;
+  max-width: none !important; 
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+  padding: 2vw;
+  box-sizing: border-box;
+  color: #ccc;
+  overflow: hidden;
+  text-align: left !important;
+}
+
+/* Top navigation bar containing the game title and profile button */
+.game-top-bar {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #333;
+  padding-bottom: 1.5vh;
+  margin-bottom: 2vh;
+}
+
+.game-title {
+  margin: 0;
+  font-size: clamp(20px, 2.5vw, 36px);
+  color: #f0f0f0; 
+  letter-spacing: 2px; 
+}
+
+.game-profile-btn {
+  font-size: clamp(20px, 2.5vw, 32px);
+  cursor: pointer;
+  color: #ccc;
+  transition: color 0.2s;
+}
+
+.game-profile-btn:hover {
+  color: #fff;
+}
+
+/* Main layout wrapper defining the sidebars and the central board area */
+.game-main-layout {
+  display: flex;
+  flex: 1;
+  gap: 2vw;
+  min-height: 0;
+}
+
+.game-sidebar {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+}
+
+/* Base styling for side panels (turn indicator, chat, player stats) */
+.game-panel {
+  box-sizing: border-box;
+  border: 2px solid #333;
+  padding: 1.5vw 1vw;
+  background-color: #242424; 
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  transition: all 0.3s ease;
+}
+
+.game-panel.p1-card {
+  border: 2px solid #00E5FF;
+}
+
+.game-panel.p2-card {
+  border: 2px solid #FF0055;
+}
+
+/* Dynamic glowing borders and text colors for active player turns */
+.game-panel.turn-p1 { 
+  border-color: #00E5FF; 
+  background-color: #1c2b30;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.1); 
+} 
+.game-panel.turn-p2 { 
+  border-color: #FF0055; 
+  background-color: #301c22;
+  box-shadow: 0 0 10px rgba(255, 0, 85, 0.1); 
+} 
+.text-p1 { color: #00E5FF; } 
+.text-p2 { color: #FF0055; } 
+
+.game-panel-header {
+  font-weight: bold;
+  border-bottom: 1px solid #444;
+  padding-bottom: 1vh;
+  margin-bottom: 1vh;
+  font-size: clamp(14px, 1.2vw, 20px);
+}
+
+/* Chat box container allowing vertical scrolling for messages */
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-align: left;
+}
+
+.chat-content {
+  flex: 1;
+  color: #aaa; 
+  font-size: clamp(12px, 1vw, 16px);
+  overflow-y: auto;
+}
+
+/* Generic action buttons (e.g., Undo, End Turn) with hover effects */
+.game-action-btn {
+  box-sizing: border-box;
+  padding: 2vh;
+  border: 1px solid #444;
+  background-color: #242424; 
+  color: #ccc;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 8px;
+  font-size: clamp(12px, 1vw, 16px);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.game-action-btn:hover {
+  background-color: #333;
+  border-color: #666;
+  color: #fff;
+}
+
+.game-action-btn.btn-undo {
+  border-color: #FF9800;
+  color: #FF9800;
+}
+
+.game-action-btn.btn-undo:hover {
+  background-color: #FF9800;
+  border-color: #FF9800;
+  color: #1a1a1a;
+}
+
+.game-action-btn.btn-end {
+  border-color: #B388FF;
+  color: #B388FF;
+}
+
+.game-action-btn.btn-end:hover {
+  background-color: #B388FF;
+  border-color: #B388FF;
+  color: #1a1a1a;
+}
+
+/* Central game board container ensuring proper alignment */
+.board-column {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.board-wrapper {
+  box-sizing: border-box;
+  padding: 1vw;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.board-relative {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4vw 6vw 2vw 6vw;
+}
+
+/* Background SVG triangle for the game board */
+.board-svg-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.board-grid {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.hex-row {
+  display: flex;
+  justify-content: center;
+}
+
+/* Base hexagon shape styling using clip-path and shadow effects */
+.hex-cell {
+  aspect-ratio: 1.2 / 1;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  font-size: clamp(12px, 1.5vw, 22px);
+  font-weight: bold;
+  padding: 0;
+  line-height: 1;
+  margin: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, filter 0.2s ease, opacity 0.2s ease, border 0.2s ease;
+  filter: drop-shadow(0px 4px 5px rgba(0,0,0,0.6)); 
+}
+
+/* Styling for empty, clickable hexagon slots */
+.hex-empty {
+  background: linear-gradient(145deg, #333333, #222222); 
+  border: 2px solid #444444;
+  color: transparent;
+  cursor: pointer;
+  opacity: 0.95;
+}
+
+.hex-empty:active { transform: scale(0.92); }
+
+/* Player 1  and Player 2  filled token styles */
+.hex-p1 {
+  background: linear-gradient(145deg, #00E5FF, #008B99); 
+  color: #ffffff; 
+  border: none;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.hex-p2 {
+  background: linear-gradient(145deg, #FF3377, #CC0044); 
+  color: #ffffff; 
+  border: none;
+  cursor: not-allowed;
+  opacity: 1;
+}

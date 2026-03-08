@@ -3,6 +3,7 @@ import './App.css';
 import RegisterForm from './RegisterForm';
 import LoginForm from './LoginForm';
 import Lobby from './Lobby';
+import GameBoard from './GameBoard';
 import reactLogo from './assets/react.svg';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
   
   // 2. Determine if they are trying to see the lobby
   const isLobbyWindow = globalThis.location.search === '?view=lobby';
+  const isGameWindow = globalThis.location.search === '?view=game';
 
   // 3. SECURITY CHECK: 
   // If they want the lobby but aren't logged in, send them home immediately.
@@ -26,10 +28,18 @@ function App() {
     globalThis.location.href = globalThis.location.pathname + '?view=lobby';
   };
 
+  const handleGoToGame = () => {
+    globalThis.location.href = globalThis.location.pathname + '?view=game';
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('username');
     globalThis.location.href = globalThis.location.pathname;
   };
+
+  if (isGameWindow) {
+    return <GameBoard />;
+  }
 
   // 4. Only show the Lobby if the URL is right AND we have a user
   if (isLobbyWindow && storedUsername) {
@@ -37,7 +47,7 @@ function App() {
       <div className="App">
         <Lobby 
           username={storedUsername} 
-          onPlay={(mode) => console.log("Starting:", mode)} 
+          onPlay={handleGoToGame} 
           onLogout={handleLogout} 
         />
       </div>
@@ -56,6 +66,15 @@ function App() {
       </div>
 
       <h2>Welcome to the Software Architecture 2025-2026 course</h2>
+
+      <div style={{ margin: '20px 0', padding: '15px', border: '2px dashed #00E5FF', borderRadius: '8px', backgroundColor: '#1a1a1a' }}>
+        <button 
+          onClick={handleGoToGame} 
+          style={{ padding: '10px 20px', backgroundColor: '#FF0055', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+         GO TO GAME (TEST)
+        </button>
+      </div>
 
       <div className="form-switch">
         <button onClick={() => setMode('register')} disabled={mode === 'register'}>Register</button>
