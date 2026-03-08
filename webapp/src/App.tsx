@@ -72,7 +72,7 @@ function App() {
           onClick={handleGoToGame} 
           style={{ padding: '10px 20px', backgroundColor: '#FF0055', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
         >
-         Go TO GAME (TEST)
+         GO TO GAME (TEST)
         </button>
       </div>
 
