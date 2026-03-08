@@ -35,6 +35,7 @@ yovi_en1a/
 ├── users/        🟢  Node.js + Express user service
 ├── gamey/        🦀  Rust game engine & bot
 └── docs/         📐  Arc42 architecture documentation
+└── gameyapi/     🎮  API for the GameY bot
 ```
 
 ---
