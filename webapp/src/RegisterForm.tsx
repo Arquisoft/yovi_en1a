@@ -125,22 +125,19 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         </div>
 
         <div style={{ textAlign: 'center' }}>
-          <span
+          <button
+            type="button"
             onClick={toggleMode}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                toggleMode();
-              }
-            }}
-            role="button"
-            tabIndex={0}
             style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
               color: '#aaa',
               cursor: 'pointer',
               fontSize: '0.9rem',
               textDecoration: 'underline',
-              transition: 'color 0.2s'
+              transition: 'color 0.2s',
+              fontFamily: 'inherit'
             }}
             onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
             onMouseOut={(e) => e.currentTarget.style.color = '#aaa'}
@@ -149,7 +146,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
           >
             {mode === 'login' && "Don't have an account? Register here"}
             {mode === 'register' && "Already have an account? Login here"}
-          </span>
+          </button>
         </div>
       </form>
     </div>
