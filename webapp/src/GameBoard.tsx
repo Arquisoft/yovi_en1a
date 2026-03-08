@@ -25,8 +25,7 @@ const BOARD_SIZE = 11;
 const TOTAL_CELLS = (BOARD_SIZE * (BOARD_SIZE + 1)) / 2;
 
 // ─── Coordinate helpers ───────────────────────────────────────────────────────
-// The board is a triangle. Row `r` (0-indexed) has r+1 cells.
-// Cell index → (x, y) where x = column within row, y = row
+
 function indexToCoords(index: number): { x: number; y: number } {
   let row = 0;
   let remaining = index;
@@ -54,33 +53,51 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
+// ─── Pure helper functions (exported for testing) ─────────────────────────────
+
+export function getCellClass(cellValue: CellValue): string {
+  if (cellValue === 'B') return 'hex-cell hex-p1';
+  if (cellValue === 'R') return 'hex-cell hex-p2';
+  return 'hex-cell hex-empty';
+}
+
+export function getTurnPanelHeader(
+    gameStatus: GameStatus,
+    winner: PlayerTurn | null,
+    isBotThinking: boolean,
+    currentTurn: PlayerTurn
+): string {
+  if (gameStatus === 'idle') return 'START GAME';
+  if (gameStatus === 'finished') return `${winner} WINS!`;
+  if (isBotThinking) return 'BOT THINKING…';
+  return `${currentTurn} TURN`;
+}
+
+export function getTurnPanelSubtext(gameStatus: GameStatus, currentTurn: PlayerTurn): string {
+  if (gameStatus === 'idle') return 'Choose mode below';
+  return currentTurn === 'P1' ? '(Blue)' : '(Red)';
+}
+
+export function applyMovesToBoard(moves: GameSession['moves']): CellValue[] {
+  const newBoard: CellValue[] = new Array(TOTAL_CELLS).fill('.'); // FIX: new Array()
+  for (const m of moves) {
+    const idx = coordsToIndex(m.x, m.y);
+    newBoard[idx] = m.player === 0 ? 'B' : 'R';
+  }
+  return newBoard;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function GameBoard() {
-  // ── UI state
-  const [board, setBoard] = useState<CellValue[]>(Array(TOTAL_CELLS).fill('.'));
+  const [board, setBoard] = useState<CellValue[]>(new Array(TOTAL_CELLS).fill('.')); // FIX: new Array()
   const [currentTurn, setCurrentTurn] = useState<PlayerTurn>('P1');
-
-  // ── Game session state
   const [session, setSession] = useState<GameSession | null>(null);
   const [gameStatus, setGameStatus] = useState<GameStatus>('idle');
   const [winner, setWinner] = useState<PlayerTurn | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('hvb');
-
-  // ── Apply a list of server moves onto the local board array
-  const applyMovesToBoard = useCallback(
-      (moves: GameSession['moves']): CellValue[] => {
-        const newBoard: CellValue[] = Array(TOTAL_CELLS).fill('.');
-        for (const m of moves) {
-          const idx = coordsToIndex(m.x, m.y);
-          newBoard[idx] = m.player === 0 ? 'B' : 'R';
-        }
-        return newBoard;
-      },
-      []
-  );
 
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
@@ -93,14 +110,14 @@ export default function GameBoard() {
           setWinner(s.winner === 0 ? 'P1' : 'P2');
         }
       },
-      [applyMovesToBoard]
+      []
   );
 
   // ── Start a new game
   const handleStartGame = async () => {
     setErrorMsg(null);
     setWinner(null);
-    setBoard(Array(TOTAL_CELLS).fill('.'));
+    setBoard(new Array(TOTAL_CELLS).fill('.')); // FIX: new Array()
     setCurrentTurn('P1');
     try {
       const data = await apiPost<GameSession>('/game/create', {
@@ -118,14 +135,12 @@ export default function GameBoard() {
   const handleCellClick = async (index: number) => {
     if (!session || gameStatus !== 'ongoing') return;
     if (board[index] !== '.') return;
-    // In hvb mode, block clicks when it's the bot's turn
     if (session.mode === 'hvb' && session.currentPlayer === 1) return;
     if (isBotThinking) return;
 
     const { x, y } = indexToCoords(index);
-    const playerNum = session.currentPlayer; // 0 or 1
+    const playerNum = session.currentPlayer;
 
-    // Optimistic local update so click feels instant
     const optimistic = [...board];
     optimistic[index] = playerNum === 0 ? 'B' : 'R';
     setBoard(optimistic);
@@ -138,30 +153,26 @@ export default function GameBoard() {
       );
       syncFromSession(data);
     } catch (e: unknown) {
-      // Roll back optimistic update
-      setBoard(board);
+      // FIX: Use functional updater to avoid referencing stale `board` state variable
+      setBoard(prev => prev.map((v, i) => (i === index ? '.' : v)));
       setErrorMsg(`Move failed: ${(e as Error).message}`);
     } finally {
       setIsBotThinking(false);
     }
   };
 
-  // ── Undo: delete session and recreate with same moves minus last 1 (hvh) or 2 (hvb)
+  // ── Undo
   const handleUndo = async () => {
     if (!session || session.moves.length === 0) return;
-    const movesToKeep = session.mode === 'hvb'
-        ? session.moves.slice(0, -2)   // remove both human + bot move
-        : session.moves.slice(0, -1);  // remove last human move
+    const movesToKeep =
+        session.mode === 'hvb' ? session.moves.slice(0, -2) : session.moves.slice(0, -1);
 
     try {
-      // Delete old session
       await fetch(`${API_URL}/game/${session.gameId}`, { method: 'DELETE' });
-      // Create fresh session
       const fresh = await apiPost<GameSession>('/game/create', {
         mode: session.mode,
         boardSize: session.boardSize,
       });
-      // Replay kept moves
       let current: GameSession = fresh;
       for (const m of movesToKeep) {
         current = await apiPost<GameSession>(`/game/${fresh.gameId}/move`, m);
@@ -179,7 +190,7 @@ export default function GameBoard() {
     if (!session) return handleStartGame();
     try {
       const data = await apiPost<GameSession>(`/game/${session.gameId}/rematch`, {});
-      setBoard(Array(TOTAL_CELLS).fill('.'));
+      setBoard(new Array(TOTAL_CELLS).fill('.')); // FIX: new Array()
       setWinner(null);
       setErrorMsg(null);
       syncFromSession(data);
@@ -188,60 +199,57 @@ export default function GameBoard() {
     }
   };
 
-  // ─── Render ────────────────────────────────────────────────────────────────
+  // ─── Extracted render helpers (reduces cognitive complexity of renderBoard) ──
 
+  const renderCell = (cellIndex: number, cellValue: CellValue, hexWidth: string, isInteractive: boolean) => (
+      <button
+          key={cellIndex}
+          className={getCellClass(cellValue)}
+          style={{
+            width: hexWidth,
+            opacity: isInteractive ? 1 : 0.6,
+            cursor: isInteractive && cellValue === '.' ? 'pointer' : 'default',
+          }}
+          onClick={() => handleCellClick(cellIndex)}
+          disabled={!isInteractive}
+      >
+        {cellValue === '.' ? '' : cellValue}
+      </button>
+  );
+
+  const renderBoardRow = (row: number, startIndex: number, hexWidth: string, isInteractive: boolean) => {
+    const rowCells = [];
+    for (let i = 0; i <= row; i++) {
+      const cellIndex = startIndex + i;
+      rowCells.push(renderCell(cellIndex, board[cellIndex], hexWidth, isInteractive));
+    }
+    return (
+        <div
+            key={row}
+            className="hex-row"
+            style={{ marginTop: row === 0 ? '0' : `calc(${hexWidth} * -0.208 + 2px)` }}
+        >
+          {rowCells}
+        </div>
+    );
+  };
+
+  // FIX: Cognitive complexity reduced from 21 → ~8 by extracting helpers above
   const renderBoard = () => {
+    const hexWidth = 'clamp(30px, 8.5vmin, 130px)';
+    const isInteractive = gameStatus === 'ongoing' && !isBotThinking;
     const rows = [];
     let currentIndex = 0;
-    const hexWidth = 'clamp(30px, 8.5vmin, 130px)';
-
     for (let row = 0; row < BOARD_SIZE; row++) {
-      const rowCells = [];
-      const cellsInThisRow = row + 1;
-
-      for (let i = 0; i < cellsInThisRow; i++) {
-        const cellIndex = currentIndex;
-        const cellValue = board[cellIndex];
-
-        let cellClass = 'hex-cell ';
-        if (cellValue === '.') cellClass += 'hex-empty';
-        else if (cellValue === 'B') cellClass += 'hex-p1';
-        else if (cellValue === 'R') cellClass += 'hex-p2';
-
-        // Dim board while bot is thinking or game is idle
-        const isInteractive = gameStatus === 'ongoing' && !isBotThinking;
-
-        rowCells.push(
-            <button
-                key={cellIndex}
-                className={cellClass}
-                style={{
-                  width: hexWidth,
-                  opacity: isInteractive ? 1 : 0.6,
-                  cursor: isInteractive && cellValue === '.' ? 'pointer' : 'default',
-                }}
-                onClick={() => handleCellClick(cellIndex)}
-                disabled={!isInteractive}
-            >
-              {cellValue === '.' ? '' : cellValue}
-            </button>
-        );
-        currentIndex++;
-      }
-
-      rows.push(
-          <div
-              key={row}
-              className="hex-row"
-              style={{ marginTop: row === 0 ? '0' : `calc(${hexWidth} * -0.208 + 2px)` }}
-          >
-            {rowCells}
-          </div>
-      );
+      rows.push(renderBoardRow(row, currentIndex, hexWidth, isInteractive));
+      currentIndex += row + 1;
     }
     return rows;
   };
 
+  // FIX: Nested ternaries extracted into independent statements (lines 270, 277)
+  const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, currentTurn);
+  const turnPanelSubtext = getTurnPanelSubtext(gameStatus, currentTurn);
   const p2Label = selectedMode === 'hvb' ? 'P2 (Bot)' : 'P2: USERN.';
 
   return (
@@ -258,27 +266,15 @@ export default function GameBoard() {
           {/* LEFT SIDEBAR */}
           <div className="game-sidebar">
 
-            {/* Turn indicator — changes based on live server state */}
             <div className={`game-panel ${currentTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
               <div className={`game-panel-header ${currentTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
-                {gameStatus === 'idle'
-                    ? 'START GAME'
-                    : gameStatus === 'finished'
-                        ? `${winner} WINS!`
-                        : isBotThinking
-                            ? 'BOT THINKING…'
-                            : `${currentTurn} TURN`}
+                {turnPanelHeader}
               </div>
               <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
-                {gameStatus === 'idle'
-                    ? 'Choose mode below'
-                    : currentTurn === 'P1'
-                        ? '(Blue)'
-                        : '(Red)'}
+                {turnPanelSubtext}
               </div>
             </div>
 
-            {/* Mode selector — only visible before game starts */}
             {gameStatus === 'idle' && (
                 <div className="game-panel" style={{ gap: 6 }}>
                   <div className="game-panel-header" style={{ color: '#ccc' }}>MODE</div>
@@ -305,7 +301,6 @@ export default function GameBoard() {
                 </div>
             )}
 
-            {/* Start / Rematch buttons */}
             {gameStatus === 'idle' && (
                 <button className="game-action-btn btn-end" onClick={handleStartGame}>
                   START GAME
@@ -317,14 +312,12 @@ export default function GameBoard() {
                 </button>
             )}
 
-            {/* Error message */}
             {errorMsg && (
                 <div style={{ color: '#ff4444', fontSize: 12, padding: '4px 8px', wordBreak: 'break-word' }}>
                   ⚠ {errorMsg}
                 </div>
             )}
 
-            {/* Chat panel */}
             <div className="game-panel chat-panel">
               <div className="game-panel-header" style={{ color: '#ccc' }}>CHAT</div>
               <div className="chat-content">...</div>
