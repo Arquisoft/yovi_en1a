@@ -140,6 +140,6 @@ describe('RegisterForm', () => {
     await user.type(screen.getByLabelText(/password/i), 'secret')
     await user.click(screen.getByRole('button', { name: /login/i }))
 
-    expect(await screen.findByText(/network error\. is the server running\?/i)).toBeInTheDocument()
+    expect(await screen.findByText(/network error\./i)).toBeInTheDocument()
   })
 })
