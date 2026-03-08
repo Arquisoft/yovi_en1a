@@ -4,114 +4,142 @@ import RegisterForm from '../RegisterForm'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom'
 
-describe('RegisterForm Coverage Booster', () => {
+describe('RegisterForm', () => {
   afterEach(() => {
     vi.restoreAllMocks()
     localStorage.clear()
   })
 
-  test('shows validation error when username is empty', async () => {
+  test('renders login form by default', () => {
     render(<RegisterForm onRegisterSuccess={vi.fn()} />)
-    const user = userEvent.setup()
-
-    await user.click(screen.getByRole('button', { name: /lets go!/i }))
-    expect(await screen.findByText(/please enter a username/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/e-mail/i)).not.toBeInTheDocument()
   })
 
-  test('submits username and displays response with game status', async () => {
+  test('toggles to register form and back', async () => {
+    const user = userEvent.setup()
+    render(<RegisterForm onRegisterSuccess={vi.fn()} />)
+
+    // Switch to register
+    await user.click(screen.getByText(/don't have an account\? register here/i))
+    expect(screen.getByRole('button', { name: /register/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/e-mail/i)).toBeInTheDocument()
+
+    // Switch to login
+    await user.click(screen.getByText(/already have an account\? login here/i))
+    expect(screen.getByRole('button', { name: /login/i })).toBeInTheDocument()
+    expect(screen.queryByLabelText(/e-mail/i)).not.toBeInTheDocument()
+  })
+
+  test('shows validation error when fields are empty on login', async () => {
+    const user = userEvent.setup()
+    render(<RegisterForm onRegisterSuccess={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: /login/i }))
+    expect(await screen.findByText(/please fill in all required fields/i)).toBeInTheDocument()
+  })
+
+  test('shows validation error when email is missing on register', async () => {
+    const user = userEvent.setup()
+    render(<RegisterForm onRegisterSuccess={vi.fn()} />)
+
+    await user.click(screen.getByText(/don't have an account\? register here/i))
+    await user.type(screen.getByLabelText(/username/i), 'testuser')
+    await user.type(screen.getByLabelText(/password/i), 'password')
+    await user.click(screen.getByRole('button', { name: /register/i }))
+
+    expect(await screen.findByText(/please provide an email address/i)).toBeInTheDocument()
+  })
+
+  test('submits login successfully', async () => {
     const user = userEvent.setup()
     const mockSuccess = vi.fn()
 
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: 'Welcome Pablo!' }),
-      } as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-      } as Response)
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
+    } as Response)
 
     render(<RegisterForm onRegisterSuccess={mockSuccess} />)
 
-    await user.type(screen.getByLabelText(/whats your name\?/i), 'Pablo')
-    await user.click(screen.getByRole('button', { name: /lets go!/i }))
-
-    expect(await screen.findByText(/welcome pablo!/i)).toBeInTheDocument()
-    expect(await screen.findByText(/game is ready/i)).toBeInTheDocument()
-    expect(localStorage.getItem('username')).toBe('Pablo')
+    await user.type(screen.getByLabelText(/username/i), 'Pablo')
+    await user.type(screen.getByLabelText(/password/i), 'secret')
+    await user.click(screen.getByRole('button', { name: /login/i }))
 
     await waitFor(() => {
-      expect(mockSuccess).toHaveBeenCalledTimes(1)
-    }, { timeout: 3000 })
+      expect(mockSuccess).toHaveBeenCalledWith('Pablo')
+    })
   })
 
-  // COVERAGE: checkGamey fetch failure (catch block inside checkGamey)
-  test('handles checkGamey network failure gracefully', async () => {
-    const user = userEvent.setup();
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ message: 'Success' }),
-      } as Response)
-      .mockRejectedValueOnce(new Error('Gamey Offline')); // Triggers catch in checkGamey
+  test('submits register successfully', async () => {
+    const user = userEvent.setup()
+    const mockSuccess = vi.fn()
 
-    render(<RegisterForm onRegisterSuccess={vi.fn()} />);
-    await user.type(screen.getByLabelText(/whats your name\?/i), 'Bob');
-    await user.click(screen.getByRole('button', { name: /lets go!/i }));
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({}),
+    } as Response)
 
-    expect(await screen.findByText(/game is not ready/i)).toBeInTheDocument();
+    render(<RegisterForm onRegisterSuccess={mockSuccess} />)
+
+    await user.click(screen.getByText(/don't have an account\? register here/i))
+    await user.type(screen.getByLabelText(/e-mail/i), 'test@test.com')
+    await user.type(screen.getByLabelText(/username/i), 'Pablo')
+    await user.type(screen.getByLabelText(/password/i), 'secret')
+    await user.click(screen.getByRole('button', { name: /register/i }))
+
+    await waitFor(() => {
+      expect(mockSuccess).toHaveBeenCalledWith('Pablo')
+    })
   })
 
-  // COVERAGE: handleSubmit fetch failure (main catch block)
-  test('handles main registration network failure', async () => {
-    const user = userEvent.setup();
-    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Server Down'));
+  test('handles server error with specific message', async () => {
+    const user = userEvent.setup()
 
-    render(<RegisterForm onRegisterSuccess={vi.fn()} />);
-    await user.type(screen.getByLabelText(/whats your name\?/i), 'Charlie');
-    await user.click(screen.getByRole('button', { name: /lets go!/i }));
-
-    expect(await screen.findByText(/server down/i)).toBeInTheDocument();
-  })
-
-  // COVERAGE: handles non-Error rejection in main catch
-  test('handles non-Error rejection objects', async () => {
-    const user = userEvent.setup();
-    global.fetch = vi.fn().mockRejectedValueOnce("Unknown Error String");
-
-    render(<RegisterForm onRegisterSuccess={vi.fn()} />);
-    await user.type(screen.getByLabelText(/whats your name\?/i), 'Charlie');
-    await user.click(screen.getByRole('button', { name: /lets go!/i }));
-
-    expect(await screen.findByText(/network error/i)).toBeInTheDocument();
-  })
-
-  // COVERAGE: handles server error with no error message from JSON
-  test('handles server error without specific message', async () => {
-    const user = userEvent.setup();
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: false,
-      json: async () => ({}), // No .error field
-    } as Response);
+      json: async () => ({ error: 'User already exists' }),
+    } as Response)
 
-    render(<RegisterForm onRegisterSuccess={vi.fn()} />);
-    await user.type(screen.getByLabelText(/whats your name\?/i), 'Dave');
-    await user.click(screen.getByRole('button', { name: /lets go!/i }));
+    render(<RegisterForm onRegisterSuccess={vi.fn()} />)
 
-    expect(await screen.findByText(/server error/i)).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/username/i), 'Pablo')
+    await user.type(screen.getByLabelText(/password/i), 'secret')
+    await user.click(screen.getByRole('button', { name: /login/i }))
+
+    expect(await screen.findByText(/user already exists/i)).toBeInTheDocument()
   })
 
-  // COVERAGE: explicitly tests the gameyStatus === 'error' branch from a non-ok response
-  test('displays "not ready" when gamey service returns non-ok status', async () => {
-    const user = userEvent.setup();
-    global.fetch = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ message: 'User created' }) })
-      .mockResolvedValueOnce({ ok: false }); // status check returns 500 etc
+  test('handles server error without specific message', async () => {
+    const user = userEvent.setup()
 
-    render(<RegisterForm onRegisterSuccess={vi.fn()} />);
-    await user.type(screen.getByLabelText(/whats your name\?/i), 'Eve');
-    await user.click(screen.getByRole('button', { name: /lets go!/i }));
+    global.fetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({}),
+    } as Response)
 
-    expect(await screen.findByText(/game is not ready/i)).toBeInTheDocument();
-  });
+    render(<RegisterForm onRegisterSuccess={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/username/i), 'Pablo')
+    await user.type(screen.getByLabelText(/password/i), 'secret')
+    await user.click(screen.getByRole('button', { name: /login/i }))
+
+    expect(await screen.findByText(/server error occurred/i)).toBeInTheDocument()
+  })
+
+  test('handles network failure', async () => {
+    const user = userEvent.setup()
+
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network disconnected'))
+
+    render(<RegisterForm onRegisterSuccess={vi.fn()} />)
+
+    await user.type(screen.getByLabelText(/username/i), 'Pablo')
+    await user.type(screen.getByLabelText(/password/i), 'secret')
+    await user.click(screen.getByRole('button', { name: /login/i }))
+
+    expect(await screen.findByText(/network error\. is the server running\?/i)).toBeInTheDocument()
+  })
 })

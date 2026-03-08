@@ -1,104 +1,146 @@
 import React, { useState } from 'react';
+import './RegisterForm.css';
 
-// Define the interface for props
 interface RegisterFormProps {
-  onRegisterSuccess: () => void;
+  onRegisterSuccess: (username: string) => void;
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+
+  // States for the forms
   const [username, setUsername] = useState('');
-  const [responseMessage, setResponseMessage] = useState<string | null>(null);
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+
+  // Feedback states
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [gameyStatus, setGameyStatus] = useState<'ok' | 'error' | null>(null);
 
-  const checkGamey = async () => {
-    try {
-      const GAMEY_URL = import.meta.env.VITE_GAMEY_URL ?? 'http://localhost:4000';
-      const res = await fetch(`${GAMEY_URL}/status`);
-      setGameyStatus(res.ok ? 'ok' : 'error');
-    } catch {
-      setGameyStatus('error');
-    }
-  };
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setResponseMessage(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
-    setGameyStatus(null);
 
-    if (!username.trim()) {
-      setError('Please enter a username.');
+    if (!username.trim() || !password) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+
+    if (mode === 'register' && !email.trim()) {
+      setError('Please provide an email address.');
       return;
     }
 
     setLoading(true);
     try {
       const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-      const res = await fetch(`${API_URL}/createuser`, {
+      const endpoint = mode === 'login' ? '/login' : '/createuser';
+
+      const payload = mode === 'login'
+        ? { username, password }
+        : { username, email, password };
+
+      const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // NOTE: Since your backend requires email/password currently, 
-        // ensure you've modified users-service.js to make them optional!
-        body: JSON.stringify({ username }) 
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
-      if (res.ok) {
-        setResponseMessage(data.message);
-        
-        localStorage.setItem('username', username);
 
-        await checkGamey();
-        setTimeout(() => {
-          onRegisterSuccess();
-        }, 1500);
+      if (res.ok) {
+        onRegisterSuccess(username);
       } else {
-        setError(data.error || 'Server error');
+        setError(data.error || 'Server error occurred');
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Network error';
-      setError(errorMessage);
+      setError('Network error. Is the server running?');
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleMode = () => {
+    setMode(mode === 'login' ? 'register' : 'login');
+    setUsername('');
+    setPassword('');
+    setEmail('');
+    setError(null);
+  };
+
   return (
-  <form onSubmit={handleSubmit} className="register-form">
-      <div className="form-group">
-        <label htmlFor="username">Whats your name?</label>
+    <div className="start-page-container">
+      <h1 className="game-title-large">GAME Y</h1>
 
-        <input
-          type="text"
-          id="username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="form-input"
-        />
+      <form onSubmit={handleSubmit} className="auth-form" noValidate>
+        {mode === 'register' && (
+          <div className="form-group">
+            <label htmlFor="email">E-Mail</label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="form-input"
+              placeholder="Enter e-mail"
+            />
+          </div>
+        )}
 
-      </div>
-      <button type="submit" className="submit-button" disabled={loading}>
-        {loading ? 'Entering...' : 'Lets go!'}
-      </button>
-
-      {responseMessage && (
-        <div className="success-message" style={{ marginTop: 12, color: 'green' }}>
-          <p>{responseMessage}</p>
-          <p style={{ marginTop: 12, color: 'black' }}>
-            {gameyStatus === 'ok' && 'Game is ready'}
-            {gameyStatus === 'error' && 'Game is not ready'}
-          </p>
+        <div className="form-group">
+          <label htmlFor="username">Username</label>
+          <input
+            type="text"
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="form-input"
+            placeholder={mode === 'login' ? "Enter username" : "Choose a username"}
+            required
+          />
         </div>
-      )}
 
-      {error && (
-        <div className="error-message" style={{ marginTop: 12, color: 'red' }}>
-          {error}
+        <div className="form-group">
+          <label htmlFor="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="form-input"
+            placeholder={mode === 'login' ? "Enter password" : "Create password"}
+            required
+          />
         </div>
-      )}
-    </form>
+
+        <button type="submit" className="submit-button" disabled={loading}>
+          {loading ? 'WAITING...' : (mode === 'login' ? 'LOGIN' : 'REGISTER')}
+        </button>
+
+        <div className="error-message-container">
+          {error && <div className="error-message">{error}</div>}
+        </div>
+
+        <div style={{ textAlign: 'center' }}>
+          <span
+            onClick={toggleMode}
+            style={{
+              color: '#aaa',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              textDecoration: 'underline',
+              transition: 'color 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
+            onMouseOut={(e) => e.currentTarget.style.color = '#aaa'}
+          >
+            {mode === 'login'
+              ? "Don't have an account? Register here"
+              : "Already have an account? Login here"}
+          </span>
+        </div>
+      </form>
+    </div>
   );
 };
 
