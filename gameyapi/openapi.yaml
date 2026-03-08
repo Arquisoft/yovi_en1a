@@ -1,0 +1,37 @@
+openapi: 3.0.0
+info:
+  title: Game Y Bot API
+  version: 1.0.0
+paths:
+  /play:
+    post:
+      summary: Get next move from bot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                position:
+                  type: string
+                  description: Board state in YEN notation (66 characters)
+                  example: ".........................................................."
+                strategy:
+                  type: string
+                  enum: [easy, medium, hard]
+                  default: medium
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  position:
+                    type: string
+                    description: New board state after bot's move
+                  move:
+                    type: integer
+                    description: Index where the bot placed its token

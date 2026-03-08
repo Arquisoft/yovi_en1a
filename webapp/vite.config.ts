@@ -8,4 +8,12 @@ export default defineConfig({
       reporter: ['text', 'lcov'],
     },
   },
+  server: {
+    proxy: {
+      '/game': 'http://localhost:3001',
+    },
+  },
+  define: {
+    'import.meta.env.VITE_GAMEY_API_URL': JSON.stringify('http://localhost:3001'),
+  },
 })

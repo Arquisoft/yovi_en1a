@@ -37,6 +37,15 @@ services:
     networks:
       - monitor-net
 
+  gamey-service:
+    build: ./gameyapi
+    ports:
+      - "3001:3001"
+    environment:
+      - GAMEY_RUST_URL=http://gamey-rust:4000
+    depends_on:
+      - gamey
+
   prometheus:
     image: prom/prometheus
     container_name: prometheus

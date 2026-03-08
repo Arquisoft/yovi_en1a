@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/gameyapi/gameyapi.iml" filepath="$PROJECT_DIR$/gameyapi/gameyapi.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/yovi_en1a.iml" filepath="$PROJECT_DIR$/.idea/yovi_en1a.iml" />
     </modules>
   </component>
