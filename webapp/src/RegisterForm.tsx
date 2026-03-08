@@ -136,6 +136,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
             }}
             onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
             onMouseOut={(e) => e.currentTarget.style.color = '#aaa'}
+            onFocus={(e) => e.currentTarget.style.color = '#fff'}
           >
             {mode === 'login' && "Don't have an account? Register here"}
             {mode === 'register' && "Already have an account? Login here"}
