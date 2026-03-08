@@ -1,19 +1,19 @@
-/* Lobby.css */
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow-x: hidden; 
+  overflow-x: hidden;
 }
 
 #root {
   margin: 0;
   padding: 0;
-  width: 100vw;       
+  width: 100vw;
   min-height: 100vh;
-  display: block;     
-  max-width: none;    
+  display: block;
+  max-width: none;
 }
 
 .lobby-page-wrapper {
@@ -24,16 +24,15 @@ html, body {
   flex-direction: column;
 }
 
-/* NAVBAR: Spans 100% width with items pushed to corners */
 .lobby-navbar {
   width: 100%;
   height: 10vh;
-  background-color: #242424;
+  background-color: transparent;
   display: flex;
-  justify-content: space-between; 
+  justify-content: space-between;
   align-items: center;
-  padding: 0 4%; /* Relative horizontal padding */
-  box-sizing: border-box; /* Ensures padding stays inside the 100% width */
+  padding: 0 4%;
+  box-sizing: border-box;
   border-bottom: 0.1rem solid #333;
 }
 
@@ -44,119 +43,170 @@ html, body {
 }
 
 .nav-logout-btn {
-  background: #333;
-  border: 0.1rem solid #555;
-  color: #ccc;
+  background: transparent;
+  border: 1px solid #555;
+  color: #aaa;
   padding: 0.5rem 1.5rem;
-  border-radius: 0.5rem;
-  font-weight: bold;
+  border-radius: 4px;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
 }
 
-/* MAIN CONTENT: Centered container scaling with screen width */
+.nav-logout-btn:hover {
+  color: #fff;
+  border-color: #fff;
+}
+
 .lobby-main-content {
   flex: 1;
   display: flex;
-  justify-content: center; 
-  align-items: center; 
-  padding: 2vh 0; 
+  justify-content: center;
+  align-items: center;
+  padding: 2vh 0;
   box-sizing: border-box;
-  width: 100%; 
+  width: 100%;
 }
 
 .lobby-layout-container {
   display: flex;
-  gap: 2rem; 
-  width: 100%; 
-  max-width: 1200px; 
-  padding: 0 5%; 
-  margin: 0 auto; 
+  gap: 2rem;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 5%;
+  margin: 0 auto;
 }
 
-/* PANELS */
 .white-panel {
-  background-color: #ffffff;
-  border-radius: 1rem;
-  padding: 2rem;
-  color: #333;
-  box-shadow: 0 0.5rem 1.5rem rgba(0,0,0,0.3);
+  background-color: transparent;
+  border-radius: 0;
+  padding: 1rem;
+  color: #fff;
+  box-shadow: none;
 }
 
-.game-setup-column { 
-  flex: 1.5; 
-  display: flex; 
-  flex-direction: column; 
+.game-setup-column {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-title {
+  color: #483dff;
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 2px solid #333;
+  padding-bottom: 0.5rem;
 }
 
 .mode-option-btn {
   width: 100%;
-  padding: 1.2rem;
+  padding: 1rem 1.5rem;
   margin-bottom: 0.8rem;
-  border: 0.15rem solid #eee;
-  border-radius: 0.6rem;
-  background: #f9f9f9;
-  color: #483dff;
-  font-weight: bold;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: #aaa;
+  font-size: 1.1rem;
   text-align: left;
+  transition: all 0.2s ease;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .mode-option-btn.active {
-  background-color: #483dff;
-  color: white;
-  border-color: #483dff;
+  color: #fff;
+  border: 1px solid #483dff;
+  background: rgba(72, 61, 255, 0.1);
+  box-shadow: 0 0 15px rgba(72, 61, 255, 0.15);
+}
+
+.mode-option-btn:hover:not(.active) {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #555;
 }
 
 .primary-play-btn {
+  margin-top: 2rem;
+  padding: 1rem;
   width: 100%;
-  margin-top: 1.5rem;
-  padding: 1.5rem;
+  border: 1px solid #483dff;
+  border-radius: 4px;
   background-color: #483dff;
   color: white;
-  border-radius: 0.8rem;
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-/* Sidebar column should take up the remaining height */
+.primary-play-btn:hover {
+  background-color: transparent;
+  color: #483dff;
+}
+
 .social-sidebar-column {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2vh;
-  max-height: 80vh; /* Keeps the sidebar from growing infinitely */
+  max-height: 80vh;
 }
 
-/* User Profile specific fixes */
+.user-profile-button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 1rem 0;
+  border-bottom: 1px solid #333;
+}
+
 .profile-info-container {
   display: flex;
-  align-items: center; /* Vertically centers avatar and text */
-  gap: 12px;
+  align-items: center;
+  gap: 15px;
   text-align: left;
 }
 
 .profile-avatar {
   font-size: 1.5rem;
-  width: 45px;
-  height: 45px;
-  background-color: #f0f0f0;
+  width: 40px;
+  height: 40px;
+  background-color: transparent;
+  border: 1px solid #555;
+  color: #fff;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0; /* Prevents avatar from squishing */
+  flex-shrink: 0;
 }
 
-/* Friends Panel with Scrolling */
+.profile-username {
+  font-size: 1.2rem;
+  color: #fff;
+}
+
 .friends-panel {
   display: flex;
   flex-direction: column;
-  flex: 1; /* Makes this panel fill the available sidebar space */
-  min-height: 0; /* Important for nested flex scrolling */
-  padding: 1.5rem 0 0 0 !important; /* Remove side padding to let separators touch edges */
+  flex: 1;
+  min-height: 0;
+  padding: 0 !important;
 }
 
 .friends-panel .panel-title {
-  padding: 0 1.5rem;
-  margin-bottom: 0.5rem;
+  padding: 0;
+  margin-bottom: 1rem;
 }
 
 .friends-scroll-container {
@@ -164,26 +214,27 @@ html, body {
   flex: 1;
 }
 
-/* Friend Item with Separators */
 .friend-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0.8rem 1.5rem;
-  border-bottom: 1px solid #f0f0f0; /* The separator line */
-  transition: background-color 0.2s;
+  gap: 12px;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #333;
+  transition: all 0.2s;
+  color: #888;
 }
 
 .friend-item:hover {
-  background-color: #f9f9f9;
+  background-color: transparent;
   cursor: pointer;
+  color: #fff;
 }
 
 .friend-item:last-child {
-  border-bottom: none; /* No line after the last friend */
+  border-bottom: none;
 }
 
 .status-dot.online {
-  color: #2ecc71; /* League-style green */
-  font-size: 0.8rem;
+  color: #fff;
+  font-size: 0.6rem;
 }
