@@ -7,7 +7,6 @@
     "api": "cd gameyapi && node gamey-service.js",
     "gamey": "cd gamey && cargo run -- --mode computer",
     "users": "cd users && npm start",
-    "gamey-service": "cd gameyapi && node gamey-service.js",
     "dev": "npm-run-all -p -r users gamey-service gamey",
     "dev:full": "npm-run-all -p -r users gamey-service gamey"
   }
