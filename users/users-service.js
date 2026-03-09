@@ -7,7 +7,7 @@ const app = express();
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'];
+    : ['http://localhost', 'http://localhost:3000', 'http://0.0.0.0'];
 
 app.use(cors({
   origin: (origin, callback) => {
