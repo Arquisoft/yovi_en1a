@@ -2,17 +2,18 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
 
-# Install deps
 COPY package.json package-lock.json ./
 RUN npm ci --silent
 
-# Copy sources
 COPY . .
 
-# Accept build-time API url (defaults to localhost:3000)
 ARG VITE_API_URL="http://localhost:3000"
 ARG VITE_GAMEY_URL="http://localhost:4000"
-RUN export VITE_API_URL=${VITE_API_URL} && export VITE_GAMEY_URL=${VITE_GAMEY_URL} && npm run build
+ARG VITE_GAMEY_API_URL="http://localhost:3001"
+RUN VITE_API_URL=${VITE_API_URL} \
+    VITE_GAMEY_URL=${VITE_GAMEY_URL} \
+    VITE_GAMEY_API_URL=${VITE_GAMEY_API_URL} \
+    npm run build
 
 # Production image
 FROM nginx:stable-alpine
