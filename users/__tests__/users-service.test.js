@@ -14,15 +14,15 @@ vi.mock('bcrypt', async (importOriginal) => {
 });
 
 let mongoServer;
+let mongoUri;
 
 beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
-    const uri = mongoServer.getUri();
-    await connectToMongo(uri);
+    mongoUri = mongoServer.getUri();
+    await connectToMongo(mongoUri);
 
-    // Create unique indexes so duplicate detection (409) works
     const { MongoClient } = await import('mongodb');
-    const client = new MongoClient(uri);
+    const client = new MongoClient(mongoUri);
     await client.connect();
     const db = client.db('test_db');
     await db.collection('users').createIndex({ username: 1 }, { unique: true });
@@ -37,34 +37,70 @@ afterAll(async () => {
 
 beforeEach(async () => {
     const { MongoClient } = await import('mongodb');
-    const uri = mongoServer.getUri();
-    const client = new MongoClient(uri);
+    const client = new MongoClient(mongoUri);
     await client.connect();
     const db = client.db('test_db');
     await db.collection('users').deleteMany({});
     await client.close();
 });
 
+// ─────────────────────────────────────────────
+// POST /createuser
+// ─────────────────────────────────────────────
 describe('POST /createuser', () => {
     afterEach(() => vi.restoreAllMocks());
 
-    it('returns a greeting message for the provided username', async () => {
+    it('returns 200 and a welcome message with userId for valid input', async () => {
         const res = await request(app)
             .post('/createuser')
             .send({ username: 'Pablo', email: 'pablo@example.com', password: 'secret123' })
             .set('Accept', 'application/json');
 
         expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('message');
         expect(res.body.message).toMatch(/Hello Pablo! Welcome to the course!/i);
         expect(res.body).toHaveProperty('userId');
+    });
+
+    it('stores the user so a second request with the same data returns 409', async () => {
+        const user = { username: 'Pablo', email: 'pablo@example.com', password: 'secret123' };
+        const first = await request(app).post('/createuser').send(user);
+        expect(first.status).toBe(200);
+
+        const second = await request(app).post('/createuser').send(user);
+        expect(second.status).toBe(409);
+        expect(second.body.error).toMatch(/already exists/i);
+    });
+
+    it('returns 409 when only the username is duplicated', async () => {
+        await request(app)
+            .post('/createuser')
+            .send({ username: 'dupeUser', email: 'first@example.com', password: 'pass' });
+
+        const res = await request(app)
+            .post('/createuser')
+            .send({ username: 'dupeUser', email: 'second@example.com', password: 'pass' });
+
+        expect(res.status).toBe(409);
+        expect(res.body.error).toMatch(/already exists/i);
+    });
+
+    it('returns 409 when only the email is duplicated', async () => {
+        await request(app)
+            .post('/createuser')
+            .send({ username: 'firstUser', email: 'shared@example.com', password: 'pass' });
+
+        const res = await request(app)
+            .post('/createuser')
+            .send({ username: 'secondUser', email: 'shared@example.com', password: 'pass' });
+
+        expect(res.status).toBe(409);
+        expect(res.body.error).toMatch(/already exists/i);
     });
 
     it('returns 400 when username is missing', async () => {
         const res = await request(app)
             .post('/createuser')
-            .send({ email: 'pablo@example.com', password: 'secret123' })
-            .set('Accept', 'application/json');
+            .send({ email: 'pablo@example.com', password: 'secret123' });
 
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/missing required fields/i);
@@ -73,8 +109,7 @@ describe('POST /createuser', () => {
     it('returns 400 when email is missing', async () => {
         const res = await request(app)
             .post('/createuser')
-            .send({ username: 'Pablo', password: 'secret123' })
-            .set('Accept', 'application/json');
+            .send({ username: 'Pablo', password: 'secret123' });
 
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/missing required fields/i);
@@ -83,70 +118,115 @@ describe('POST /createuser', () => {
     it('returns 400 when password is missing', async () => {
         const res = await request(app)
             .post('/createuser')
-            .send({ username: 'Pablo', email: 'pablo@example.com' })
-            .set('Accept', 'application/json');
+            .send({ username: 'Pablo', email: 'pablo@example.com' });
 
         expect(res.status).toBe(400);
         expect(res.body.error).toMatch(/missing required fields/i);
     });
 
-    it('returns 409 when username or email already exists', async () => {
-        const user = { username: 'Pablo', email: 'pablo@example.com', password: 'secret123' };
+    it('returns 400 when body is completely empty', async () => {
+        const res = await request(app)
+            .post('/createuser')
+            .send({});
 
-        const first = await request(app).post('/createuser').send(user);
-        expect(first.status).toBe(200);
-
-        const res = await request(app).post('/createuser').send(user);
-        expect(res.status).toBe(409);
-        expect(res.body.error).toMatch(/already exists/i);
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/missing required fields/i);
     });
 
     it('returns 5xx when the database is unavailable', async () => {
-        const uri = mongoServer.getUri();
-
-        // Close the connection so db becomes null inside the service
         await closeMongoConnection();
 
         const res = await request(app)
             .post('/createuser')
-            .send({ username: 'ErrorUser', email: 'err@example.com', password: 'secret123' })
-            .set('Accept', 'application/json');
+            .send({ username: 'ErrorUser', email: 'err@example.com', password: 'secret123' });
 
-        // Reconnect so remaining tests are unaffected
-        await connectToMongo(uri);
+        await connectToMongo(mongoUri);
 
-        // Middleware returns 503, route guard returns 500 — both are correct "unavailable" responses
         expect(res.status).toBeGreaterThanOrEqual(500);
         expect(res.status).toBeLessThan(600);
-        expect(res.body.error).toMatch(/internal server error|database not available|database not initialized|temporarily unavailable/i);
+        expect(res.body.error).toMatch(
+            /internal server error|database not available|database not initialized|temporarily unavailable/i
+        );
+    });
+
+    it('returns 500 when insertOne throws a generic unexpected error', async () => {
+        const { MongoClient } = await import('mongodb');
+        const probe = new MongoClient(mongoUri);
+        await probe.connect();
+        const col = probe.db('test_db').collection('users');
+        vi.spyOn(col.constructor.prototype, 'insertOne').mockRejectedValueOnce(
+            new Error('unexpected storage failure')
+        );
+
+        const res = await request(app)
+            .post('/createuser')
+            .send({ username: 'GenericFail', email: 'generic@example.com', password: 'secret' });
+
+        vi.restoreAllMocks();
+        await probe.close();
+
+        expect(res.status).toBe(500);
+        expect(res.body.error).toMatch(/internal server error/i);
+    });
+
+    it('returns 5xx when insertOne throws MongoNotConnectedError and retry also fails', async () => {
+        const { MongoClient } = await import('mongodb');
+        const probe = new MongoClient(mongoUri);
+        await probe.connect();
+        const col = probe.db('test_db').collection('users');
+
+        vi.spyOn(col.constructor.prototype, 'insertOne')
+            .mockRejectedValueOnce(
+                Object.assign(new Error('client is not connected'), { name: 'MongoNotConnectedError' })
+            )
+            .mockRejectedValueOnce(new Error('still not connected'));
+
+        const res = await request(app)
+            .post('/createuser')
+            .send({ username: 'RetryFail', email: 'retry@example.com', password: 'secret' });
+
+        vi.restoreAllMocks();
+        await probe.close();
+
+        expect(res.status).toBeGreaterThanOrEqual(500);
+        expect(res.status).toBeLessThan(600);
     });
 });
 
+// ─────────────────────────────────────────────
+// POST /login
+// ─────────────────────────────────────────────
 describe('POST /login', () => {
     afterEach(() => vi.restoreAllMocks());
 
-    it('returns a success message regardless of password', async () => {
+    it('returns 200 with a success message using username', async () => {
         const res = await request(app)
             .post('/login')
-            .send({ username: 'Alice', email: 'a@example.com', password: 'secret' })
-            .set('Accept', 'application/json');
+            .send({ username: 'Alice', email: 'a@example.com', password: 'secret' });
 
         expect(res.status).toBe(200);
-        expect(res.body).toHaveProperty('message');
         expect(res.body.message).toMatch(/Login successful for Alice/i);
     });
 
-    it('returns a success message with no password provided', async () => {
+    it('falls back to email when username is absent', async () => {
         const res = await request(app)
             .post('/login')
-            .send({ username: 'Bob', email: 'bob@example.com' })
-            .set('Accept', 'application/json');
+            .send({ email: 'bob@example.com' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.message).toMatch(/Login successful for bob@example.com/i);
+    });
+
+    it('returns 200 with no password provided', async () => {
+        const res = await request(app)
+            .post('/login')
+            .send({ username: 'Bob' });
 
         expect(res.status).toBe(200);
         expect(res.body.message).toMatch(/Login successful for Bob/i);
     });
 
-    it('handles login with no body gracefully', async () => {
+    it('handles login with no body (username is undefined)', async () => {
         const res = await request(app)
             .post('/login')
             .set('Accept', 'application/json');
@@ -154,24 +234,107 @@ describe('POST /login', () => {
         expect(res.status).toBe(200);
         expect(res.body.message).toMatch(/Login successful for undefined/i);
     });
+
+    it('returns 5xx when database is unavailable (middleware guard)', async () => {
+        await closeMongoConnection();
+
+        const res = await request(app)
+            .post('/login')
+            .send({ username: 'Alice' });
+
+        await connectToMongo(mongoUri);
+
+        expect(res.status).toBeGreaterThanOrEqual(500);
+        expect(res.status).toBeLessThan(600);
+    });
 });
 
+// ─────────────────────────────────────────────
+// CORS
+// ─────────────────────────────────────────────
 describe('CORS headers', () => {
-    it('allows requests from a permitted origin', async () => {
+    it('allows requests from http://localhost:3000', async () => {
         const res = await request(app)
             .post('/login')
             .set('Origin', 'http://localhost:3000')
-            .send({ username: 'Alice', password: 'secret' });
+            .send({ username: 'Alice' });
 
         expect(res.headers['access-control-allow-origin']).toBe('http://localhost:3000');
+    });
+
+    it('allows requests from http://localhost', async () => {
+        const res = await request(app)
+            .post('/login')
+            .set('Origin', 'http://localhost')
+            .send({ username: 'Alice' });
+
+        expect(res.headers['access-control-allow-origin']).toBe('http://localhost');
+    });
+
+    it('allows requests from http://127.0.0.1', async () => {
+        const res = await request(app)
+            .post('/login')
+            .set('Origin', 'http://127.0.0.1')
+            .send({ username: 'Alice' });
+
+        expect(res.headers['access-control-allow-origin']).toBe('http://127.0.0.1');
     });
 
     it('blocks requests from an unknown origin', async () => {
         const res = await request(app)
             .post('/login')
             .set('Origin', 'http://evil.com')
-            .send({ username: 'Alice', password: 'secret' });
+            .send({ username: 'Alice' });
 
         expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    });
+
+    it('does NOT allow http://0.0.0.0 as a CORS origin', async () => {
+        const res = await request(app)
+            .post('/login')
+            .set('Origin', 'http://0.0.0.0')
+            .send({ username: 'Alice' });
+
+        // 0.0.0.0 is a bind address, never a valid browser origin
+        expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    });
+
+    it('allows requests with no Origin header (e.g. curl / server-to-server)', async () => {
+        const res = await request(app)
+            .post('/login')
+            .send({ username: 'Alice' });
+
+        expect(res.status).toBe(200);
+    });
+});
+
+// ─────────────────────────────────────────────
+// Middleware — non-DB routes skip the health check
+// ─────────────────────────────────────────────
+describe('Middleware passthrough for unknown routes', () => {
+    it('returns 404 for an unregistered route without hitting db guard', async () => {
+        const res = await request(app).get('/healthz');
+        // Express default: 404, not a db error
+        expect(res.status).toBe(404);
+    });
+});
+
+// ─────────────────────────────────────────────
+// connectToMongo / closeMongoConnection
+// ─────────────────────────────────────────────
+describe('connectToMongo and closeMongoConnection', () => {
+    it('connectToMongo returns the MongoClient', async () => {
+        // Already connected in beforeAll; reconnect to exercise the return value
+        await closeMongoConnection();
+        const returnedClient = await connectToMongo(mongoUri);
+        expect(returnedClient).toBeDefined();
+        expect(typeof returnedClient.close).toBe('function');
+    });
+
+    it('closeMongoConnection is idempotent (calling twice does not throw)', async () => {
+        await closeMongoConnection();
+        await expect(closeMongoConnection()).resolves.not.toThrow();
+        // Restore connection for subsequent tests
+        await connectToMongo(mongoUri);
     });
 });

@@ -6,12 +6,15 @@ const cors = require('cors');
 const app = express();
 
 // -------------------- CORS Configuration --------------------
+// In production set ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
+// Never include http://0.0.0.0 — that is a server bind address, not a browser origin.
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1', 'http://0.0.0.0'];
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+    : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'];
 
 app.use(cors({
   origin: (origin, callback) => {
+    // Allow requests with no Origin header (same-origin, curl, Postman, server-to-server)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -22,7 +25,7 @@ app.use(cors({
 
 app.use(express.json());
 
-// -------------------- MongoDB Connection with Robust Settings --------------------
+// -------------------- MongoDB Connection --------------------
 let client;
 let db;
 
@@ -41,7 +44,7 @@ async function connectToMongo(uri) {
   client.on('connectionReady', () => console.log('MongoDB connected'));
   client.on('connectionClosed', () => {
     console.warn('MongoDB connection closed');
-    db = null; // <-- null out db so route guards fire correctly after disconnect
+    db = null;
   });
   client.on('error', (err) => console.error('MongoDB client error:', err));
 
@@ -54,12 +57,12 @@ async function connectToMongo(uri) {
 async function closeMongoConnection() {
   if (client) {
     await client.close();
-    db = null; // <-- ensure db is nulled synchronously on explicit close
+    db = null;
     console.log('MongoDB connection closed');
   }
 }
 
-// Optional: Middleware to check database health before each request that needs it
+// -------------------- DB Health Middleware --------------------
 app.use(async (req, res, next) => {
   if (req.path === '/createuser' || req.path === '/login') {
     if (!db) {
@@ -145,7 +148,6 @@ app.post('/createuser', async (req, res) => {
   }
 });
 
-// Mock login endpoint (still ignores password)
 app.post('/login', async (req, res) => {
   const username = req.body?.username;
   const email = req.body?.email;
@@ -157,7 +159,11 @@ app.post('/login', async (req, res) => {
 // -------------------- Server Startup --------------------
 
 const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '127.0.0.1' : '0.0.0.0');
+
+// Bind to 0.0.0.0 so the service is reachable from outside the host/container.
+// To restrict to loopback only, set HOST=127.0.0.1 in your environment.
+// Firewall / reverse-proxy (nginx, ALB, etc.) should control external exposure.
+const HOST = process.env.HOST || '0.0.0.0';
 
 if (process.env.NODE_ENV !== 'test') {
   (async () => {
