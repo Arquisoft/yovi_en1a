@@ -16,9 +16,6 @@ gameyService.use(bodyParser.json());
 const sessions = new Map();
 
 // ─── YEN helpers ──────────────────────────────────────────────────────────────
-// Layout format: rows separated by '/', row 0 has 1 cell, row N has N+1 cells
-// Player 0 = 'B' (Blue), Player 1 = 'R' (Red)
-// Moves stored as { player, x (col within row), y (row index) }
 
 function buildLayout(moves, boardSize) {
   const totalCells = (boardSize * (boardSize + 1)) / 2;
@@ -47,20 +44,138 @@ function buildYEN(moves, boardSize, nextPlayer) {
   };
 }
 
-// ─── Call Rust engine ─────────────────────────────────────────────────────────
-// POST /v1/ybot/choose/gamer_bot  body: YEN
-// Response: { api_version, bot_id, coords: { x, y, z } }  (barycentric x+y+z=size-1)
+// ─── Win detection (mirrors Rust union-find logic) ────────────────────────────
 //
-// The triangular board rows go from top (row 0, 1 cell) to bottom (row N-1, N cells).
-// Barycentric (x,y,z) where x+y+z = size-1:
-//   row  = (size-1) - z        (distance from top)
-//   col  = x                   (position within that row)
-// This matches how GameY::to_index works in Rust: idx = row*(row+1)/2 + col
+// Triangular board: row ∈ [0, size-1], col ∈ [0, row]
+// Barycentric: x = size-1-row, y = col, z = row-col
+//
+// Three sides a player must connect to win:
+//   Side A (apex row):  row === 0              (x = size-1)
+//   Side B (left edge): col === 0              (y = 0)
+//   Side C (right edge): col === row           (z = 0)
+//
+// Six neighbors of (row, col):
+//   (row-1, col-1), (row-1, col)   — row above
+//   (row,   col-1), (row,   col+1) — same row
+//   (row+1, col),   (row+1, col+1) — row below
+
+function getNeighbors(row, col, boardSize) {
+  const neighbors = [];
+  const candidates = [
+    [row - 1, col - 1],
+    [row - 1, col],
+    [row,     col - 1],
+    [row,     col + 1],
+    [row + 1, col],
+    [row + 1, col + 1],
+  ];
+  for (const [r, c] of candidates) {
+    if (r >= 0 && r < boardSize && c >= 0 && c <= r) {
+      neighbors.push([r, c]);
+    }
+  }
+  return neighbors;
+}
+
+function touchesSideA(row)       { return row === 0; }         // apex
+function touchesSideB(col)       { return col === 0; }         // left edge
+function touchesSideC(row, col)  { return col === row; }       // right edge
+
+/**
+ * Check whether `player` (0 or 1) has won given the current move list.
+ * Uses union-find over the player's stones tracking which of the three
+ * sides each connected component touches.
+ *
+ * Returns true if the player has a group touching all three sides.
+ */
+function checkWin(moves, boardSize, player) {
+  const symbol = player === 0 ? 'B' : 'R';
+
+  // Build a Set of occupied cells for fast lookup: key = row*1000+col
+  const playerCells = new Map(); // key → { row, col }
+  for (const m of moves) {
+    if (m.player === player) {
+      const key = m.y * 1000 + m.x; // y=row, x=col in session move format
+      playerCells.set(key, { row: m.y, col: m.x });
+    }
+  }
+
+  if (playerCells.size === 0) return false;
+
+  // Union-Find
+  const keys = [...playerCells.keys()];
+  const parent = new Map(keys.map(k => [k, k]));
+  const sideA  = new Map(keys.map(k => [k, touchesSideA(playerCells.get(k).row)]));
+  const sideB  = new Map(keys.map(k => [k, touchesSideB(playerCells.get(k).col)]));
+  const sideC  = new Map(keys.map(k => [k, touchesSideC(playerCells.get(k).row, playerCells.get(k).col)]));
+
+  function find(k) {
+    if (parent.get(k) !== k) parent.set(k, find(parent.get(k)));
+    return parent.get(k);
+  }
+
+  function union(a, b) {
+    const ra = find(a), rb = find(b);
+    if (ra === rb) return;
+    parent.set(ra, rb);
+    sideA.set(rb, sideA.get(rb) || sideA.get(ra));
+    sideB.set(rb, sideB.get(rb) || sideB.get(ra));
+    sideC.set(rb, sideC.get(rb) || sideC.get(ra));
+  }
+
+  // Union each stone with its neighbors that also belong to this player
+  for (const [key, { row, col }] of playerCells) {
+    for (const [nr, nc] of getNeighbors(row, col, boardSize)) {
+      const nk = nr * 1000 + nc;
+      if (playerCells.has(nk)) union(key, nk);
+    }
+  }
+
+  // Check if any root touches all three sides
+  for (const key of keys) {
+    const root = find(key);
+    if (sideA.get(root) && sideB.get(root) && sideC.get(root)) return true;
+  }
+  return false;
+}
+
+/**
+ * After a move is pushed onto s.moves, check both players for a win
+ * and update s.status / s.winner accordingly.
+ * Returns true if the game just ended.
+ */
+// Replace the updateWinStatus function with this corrected version:
+
+function updateWinStatus(s) {
+  // Check the player who just moved first (most likely winner)
+  const lastPlayer = s.moves[s.moves.length - 1]?.player;
+  const toCheck = lastPlayer !== undefined
+      ? [lastPlayer, 1 - lastPlayer]
+      : [0, 1];
+
+  for (const p of toCheck) {
+    if (checkWin(s.moves, s.boardSize, p)) {
+      s.status = 'finished';
+      s.winner = p;
+      return true;
+    }
+  }
+
+  if (isBoardFull(s.moves, s.boardSize)) {
+    s.status = 'finished';
+    s.winner = null; // Draw
+    return true;
+  }
+
+  s.status = 'ongoing';
+  return false;
+}
+
+// ─── Call Rust engine ─────────────────────────────────────────────────────────
 
 function barycentricToRowCol(x, y, z, boardSize) {
   const row = (boardSize - 1) - z;
   const col = x;
-  // Validate: col must be in [0, row]
   if (row < 0 || row >= boardSize || col < 0 || col > row) {
     console.warn(`[COORDS] Out of bounds: x=${x} y=${y} z=${z} → row=${row} col=${col}`);
     return null;
@@ -68,7 +183,6 @@ function barycentricToRowCol(x, y, z, boardSize) {
   return { x: col, y: row };
 }
 
-// Pick a random free cell as fallback when bot returns bad coords
 function randomFreeCell(moves, boardSize) {
   const occupied = new Set(moves.map(m => m.y * 100 + m.x));
   const free = [];
@@ -141,7 +255,6 @@ function isBoardFull(moves, boardSize) {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
-// POST /play/create
 gameyService.post('/play/create', (req, res) => {
   const { mode, boardSize = 11 } = req.body;
   if (!['hvh', 'hvb'].includes(mode))
@@ -155,14 +268,15 @@ gameyService.post('/play/create', (req, res) => {
   return res.status(201).json(sessionView(sessions.get(id)));
 });
 
-// GET /play/:gameId
 gameyService.get('/play/:gameId', (req, res) => {
   const s = sessions.get(req.params.gameId);
   if (!s) return res.status(404).json({ error: 'Game not found' });
   return res.json(sessionView(s));
 });
 
-// POST /play/:gameId/move  { player: 0|1, x, y }
+
+// In the POST /play/:gameId/move handler, update the response handling:
+
 gameyService.post('/play/:gameId/move', async (req, res) => {
   const s = sessions.get(req.params.gameId);
   if (!s) return res.status(404).json({ error: 'Game not found' });
@@ -171,53 +285,63 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
   const { player, x, y } = req.body;
   if (player === undefined || x === undefined || y === undefined)
     return res.status(400).json({ error: 'player, x and y are required' });
+
+  if (s.mode === 'hvb' && player === 1)
+    return res.status(400).json({ error: 'Player 1 is the bot' });
+
   if (player !== s.currentPlayer)
     return res.status(400).json({ error: `It is player ${s.currentPlayer}'s turn` });
-  if (s.mode === 'hvb' && player === 1)
-    return res.status(400).json({ error: 'Player 1 is the bot — it moves automatically' });
+
+  if (x < 0 || y < 0 || y >= s.boardSize || x > y)
+    return res.status(400).json({ error: `Invalid coordinates (${x},${y}) for board size ${s.boardSize}` });
+
   if (s.moves.some(m => m.x === x && m.y === y))
     return res.status(400).json({ error: `Cell (${x},${y}) is already occupied` });
 
-  // Apply human move
   s.moves.push({ player, x, y });
   s.currentPlayer = player === 0 ? 1 : 0;
-  if (isBoardFull(s.moves, s.boardSize)) s.status = 'finished';
 
-  const response = { ...sessionView(s), botMove: null };
+  const gameEnded = updateWinStatus(s);
+  console.log(`[DEBUG] After move: status=${s.status}, winner=${s.winner}, gameEnded=${gameEnded}`);
 
-  // Bot auto-responds in hvb mode
+  let response = sessionView(s);
+  response.botMove = null;
+
   if (s.mode === 'hvb' && s.status === 'ongoing') {
     try {
       const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer);
 
       if (!botCoords) {
-        // No free cells left — board is effectively full
         s.status = 'finished';
-        response.status = s.status;
+        s.winner = s.currentPlayer === 0 ? 1 : 0;
+        response = sessionView(s);
+        console.log(`[DEBUG] No bot moves, game finished: status=${s.status}`);
         return res.json(response);
       }
 
       s.moves.push({ player: 1, ...botCoords });
       s.currentPlayer = 0;
-      if (isBoardFull(s.moves, s.boardSize)) s.status = 'finished';
 
+      const botGameEnded = updateWinStatus(s);
+      console.log(`[DEBUG] After bot move: status=${s.status}, winner=${s.winner}, gameEnded=${botGameEnded}`);
+
+      response = sessionView(s);
       response.botMove = botCoords;
-      response.moves = s.moves;
-      response.currentPlayer = s.currentPlayer;
-      response.status = s.status;
-      response.layout = buildLayout(s.moves, s.boardSize);
       console.log(`[BOT] game=${s.id} coords=(${botCoords.x},${botCoords.y})`);
     } catch (err) {
       console.error('[BOT] Rust engine error:', err.message);
+      response = sessionView(s);
       response.error = 'Bot move failed — retry with POST /play/:id/bot-move';
     }
   }
 
-  console.log(`[MOVE] game=${s.id} player=${player} (${x},${y}) status=${s.status}`);
+  console.log(`[MOVE] game=${s.id} player=${player} (${x},${y}) status=${s.status} winner=${s.winner}`);
+
+  console.log(`[DEBUG] Response status field: ${response.status}`);
+
   return res.json(response);
 });
 
-// POST /play/:gameId/bot-move  — manual bot trigger / retry
 gameyService.post('/play/:gameId/bot-move', async (req, res) => {
   const s = sessions.get(req.params.gameId);
   if (!s) return res.status(404).json({ error: 'Game not found' });
@@ -229,8 +353,11 @@ gameyService.post('/play/:gameId/bot-move', async (req, res) => {
     const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer);
     s.moves.push({ player: 1, ...botCoords });
     s.currentPlayer = 0;
-    if (isBoardFull(s.moves, s.boardSize)) s.status = 'finished';
-    console.log(`[BOT-MOVE] game=${s.id} coords=(${botCoords.x},${botCoords.y})`);
+
+    // ← Win check after manual bot-move trigger
+    updateWinStatus(s);
+
+    console.log(`[BOT-MOVE] game=${s.id} coords=(${botCoords.x},${botCoords.y}) winner=${s.winner}`);
     return res.json({ ...sessionView(s), lastMove: botCoords });
   } catch (err) {
     console.error('[BOT-MOVE]', err.message);
@@ -238,7 +365,6 @@ gameyService.post('/play/:gameId/bot-move', async (req, res) => {
   }
 });
 
-// POST /play/:gameId/rematch
 gameyService.post('/play/:gameId/rematch', (req, res) => {
   const old = sessions.get(req.params.gameId);
   if (!old) return res.status(404).json({ error: 'Game not found' });
@@ -249,14 +375,12 @@ gameyService.post('/play/:gameId/rematch', (req, res) => {
   return res.status(201).json(sessionView(sessions.get(id)));
 });
 
-// DELETE /play/:gameId
 gameyService.delete('/play/:gameId', (req, res) => {
   if (!sessions.delete(req.params.gameId))
     return res.status(404).json({ error: 'Game not found' });
   return res.json({ message: 'Game deleted' });
 });
 
-// GET /health  — also pings Rust engine's /status endpoint
 gameyService.get('/health', async (req, res) => {
   let rustOk = false;
   try {

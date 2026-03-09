@@ -1,7 +1,7 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
 const bcrypt = require('bcrypt');
-const cors = require('cors');  // Fixed: changed from import to require
+const cors = require('cors');
 
 const app = express();
 
@@ -36,7 +36,7 @@ async function closeMongoConnection() {
   }
 }
 
-module.exports = { app, connectToMongo, closeMongoConnection };  // Fixed: changed from export to module.exports
+module.exports = { app, connectToMongo, closeMongoConnection };
 
 app.post('/createuser', async (req, res) => {
   if (!db) return res.status(500).json({ error: 'Database not available' });
