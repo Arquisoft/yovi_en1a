@@ -5,9 +5,10 @@ const cors = require('cors');
 
 const app = express();
 
+// -------------------- CORS Configuration --------------------
 const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost', 'http://localhost:3000', 'http://0.0.0.0'];
+    : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1', 'http://0.0.0.0'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -21,25 +22,76 @@ app.use(cors({
 
 app.use(express.json());
 
-let db, client;
+// -------------------- MongoDB Connection with Robust Settings --------------------
+let client;
+let db;
+
+const MONGO_URI = process.env.MONGODB_URI;
+const DB_NAME = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
 
 async function connectToMongo(uri) {
-  client = new MongoClient(uri);
+  client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+    connectTimeoutMS: 10000,
+    retryWrites: true,
+    retryReads: true,
+  });
+
+  client.on('connectionReady', () => console.log('MongoDB connected'));
+  client.on('connectionClosed', () => {
+    console.warn('MongoDB connection closed');
+    db = null; // <-- null out db so route guards fire correctly after disconnect
+  });
+  client.on('error', (err) => console.error('MongoDB client error:', err));
+
   await client.connect();
-  db = client.db(process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi');
+  db = client.db(DB_NAME);
+  console.log(`Connected to MongoDB database: ${DB_NAME}`);
   return client;
 }
 
 async function closeMongoConnection() {
   if (client) {
     await client.close();
+    db = null; // <-- ensure db is nulled synchronously on explicit close
+    console.log('MongoDB connection closed');
   }
 }
 
+// Optional: Middleware to check database health before each request that needs it
+app.use(async (req, res, next) => {
+  if (req.path === '/createuser' || req.path === '/login') {
+    if (!db) {
+      return res.status(503).json({ error: 'Database not initialized' });
+    }
+    try {
+      await db.command({ ping: 1 });
+      next();
+    } catch (err) {
+      console.error('Database health check failed:', err.message);
+      try {
+        await client.connect();
+        next();
+      } catch (reconnectErr) {
+        console.error('Reconnection failed:', reconnectErr.message);
+        res.status(503).json({ error: 'Database temporarily unavailable' });
+      }
+    }
+  } else {
+    next();
+  }
+});
+
 module.exports = { app, connectToMongo, closeMongoConnection };
 
+// -------------------- Routes --------------------
+
 app.post('/createuser', async (req, res) => {
-  if (!db) return res.status(500).json({ error: 'Database not available' });
+  if (!db) {
+    console.error('Database not available when attempting to create user');
+    return res.status(500).json({ error: 'Database not available' });
+  }
 
   const { username, email, password } = req.body;
 
@@ -66,40 +118,61 @@ app.post('/createuser', async (req, res) => {
     if (error.code === 11000) {
       return res.status(409).json({ error: 'Username or email already exists' });
     }
+
+    if (error.name === 'MongoNotConnectedError' || error.message.includes('not connected')) {
+      console.error('MongoDB not connected, attempting to reconnect...');
+      try {
+        await client.connect();
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const result = await db.collection('users').insertOne({
+          username,
+          email,
+          password: hashedPassword,
+          createdAt: new Date()
+        });
+        return res.status(200).json({
+          message: `Hello ${username}! Welcome to the course!`,
+          userId: result.insertedId
+        });
+      } catch (retryError) {
+        console.error('Retry failed:', retryError.message);
+        return res.status(503).json({ error: 'Database temporarily unavailable, please try again' });
+      }
+    }
+
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
+// Mock login endpoint (still ignores password)
 app.post('/login', async (req, res) => {
-  const username = req.body && req.body.username;
-  const email = req.body && req.body.email;
-  const password = req.body && req.body.password;
-  try {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    //The password is ignored. Every login is successful
-    const message = `Login successful for ${username}`;
-    res.json({ message });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
+  const username = req.body?.username;
+  const email = req.body?.email;
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  const message = `Login successful for ${username || email}`;
+  res.json({ message });
 });
 
+// -------------------- Server Startup --------------------
+
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '127.0.0.1' : '0.0.0.0');
 
 if (process.env.NODE_ENV !== 'test') {
   (async () => {
     try {
-      await connectToMongo(process.env.MONGODB_URI); 
-      
-      app.listen(PORT, '0.0.0.0', () => {
-        console.log(`User service listening at http://localhost:${PORT}`);
+      if (!MONGO_URI) {
+        throw new Error('MONGODB_URI environment variable is not set');
+      }
+      await connectToMongo(MONGO_URI);
+
+      app.listen(PORT, HOST, () => {
+        console.log(`User service listening at http://${HOST}:${PORT}`);
       });
     } catch (err) {
-      console.error("Failed to connect to MongoDB:", err);
+      console.error('Failed to start server:', err.message);
       process.exit(1);
     }
   })();
 }
-
