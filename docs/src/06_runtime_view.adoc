@@ -33,55 +33,36 @@ UI -> User : Render updated hexagonal grid
 ----
 ===  Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)
 
-*Description:* This scenario illustrates the data flow of a single turn in a networked multiplayer match between two human players. It demonstrates how a move made by one player is validated, saved, and eventually displayed on the opponent's screen.
+*Description:* This diagram illustrates the turn flow between two human players. It demonstrates how a move made by one player is validated, saved, and seamlessly pushed to the opponent's screen.
 
-*Notable Aspects:* Unlike the "Human vs. AI" scenario where the Rust engine immediately calculates a counter-move, here the `GameY Engine` is strictly used for rule validation. The `User Service` and `MongoDB` act as the central state managers, holding the updated board so the second player's Webapp can retrieve it (either via polling or WebSockets).
+*Notable Aspects:* Unlike the "Human vs. AI" scenario where the Rust engine immediately calculates a counter-move, here the GameY Engine (Rust) is strictly used for rule validation. The User Service (Node) acts as the central state manager. It handles saving the updated board to the database internally and directly pushes the new state to the second player's client (via WebSockets/Push), initiating their turn without the need for manual retrieval or polling.
 
 [plantuml, target="human-vs-human", format="png"]
 ----
 @startuml
 autonumber
+skinparam maxMessageSize 150
+
 actor "Player 1" as P1
-participant "Webapp (P1)\n(React)" as UI1
+participant "Client (P1)" as UI1
 participant "GameY Engine\n(Rust)" as Rust
-participant "User Service\n(Node.js)" as Node
-database "MongoDB" as DB
-participant "Webapp (P2)\n(React)" as UI2
+participant "User Service\n(Node)" as Node
+participant "Client (P2)" as UI2
 actor "Player 2" as P2
 
-P1 -> UI1 : Makes a move (Hex cell click)
-UI1 -> UI1 : Convert to YEN notation
 
-UI1 -> Rust : POST /validate-move (YEN Payload)
-activate Rust
-Rust -> Rust : Evaluate Rule Set
-Rust --> UI1 : 200 OK (Move Valid, New State in YEN)
-deactivate Rust
+P1 -> UI1 : Make a move (Hex)
+UI1 -> Rust : POST /validate-move (YEN)
+Rust --> UI1 : 200 OK (Move Valid)
 
-UI1 -> Node : POST /update-match (matchId, New State)
-activate Node
-Node -> DB : updateOne(matchId, newState)
-activate DB
-DB --> Node : Write OK
-deactivate DB
+
+UI1 -> Node : POST /update-match
+Node -> Node : Save to Database
 Node --> UI1 : 200 OK (Match Updated)
-deactivate Node
 
-UI1 -> P1 : Render updated board (Wait for turn)
+Node -> UI2 : Send new state (WS/Push)
+UI2 -> P2 : Render board (P2's turn starts)
 
-... Meanwhile (via Polling or WebSocket) ...
-
-UI2 -> Node : GET /match-state?id=matchId
-activate Node
-Node -> DB : findOne({ id: matchId })
-activate DB
-DB --> Node : Current Match State
-deactivate DB
-Node --> UI2 : Return New Board State (YEN JSON)
-deactivate Node
-
-UI2 -> UI2 : Parse YEN JSON
-UI2 -> P2 : Render Player 1's move\n(Player 2's turn starts)
 @enduml
 ----
 
