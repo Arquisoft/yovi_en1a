@@ -7,7 +7,7 @@ services:
       - "3000:3000"
     depends_on:
       mongodb:
-        condition: service_healthy
+          condition: service_healthy
     networks:
       - monitor-net
     environment:
@@ -19,14 +19,12 @@ services:
       args:
         - VITE_API_URL=http://localhost:3000
         - VITE_GAMEY_URL=http://localhost:4000
-        - VITE_GAMEY_API_URL=http://localhost:3001
     container_name: webapp
     image: ghcr.io/arquisoft/yovi_en1a-webapp:latest
     ports:
       - "80:80"
     depends_on:
       - users
-      - gamey-service
     networks:
       - monitor-net
 
@@ -41,15 +39,12 @@ services:
 
   gamey-service:
     build: ./gameyapi
-    container_name: gamey-service
     ports:
       - "3001:3001"
     environment:
-      - GAMEY_RUST_URL=http://gamey:4000
+      - GAMEY_RUST_URL=http://gamey-rust:4000
     depends_on:
       - gamey
-    networks:
-      - monitor-net
 
   prometheus:
     image: prom/prometheus
@@ -89,6 +84,7 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+
 
 networks:
   monitor-net:

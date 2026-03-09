@@ -120,7 +120,7 @@ export default function GameBoard() {
     setBoard(new Array(TOTAL_CELLS).fill('.'));
     setCurrentTurn('P1');
     try {
-      const data = await apiPost<GameSession>('/play/create', {
+      const data = await apiPost<GameSession>('/game/create', {
         mode: selectedMode,
         boardSize: BOARD_SIZE,
       });
@@ -148,11 +148,12 @@ export default function GameBoard() {
 
     try {
       const data = await apiPost<GameSession & { botMove?: { x: number; y: number } | null }>(
-          `/play/${session.gameId}/move`,
+          `/game/${session.gameId}/move`,
           { player: playerNum, x, y }
       );
       syncFromSession(data);
     } catch (e: unknown) {
+
       setBoard(prev => prev.map((v, i) => (i === index ? '.' : v)));
       setErrorMsg(`Move failed: ${(e as Error).message}`);
     } finally {
@@ -167,14 +168,14 @@ export default function GameBoard() {
         session.mode === 'hvb' ? session.moves.slice(0, -2) : session.moves.slice(0, -1);
 
     try {
-      await fetch(`${API_URL}/play/${session.gameId}`, { method: 'DELETE' });
-      const fresh = await apiPost<GameSession>('/play/create', {
+      await fetch(`${API_URL}/game/${session.gameId}`, { method: 'DELETE' });
+      const fresh = await apiPost<GameSession>('/game/create', {
         mode: session.mode,
         boardSize: session.boardSize,
       });
       let current: GameSession = fresh;
       for (const m of movesToKeep) {
-        current = await apiPost<GameSession>(`/play/${fresh.gameId}/move`, m);
+        current = await apiPost<GameSession>(`/game/${fresh.gameId}/move`, m);
       }
       syncFromSession(current);
       setErrorMsg(null);
@@ -188,7 +189,7 @@ export default function GameBoard() {
   const handleRematch = async () => {
     if (!session) return handleStartGame();
     try {
-      const data = await apiPost<GameSession>(`/play/${session.gameId}/rematch`, {});
+      const data = await apiPost<GameSession>(`/game/${session.gameId}/rematch`, {});
       setBoard(new Array(TOTAL_CELLS).fill('.'));
       setWinner(null);
       setErrorMsg(null);

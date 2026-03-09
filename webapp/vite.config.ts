@@ -10,7 +10,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/play': 'http://localhost:3001',
+      '/game': 'http://localhost:3001',
     },
   },
   define: {
