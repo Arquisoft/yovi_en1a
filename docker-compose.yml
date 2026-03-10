@@ -16,7 +16,7 @@ services:
   webapp:
     build:
       context: ./webapp
-      args:
+    environment:
         - VITE_API_URL=http://localhost:3000
         - VITE_GAMEY_URL=http://localhost:4000
         - VITE_GAMEY_API_URL=http://localhost:3001
@@ -76,9 +76,6 @@ services:
     container_name: yovi_mongodb
     ports:
       - "27017:27017"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=example
     networks:
       - monitor-net
     volumes:
