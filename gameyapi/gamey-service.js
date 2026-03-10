@@ -77,7 +77,7 @@ function getNeighbors(row, col, boardSize) {
   return neighbors;
 }
 
-function touchesSideA(row)       { return row === 0; }         // apex
+function touchesSideA(row, boardSize) { return row === boardSize - 1; } // bottom edge
 function touchesSideB(col)       { return col === 0; }         // left edge
 function touchesSideC(row, col)  { return col === row; }       // right edge
 
@@ -105,7 +105,7 @@ function checkWin(moves, boardSize, player) {
   // Union-Find
   const keys = [...playerCells.keys()];
   const parent = new Map(keys.map(k => [k, k]));
-  const sideA  = new Map(keys.map(k => [k, touchesSideA(playerCells.get(k).row)]));
+  const sideA  = new Map(keys.map(k => [k, touchesSideA(playerCells.get(k).row, boardSize)]));
   const sideB  = new Map(keys.map(k => [k, touchesSideB(playerCells.get(k).col)]));
   const sideC  = new Map(keys.map(k => [k, touchesSideC(playerCells.get(k).row, playerCells.get(k).col)]));
 
