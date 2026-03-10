@@ -16,6 +16,7 @@ interface GameSession {
   status: 'ongoing' | 'finished';
   currentPlayer: number;
   winner: number | null;
+  winningPath?: { x?: number; y?: number; row?: number; col?: number }[];
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -55,9 +56,9 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
 
 // ─── Pure helper functions (exported for testing) ─────────────────────────────
 
-export function getCellClass(cellValue: CellValue): string {
-  if (cellValue === 'B') return 'hex-cell hex-p1';
-  if (cellValue === 'R') return 'hex-cell hex-p2';
+export function getCellClass(cellValue: CellValue, isWinning: boolean): string {
+  if (cellValue === 'B') return isWinning ? 'hex-cell hex-p1 hex-winning' : 'hex-cell hex-p1';
+  if (cellValue === 'R') return isWinning ? 'hex-cell hex-p2 hex-winning' : 'hex-cell hex-p2';
   return 'hex-cell hex-empty';
 }
 
@@ -95,6 +96,7 @@ export default function GameBoard() {
   const [session, setSession] = useState<GameSession | null>(null);
   const [gameStatus, setGameStatus] = useState<GameStatus>('idle');
   const [winner, setWinner] = useState<PlayerTurn | null>(null);
+  const [winningPathIndices, setWinningPathIndices] = useState<Set<number>>(new Set());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('hvb');
@@ -109,6 +111,12 @@ export default function GameBoard() {
         if (s.status === 'finished') {
           setWinner(s.winner === 0 ? 'P1' : 'P2');
         }
+        if (s.winningPath) {
+          const indices = s.winningPath.map((p) => coordsToIndex(p.x ?? p.col ?? 0, p.y ?? p.row ?? 0));
+          setWinningPathIndices(new Set(indices));
+        } else {
+          setWinningPathIndices(new Set());
+        }
       },
       []
   );
@@ -117,6 +125,7 @@ export default function GameBoard() {
   const handleStartGame = async () => {
     setErrorMsg(null);
     setWinner(null);
+    setWinningPathIndices(new Set());
     setBoard(new Array(TOTAL_CELLS).fill('.'));
     setCurrentTurn('P1');
     try {
@@ -179,6 +188,7 @@ export default function GameBoard() {
       syncFromSession(current);
       setErrorMsg(null);
       setWinner(null);
+      setWinningPathIndices(new Set());
     } catch (e: unknown) {
       setErrorMsg(`Undo failed: ${(e as Error).message}`);
     }
@@ -191,6 +201,7 @@ export default function GameBoard() {
       const data = await apiPost<GameSession>(`/play/${session.gameId}/rematch`, {});
       setBoard(new Array(TOTAL_CELLS).fill('.'));
       setWinner(null);
+      setWinningPathIndices(new Set());
       setErrorMsg(null);
       syncFromSession(data);
     } catch (e: unknown) {
@@ -200,10 +211,12 @@ export default function GameBoard() {
 
   // ─── Extracted render helpers (reduces cognitive complexity of renderBoard) ──
 
-  const renderCell = (cellIndex: number, cellValue: CellValue, hexWidth: string, isInteractive: boolean) => (
+  const renderCell = (cellIndex: number, cellValue: CellValue, hexWidth: string, isInteractive: boolean) => {
+    const isWinning = winningPathIndices.has(cellIndex);
+    return (
       <button
           key={cellIndex}
-          className={getCellClass(cellValue)}
+          className={getCellClass(cellValue, isWinning)}
           style={{
             width: hexWidth,
             opacity: isInteractive ? 1 : 0.6,
@@ -214,7 +227,8 @@ export default function GameBoard() {
       >
         {cellValue === '.' ? '' : cellValue}
       </button>
-  );
+    );
+  };
 
   const renderBoardRow = (row: number, startIndex: number, hexWidth: string, isInteractive: boolean) => {
     const rowCells = [];

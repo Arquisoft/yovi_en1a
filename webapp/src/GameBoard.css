@@ -267,3 +267,11 @@ body, html {
   cursor: not-allowed;
   opacity: 1;
 }
+
+/* Optional glow effect for winning path */
+.hex-winning {
+  filter: drop-shadow(0px 0px 10px rgba(255, 255, 255, 0.8)) brightness(1.3);
+  transform: scale(1.1);
+  z-index: 10;
+  border: 2px solid white;
+}

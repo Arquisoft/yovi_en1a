@@ -132,11 +132,26 @@ function checkWin(moves, boardSize, player) {
   }
 
   // Check if any root touches all three sides
+  let winningRoot = null;
   for (const key of keys) {
     const root = find(key);
-    if (sideA.get(root) && sideB.get(root) && sideC.get(root)) return true;
+    if (sideA.get(root) && sideB.get(root) && sideC.get(root)) {
+      winningRoot = root;
+      break;
+    }
   }
-  return false;
+
+  if (winningRoot !== null) {
+    const path = [];
+    for (const key of keys) {
+      if (find(key) === winningRoot) {
+        path.push(playerCells.get(key));
+      }
+    }
+    return { win: true, path };
+  }
+  
+  return { win: false, path: [] };
 }
 
 /**
@@ -154,9 +169,11 @@ function updateWinStatus(s) {
       : [0, 1];
 
   for (const p of toCheck) {
-    if (checkWin(s.moves, s.boardSize, p)) {
+    const result = checkWin(s.moves, s.boardSize, p);
+    if (result.win) {
       s.status = 'finished';
       s.winner = p;
+      s.winningPath = result.path;
       return true;
     }
   }
@@ -245,6 +262,7 @@ function sessionView(s) {
     status: s.status,
     currentPlayer: s.currentPlayer,
     winner: s.winner,
+    winningPath: s.winningPath || [],
     layout: buildLayout(s.moves, s.boardSize),
   };
 }

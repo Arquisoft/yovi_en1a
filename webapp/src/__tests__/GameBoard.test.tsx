@@ -52,15 +52,15 @@ afterEach(() => {
 
 describe('getCellClass', () => {
   it('returns hex-empty for empty cell', () => {
-    expect(getCellClass('.')).toBe('hex-cell hex-empty');
+    expect(getCellClass('.', false)).toBe('hex-cell hex-empty');
   });
 
   it('returns hex-p1 for blue cell', () => {
-    expect(getCellClass('B')).toBe('hex-cell hex-p1');
+    expect(getCellClass('B', false)).toBe('hex-cell hex-p1');
   });
 
   it('returns hex-p2 for red cell', () => {
-    expect(getCellClass('R')).toBe('hex-cell hex-p2');
+    expect(getCellClass('R', false)).toBe('hex-cell hex-p2');
   });
 });
 
