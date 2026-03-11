@@ -89,16 +89,16 @@ describe('getTurnPanelSubtext', () => {
     expect(getTurnPanelSubtext('idle', 'P1')).toBe('Choose mode below');
   });
 
-  it('returns (Blue) for P1 when ongoing', () => {
-    expect(getTurnPanelSubtext('ongoing', 'P1')).toBe('(Blue)');
+  it('returns (blue) for P1 when ongoing', () => {
+    expect(getTurnPanelSubtext('ongoing', 'P1')).toBe('(blue)');
   });
 
-  it('returns (Red) for P2 when ongoing', () => {
-    expect(getTurnPanelSubtext('ongoing', 'P2')).toBe('(Red)');
+  it('returns (red) for P2 when ongoing', () => {
+    expect(getTurnPanelSubtext('ongoing', 'P2')).toBe('(red)');
   });
 
-  it('returns (Red) for P2 when finished', () => {
-    expect(getTurnPanelSubtext('finished', 'P2')).toBe('(Red)');
+  it('returns (red) for P2 when finished', () => {
+    expect(getTurnPanelSubtext('finished', 'P2')).toBe('(red)');
   });
 });
 
@@ -249,14 +249,14 @@ describe('GameBoard Component', () => {
     });
   });
 
-  it('should show (Blue) subtext when it is P1 turn', async () => {
+  it('should show (blue) subtext when it is P1 turn', async () => {
     render(<GameBoard />);
     mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
 
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('(Blue)')).toBeInTheDocument();
+      expect(screen.getByText('(blue)')).toBeInTheDocument();
     });
   });
 

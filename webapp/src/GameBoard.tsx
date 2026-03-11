@@ -76,7 +76,7 @@ export function getTurnPanelHeader(
 
 export function getTurnPanelSubtext(gameStatus: GameStatus, currentTurn: PlayerTurn): string {
   if (gameStatus === 'idle') return 'Choose mode below';
-  return currentTurn === 'P1' ? '(Blue)' : '(Red)';
+  return currentTurn === 'P1' ? '(blue)' : '(red)';
 }
 
 export function applyMovesToBoard(moves: GameSession['moves']): CellValue[] {
@@ -271,8 +271,11 @@ export default function GameBoard() {
     return rows;
   };
 
-  const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, currentTurn);
-  const turnPanelSubtext = getTurnPanelSubtext(gameStatus, currentTurn);
+  const displayTurn = isBotThinking ? 'P2' : currentTurn;
+  const activePanelTurn = gameStatus === 'finished' && winner ? winner : displayTurn;
+
+  const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, activePanelTurn);
+  const turnPanelSubtext = getTurnPanelSubtext(gameStatus, activePanelTurn);
   const p2Label = selectedMode === 'hvb' ? 'P2 (Bot)' : 'P2: USERN.';
 
   return (
@@ -289,8 +292,8 @@ export default function GameBoard() {
           {/* LEFT SIDEBAR */}
           <div className="game-sidebar">
 
-            <div className={`game-panel ${currentTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
-              <div className={`game-panel-header ${currentTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
+            <div className={`game-panel ${activePanelTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
+              <div className={`game-panel-header ${activePanelTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
                 {turnPanelHeader}
               </div>
               <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
