@@ -111,7 +111,7 @@ app.post('/createuser', async (req, res) => {
   }
 
   // Validation of email format with regex (abc@abc.com)
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{1,64}$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ error: 'Invalid email format' });
   }
