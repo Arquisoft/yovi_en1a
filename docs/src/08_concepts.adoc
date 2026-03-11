@@ -13,6 +13,17 @@ The core domain of the application revolves around the "Classic Version" of Game
 ==== YEN Notation
 All game states are uniformly formatted using the **YEN Notation**, which dictates how board sizes, player turns, and piece positions are serialized. This ensures consistent state representation across the Frontend, the Logic Engine, and external bots.
 
+A YEN string encodes the complete game state in a compact, human-readable format. For example, on a 3×3 board where Blue has played two cells and Red has played one:
+
+[source]
+----
+B/BR/.R.
+----
+
+* `B` — It is **B**lue's turn.
+* `BR/` — Row 1 contains a Blue piece, a Red piece, then the row separator.
+* `.R.` — Row 2 contains an empty cell, a Red piece, and another empty cell.
+
 === Architecture and Design Patterns
 
 ==== Microservices Architecture
@@ -136,6 +147,18 @@ The current setup uses plain environment variables in `docker-compose.yml`, whic
 
 ==== Data Scoping and Privacy
 * **Data Privacy:** Requests are secured to ensure players can only access and modify their own personal profiles and match histories.
+
+==== CORS (Cross-Origin Resource Sharing)
+Because the Webapp (Port 80) communicates with backend APIs on different ports (3000, 3001, 4000), CORS must be configured explicitly.
+
+* **User Service (Node.js):** Implements a strict **origin whitelist** using the `cors` middleware. Allowed origins are configured via the `ALLOWED_ORIGINS` environment variable (comma-separated). By default, only `localhost` origins are permitted. Requests from unlisted origins are rejected with an error.
+* **Game API (`gameyapi`):** Currently uses a permissive CORS policy (`cors()` with no origin restriction) to facilitate external bot integration. This will be tightened before production deployment.
+
+==== Rate Limiting
+[NOTE]
+====
+Rate limiting is not yet implemented. Since the system exposes a public API for external bots (see Section 3), it is susceptible to abuse or accidental overload. Rate limiting middleware (e.g., `express-rate-limit` on the Node.js services or request throttling via an Nginx reverse proxy) is planned. This section will be updated once the strategy is finalized.
+====
 
 === User Experience (UX) Concepts
 
