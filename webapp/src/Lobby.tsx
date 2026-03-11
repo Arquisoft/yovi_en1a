@@ -3,7 +3,7 @@ import './Lobby.css';
 
 interface LobbyProps {
   username?: string;
-  onPlay?: (mode: string) => void;
+  onPlay?: (mode: string, difficulty: string) => void;
   onLogout?: () => void;
 }
 
@@ -54,7 +54,7 @@ const Lobby: React.FC<LobbyProps> = ({ username = "Guest User", onPlay, onLogout
                 >ADVANCED</button>
               </div>
             </div>
-            <button className="primary-play-btn" onClick={() => onPlay?.(selectedMode)}>
+            <button className="primary-play-btn" onClick={() => onPlay?.(selectedMode, selectedDifficulty)}>
               PLAY
             </button>
           </div>

@@ -143,11 +143,11 @@ describe('GameBoard Component', () => {
     expect(screen.getByRole('button', { name: /END TURN/i })).toBeInTheDocument();
   });
 
-  it('should start in idle state showing START GAME and mode selector', () => {
+  it('should start in idle state showing START GAME and selected mode', () => {
     render(<GameBoard />);
     const startGameElements = screen.getAllByText('START GAME');
-    expect(startGameElements.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Choose mode below')).toBeInTheDocument();
+    expect(startGameElements.length).toBe(1);
+    expect(screen.getByText('SELECTED MODE')).toBeInTheDocument();
     expect(screen.getByText('P1: USERN.').parentElement).toHaveClass('p1-card');
   });
 
@@ -181,24 +181,28 @@ describe('GameBoard Component', () => {
     expect(screen.getByText('END TURN')).toHaveClass('btn-end');
   });
 
-  it('should show mode selector with Human vs Bot and Human vs Human options in idle state', () => {
+  it('should show correct mode text in idle state', () => {
     render(<GameBoard />);
-    expect(screen.getByLabelText(/Human vs Bot/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Human vs Human/i)).toBeInTheDocument();
-    const hvbRadio = screen.getByLabelText(/Human vs Bot/i) as HTMLInputElement;
-    expect(hvbRadio.checked).toBe(true);
+    expect(screen.getByText(/Player vs Computer \(beginner\)/i)).toBeInTheDocument();
   });
 
-  it('should toggle selected mode when a radio button is clicked', () => {
+  it('should toggle selected mode via URL mockup (mocking window.location)', () => {
+    // GameBoard now reads from URL, we mock window.location in beforeAll or dynamically
+    const originalLocation = window.location;
+    delete (window as any).location;
+    window.location = Object.assign(new URL('http://localhost'), {
+      ...originalLocation,
+      search: '?mode=pvp&difficulty=advanced'
+    }) as any;
+    
     render(<GameBoard />);
-    const hvhRadio = screen.getByLabelText(/Human vs Human/i) as HTMLInputElement;
-    const hvbRadio = screen.getByLabelText(/Human vs Bot/i) as HTMLInputElement;
-    expect(hvbRadio.checked).toBe(true);
-    expect(hvhRadio.checked).toBe(false);
-    fireEvent.click(hvhRadio);
-    expect(hvhRadio.checked).toBe(true);
-    expect(hvbRadio.checked).toBe(false);
+    expect(screen.getByText(/Player vs Player/i)).toBeInTheDocument();
+    
+    // restore
+    window.location = originalLocation as any;
   });
+
+  // removed test: 'should toggle selected mode when a radio button is clicked' since radio buttons are gone
 
   it('should show START GAME button in idle state', () => {
     render(<GameBoard />);
@@ -206,23 +210,19 @@ describe('GameBoard Component', () => {
     expect(startBtn).toBeInTheDocument();
   });
 
-  it('should display P2 (Bot) label in hvb mode and P2: USERN. in hvh mode', () => {
+  it('should display P2 (Bot) label initially (since defaultValue is hvb)', () => {
     render(<GameBoard />);
     expect(screen.getByText('P2 (Bot)')).toBeInTheDocument();
-    const hvhRadio = screen.getByLabelText(/Human vs Human/i);
-    fireEvent.click(hvhRadio);
-    expect(screen.getByText('P2: USERN.')).toBeInTheDocument();
-    expect(screen.queryByText('P2 (Bot)')).not.toBeInTheDocument();
   });
 
-  it('should hide mode selector and START GAME button after game starts', async () => {
+  it('should hide mode display and START GAME button after game starts', async () => {
     render(<GameBoard />);
     mockApiSuccess(makeMockSession());
 
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
 
     await waitFor(() => {
-      expect(screen.queryByLabelText(/Human vs Bot/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Player vs Computer/i)).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /START GAME/i })).not.toBeInTheDocument();
     });
   });
@@ -410,16 +410,25 @@ describe('GameBoard Component', () => {
     expect(mockFetch.mock.calls.length).toBe(initialCallCount);
   });
 
-  it('should start game in hvh mode when selected', async () => {
+  it('should start game with parameters read from URL', async () => {
+    const originalLocation = window.location;
+    delete (window as any).location;
+    window.location = Object.assign(new URL('http://localhost'), {
+      ...originalLocation,
+      search: '?mode=pvp&difficulty=advanced'
+    }) as any;
+
     render(<GameBoard />);
-    fireEvent.click(screen.getByLabelText(/Human vs Human/i));
-    mockApiSuccess(makeMockSession({ mode: 'hvh' }));
+    mockApiSuccess(makeMockSession({ mode: 'hvh', difficulty: 'advanced' }));
 
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
 
     await waitFor(() => {
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(body.mode).toBe('hvh');
+      expect(body.difficulty).toBe('advanced');
     });
+
+    window.location = originalLocation as any;
   });
 });
