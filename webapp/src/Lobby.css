@@ -92,6 +92,17 @@ body {
   flex-direction: column;
 }
 
+.setup-options-row {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+}
+
+.mode-panel,
+.difficulty-panel {
+  flex: 1;
+}
+
 .panel-title {
   color: #483dff;
   font-size: 1rem;
@@ -125,10 +136,15 @@ body {
   box-shadow: 0 0 15px rgba(72, 61, 255, 0.15);
 }
 
-.mode-option-btn:hover:not(.active) {
+.mode-option-btn:hover:not(.active):not(.disabled) {
   color: #fff;
   background: rgba(255, 255, 255, 0);
   border-color: #555;
+}
+
+.mode-option-btn.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .primary-play-btn {
