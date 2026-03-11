@@ -111,6 +111,57 @@ In the Frontend Webapp, complex match states and user actions are managed reacti
 
 === Quality and Reliability Concepts
 
+==== Logging Strategy
+All services emit logs exclusively to **stdout/stderr**, which allows the Docker container runtime to collect and forward them transparently. No dedicated log-aggregation sidecar is required for the current setup.
+
+* **Rust Logic Engine (`gamey`):** Uses the https://docs.rs/tracing[`tracing`] crate with `tracing_subscriber`. This produces structured, level-based log output (`INFO`, `DEBUG`, `WARN`) that is machine-readable and can be forwarded to an aggregator (e.g., Loki/Grafana) in a future step. Fatal startup errors are written to `stderr` via `eprintln!`.
+
+* **Node.js Services (`users`, `gameyapi`):** Use the built-in `console.log` / `console.warn` / `console.error` API. Output is written directly to the process stdout/stderr, which Docker captures. Log lines are prefixed with context tags (e.g., `[CREATE]`, `[MOVE]`, `[BOT]`) to aid filtering.
+
+* **React Frontend (`webapp`):** Browser `console.*` calls are available during development. No log forwarding to the backend occurs from the client.
+
+[NOTE]
+====
+Centralized log aggregation (e.g., shipping Docker logs to a Loki stack alongside the existing Prometheus/Grafana setup) is planned for a later iteration.
+====
+
+==== Error Handling and Cross-Service Error Propagation
+The system uses a layered error propagation model based on standard HTTP semantics. The example described in Scenario 5 (Section 6.5) illustrates a concrete instance of this pattern.
+
+[plantuml, "error-propagation", png]
+----
+@startuml
+autonumber
+actor "Player" as User
+participant "Webapp\n(React)" as UI
+participant "Game API\n(Node.js)" as Node
+participant "Logic Engine\n(Rust)" as Rust
+
+User -> UI : Submits move
+UI -> Node : POST /move (YEN payload)
+activate Node
+
+Node -> Rust : POST /play (forward YEN)
+activate Rust
+Rust -> Rust : Validate rules
+Rust --> Node : 400 Bad Request\n{ "error": "CELL_ALREADY_OCCUPIED" }
+deactivate Rust
+
+Node -> Node : Log error (console.error)\nMap to client-safe response
+Node --> UI : 400 Bad Request\n{ "message": "Invalid move" }
+deactivate Node
+
+UI -> UI : Display warning toast\nRevert optimistic UI state
+UI -> User : "Invalid move!"
+@enduml
+----
+
+The concrete error handling layers are:
+
+* **Rust Logic Engine:** Returns precise HTTP error codes (`400 Bad Request` for invalid YEN/rule violations, `500 Internal Server Error` for unexpected failures). The JSON body contains a machine-readable `error` field.
+* **Node.js Middleware (Game API / User Service):** Catches errors from upstream Rust calls, logs them via `console.error`, and maps them to sanitized, client-facing JSON responses. Internal error details (stack traces, Rust error messages) are not forwarded to the browser.
+* **React Frontend:** Reads HTTP status codes from API responses. Non-2xx responses trigger UI-level feedback (e.g., warning toasts, reverting optimistic state updates). The Webapp never crashes on expected error payloads.
+
 ==== Observability and Monitoring
 To satisfy availability evaluation metrics, the system incorporates rigorous operational monitoring:
 * **Metrics Ingestion:** Both the Node.js API and the Rust Gamey Engine emit structured operational metrics.
