@@ -51,6 +51,12 @@ async function connectToMongo(uri) {
   await client.connect();
   db = client.db(DB_NAME);
   console.log(`Connected to MongoDB database: ${DB_NAME}`);
+
+  // prevent double username or email by creating field as index in mongodb
+  await db.collection('users').createIndex({ email: 1 }, { unique: true });
+  await db.collection('users').createIndex({ username: 1 }, { unique: true });
+  console.log('Unique indexes ensured for email and username');
+
   return client;
 }
 
@@ -125,7 +131,8 @@ app.post('/createuser', async (req, res) => {
     });
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(409).json({ error: 'Username or email already exists' });
+      const field = error.keyPattern?.email ? 'email' : 'username';
+      return res.status(409).json({ error: `An account with this ${field} already exists` });
     }
 
     if (error.name === 'MongoNotConnectedError' || error.message.includes('not connected')) {
