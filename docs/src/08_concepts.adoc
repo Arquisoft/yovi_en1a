@@ -21,6 +21,32 @@ To satisfy the requirements for decoupling and scalability, the application is d
 * **User Service:** A Node.js application orchestrating user accounts, authentication, and persistent statistics (running on Port 3000).
 * **Logic Engine:** A high-performance, stateless Rust web service focused exclusively on game rule validation and varying AI move generation strategies (running on Port 4000).
 
+[plantuml, "microservices-architecture", png]
+----
+@startuml
+skinparam componentStyle uml2
+
+package "Client Layer" {
+  [Browser (React Webapp)] as ReactUI
+  [External Bot] as Bot
+}
+
+package "Backend Services" {
+  [User Service (Node.js)] as UserService
+  [Logic Engine (Rust)] as LogicEngine
+}
+
+database "MongoDB" as Database
+
+ReactUI <--> UserService : REST API (Port 3000)
+ReactUI <--> LogicEngine : REST API (Port 4000)
+Bot <--> LogicEngine : REST API (Port 4000)
+Bot <--> UserService : REST API (Port 3000)
+UserService --> Database : Read/Write User Data & Stats
+
+@enduml
+----
+
 ==== Stateless Processing
 The Logic Engine is intentionally stateless. Current game states (in JSON format) are passed within each request, allowing the engine to calculate AI behavior or determine win/loss states without storing active match sessions in memory.
 
@@ -30,6 +56,32 @@ The Logic Engine is intentionally stateless. Current game states (in JSON format
 Communication both internally (between subsystems) and externally (third-party bots) relies fully on HTTP REST APIs utilizing JSON.
 * **Internal APIs:** The User Service and Logic Engine communicate with the Webapp using predefined JSON schemas strictly validating YEN notation.
 * **External Bot Interface:** The system provides dedicated endpoints (e.g., a `play` method) for third-party bots to interact with the engine.
+
+[plantuml, "api-communication-flow", png]
+----
+@startuml
+actor User
+participant "Webapp\n(TypeScript/React)" as WebApp
+participant "User Service\n(Node.js)" as Node
+participant "Logic Engine\n(Rust)" as Rust
+
+User -> WebApp : Clicks "Play Turn"
+activate WebApp
+
+WebApp -> Node : POST /api/stats (Update player stats)
+Node --> WebApp : 200 OK
+
+WebApp -> Rust : POST /api/play (Send current board state in YEN format)
+activate Rust
+Rust -> Rust : Validate Win/Loss
+Rust -> Rust : Calculate AI Move
+Rust --> WebApp : 200 OK + JSON (New Board State in YEN format)
+deactivate Rust
+
+WebApp -> User : Renders updated board state
+deactivate WebApp
+@enduml
+----
 
 === Data Persistence Concepts
 
