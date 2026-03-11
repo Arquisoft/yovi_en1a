@@ -9,8 +9,8 @@ const app = express();
 // In production set ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
 // Never include http://0.0.0.0 — that is a server bind address, not a browser origin.
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-    : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'];
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -102,6 +102,12 @@ app.post('/createuser', async (req, res) => {
     return res.status(400).json({
       error: 'Missing required fields: username, email, and password are required'
     });
+  }
+
+  // Validation of email format with regex (abc@abc.com)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
   }
 
   try {
