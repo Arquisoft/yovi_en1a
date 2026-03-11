@@ -365,6 +365,16 @@ export default function GameBoard() {
                   />
                 </svg>
                 <div className="board-grid">{renderBoard()}</div>
+                
+                {/* YOU WON Popup overlay */}
+                {gameStatus === 'finished' && winner && (
+                    <div className="winner-popup-overlay">
+                      <div className="winner-popup-content">
+                        <h2>{winner === 'P1' ? 'P1 WINS!' : 'P2 WINS!'}</h2>
+                        <p>Great match!</p>
+                      </div>
+                    </div>
+                )}
               </div>
             </div>
           </div>

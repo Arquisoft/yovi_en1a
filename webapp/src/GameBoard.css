@@ -289,3 +289,54 @@ body, html {
   border: 3px solid #ffcc00;
   animation: winningPulse 1s infinite ease-in-out;
 }
+
+/* Winner Popup Overlay */
+@keyframes slideDownPopup {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.winner-popup-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50; 
+  pointer-events: none; /* Let clicks pass through to the board if needed */
+  background: rgba(0, 0, 0, 0.4);
+  animation: slideDownPopup 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.winner-popup-content {
+  background: rgba(36, 36, 36, 0.4); /* Dark semi-transparent background */
+  backdrop-filter: blur(8px); /* Glassmorphism effect */
+  -webkit-backdrop-filter: blur(8px);
+  padding: 2vw 4vw;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.1); /* Subtle white border, dark shadow */
+  text-align: center;
+  color: #fff;
+  pointer-events: auto;
+}
+
+.winner-popup-content h2 {
+  margin: 0;
+  font-size: clamp(32px, 4vw, 64px);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 0px rgba(255,255,255,0.4);
+}
+
+.winner-popup-content p {
+  margin: 10px 0 0;
+  font-size: clamp(16px, 1.5vw, 24px);
+  font-weight: bold;
+  opacity: 0.9;
+}
