@@ -57,6 +57,12 @@ Communication both internally (between subsystems) and externally (third-party b
 * **Internal APIs:** The User Service and Logic Engine communicate with the Webapp using predefined JSON schemas strictly validating YEN notation.
 * **External Bot Interface:** The system provides dedicated endpoints (e.g., a `play` method) for third-party bots to interact with the engine.
 
+==== Asynchronous Push Communication (WebSockets)
+For real-time interactions, particularly in the "Human vs. Human" multiplayer scenario, the architecture envisions asynchronous push communication. 
+Instead of relying on inefficient client-side polling, the Node.js User Service will actively push game state updates (e.g., opponent moves) directly to the connected React clients via WebSockets.
+* **Current State:** Asynchronous push communication is planned but not yet implemented. The current system relies exclusively on RESTapi calls. 
+* **Future Updates:** Once WebSockets (e.g., via Socket.IO) are integrated, this section will be expanded with the specific event structures and network flow diagrams.
+
 [plantuml, "api-communication-flow", png]
 ----
 @startuml
