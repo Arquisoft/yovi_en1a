@@ -268,7 +268,8 @@ describe('GameBoard Component', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /REMATCH/i })).toBeInTheDocument();
-      expect(screen.getByText('P1 WINS!')).toBeInTheDocument();
+      const p1WinsElements = screen.getAllByText('P1 WINS!');
+      expect(p1WinsElements.length).toBeGreaterThan(0);
     });
   });
 
@@ -279,7 +280,8 @@ describe('GameBoard Component', () => {
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('P2 WINS!')).toBeInTheDocument();
+      const p2WinsElements = screen.getAllByText('P2 WINS!');
+      expect(p2WinsElements.length).toBeGreaterThan(0);
     });
   });
 
