@@ -424,4 +424,79 @@ describe('GameBoard Component', () => {
       expect(body.mode).toBe('hvh');
     });
   });
+
+  // ── New Tests for Scoreboard, Winning Path & Popup ──
+
+  it('should initialize scores at 0 for both players', () => {
+    render(<GameBoard />);
+    expect(screen.getByText('Pts: 0')).toBeInTheDocument();
+  });
+
+  it('should increment P1 score and show popup when P1 wins', async () => {
+    render(<GameBoard />);
+    // Initial start
+    mockApiSuccess(makeMockSession());
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+    await waitFor(() => screen.getByText('P1 TURN'));
+
+    // P1 wins
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+    const cells = document.querySelectorAll('.hex-cell');
+    fireEvent.click(cells[0]);
+
+    await waitFor(() => {
+      // Expect P1 score to be 1 and P2 to be 0
+      expect(screen.getByText('Pts: 1')).toBeInTheDocument();
+      const popupMsg = screen.getAllByText('P1 WINS!');
+      expect(popupMsg.length).toBeGreaterThan(0);
+      expect(screen.getByText('Great match!')).toBeInTheDocument();
+    });
+  });
+
+  it('should apply hex-winning class to cells in the winning path', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+    await waitFor(() => screen.getByText('P1 TURN'));
+
+    const sessionWithWin = makeMockSession({
+      status: 'finished',
+      winner: 0,
+      moves: [{ player: 0, x: 0, y: 0 }],
+      winningPath: [{ x: 0, y: 0 }]
+    });
+    mockApiSuccess(sessionWithWin);
+
+    const cells = document.querySelectorAll('.hex-cell');
+    fireEvent.click(cells[0]);
+
+    await waitFor(() => {
+      // Cell 0 should now have the hex-winning class
+      const newCells = document.querySelectorAll('.hex-cell');
+      expect(newCells[0]).toHaveClass('hex-winning');
+    });
+  });
+
+  it('should reset hasScored allowing scores to continue across multiple matches', async () => {
+    render(<GameBoard />);
+    
+    // First match P1 wins
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+    await waitFor(() => expect(screen.getByText('Pts: 1')).toBeInTheDocument());
+
+    // Rematch
+    mockApiSuccess(makeMockSession({ status: 'ongoing', currentPlayer: 0 }));
+    fireEvent.click(screen.getByRole('button', { name: /REMATCH/i }));
+    await waitFor(() => expect(screen.queryByText('Great match!')).not.toBeInTheDocument()); // popup gone
+
+    // Second match P1 wins again
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+    const cells = document.querySelectorAll('.hex-cell');
+    fireEvent.click(cells[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Pts: 2')).toBeInTheDocument();
+    });
+  });
 });
