@@ -44,6 +44,30 @@ The system uses **MongoDB**, a NoSQL document database, to store entities.
 * **Authentication:** Players must register and login to manage their profiles and statistics.
 * **Data Privacy:** Requests are secured to ensure players can only access and modify their own personal profiles and match histories.
 
+=== User Experience (UX) Concepts
+
+==== State Management and Rendering
+In the Frontend Webapp, complex match states and user actions are managed reactively. 
+* **State Trees:** React manages the active game properties (board layout, opponent type, current turn) locally to provide instant visual feedback without blocking for server responses during non-validating actions.
+* **Hexagonal UI Representation:** The UI seamlessly maps the engine-provided mathematical coordinate arrays (Barycentric or Index-based) onto visual hexagonal grids for intuitive gameplay.
+
+=== Quality and Reliability Concepts
+
+==== Observability and Monitoring
+To satisfy availability evaluation metrics, the system incorporates rigorous operational monitoring:
+* **Metrics Ingestion:** Both the Node.js API and the Rust Gamey Engine emit structured operational metrics.
+* **Visualization:** **Prometheus** scrapes system health, latency, and throughput metrics, which are then aggregated and visualized using **Grafana** dashboards.
+
+==== Testing and Quality Assurance
+System reliability is continuously verified through multiple layers of testing:
+* **Multi-Layer Testing:** The system utilizes unit tests for individual algorithmic checks (especially Rust logic), integration tests for API endpoints, and End-to-End (E2E) UI tests for critical user journeys.
+* **Static Analysis:** Code quality and security are strictly evaluated via **SonarCloud** against defined Quality Gates prior to any merge.
+
+==== Continuous Integration and Deployment (CI/CD)
+The development pipeline is automated natively with GitHub Actions:
+* **CI Pipelines:** Push events and pull requests trigger automated test suites and SonarCloud evaluations.
+* **CD Pipelines:** Upon a successful release merge, Docker images are automatically built and orchestrated on the production server.
+
 === Development and Operational Concepts
 
 ==== Documentation Strategy
