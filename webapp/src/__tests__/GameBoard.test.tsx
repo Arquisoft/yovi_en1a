@@ -429,7 +429,8 @@ describe('GameBoard Component', () => {
 
   it('should initialize scores at 0 for both players', () => {
     render(<GameBoard />);
-    expect(screen.getByText('Pts: 0')).toBeInTheDocument();
+    const scoreElements = screen.getAllByText('Pts: 0');
+    expect(scoreElements.length).toBe(2);
   });
 
   it('should increment P1 score and show popup when P1 wins', async () => {
