@@ -100,6 +100,11 @@ export default function GameBoard() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [selectedMode, setSelectedMode] = useState<GameMode>('hvb');
+  
+  // ── Session Scores (In-memory only, resets on reload)
+  const [p1Score, setP1Score] = useState(0);
+  const [p2Score, setP2Score] = useState(0);
+  const [hasScored, setHasScored] = useState(false);
 
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
@@ -110,6 +115,11 @@ export default function GameBoard() {
         setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
         if (s.status === 'finished') {
           setWinner(s.winner === 0 ? 'P1' : 'P2');
+          if (!hasScored) {
+            if (s.winner === 0) setP1Score((prev) => prev + 1);
+            if (s.winner === 1) setP2Score((prev) => prev + 1);
+            setHasScored(true);
+          }
         }
         if (s.winningPath) {
           const indices = s.winningPath.map((p) => coordsToIndex(p.x ?? p.col ?? 0, p.y ?? p.row ?? 0));
@@ -128,6 +138,7 @@ export default function GameBoard() {
     setWinningPathIndices(new Set());
     setBoard(new Array(TOTAL_CELLS).fill('.'));
     setCurrentTurn('P1');
+    setHasScored(false);
     try {
       const data = await apiPost<GameSession>('/play/create', {
         mode: selectedMode,
@@ -203,6 +214,7 @@ export default function GameBoard() {
       setWinner(null);
       setWinningPathIndices(new Set());
       setErrorMsg(null);
+      setHasScored(false);
       syncFromSession(data);
     } catch (e: unknown) {
       setErrorMsg(`Rematch failed: ${(e as Error).message}`);
@@ -361,7 +373,7 @@ export default function GameBoard() {
           <div className="game-sidebar">
             <div className="game-panel p1-card">
               <div className="game-panel-header text-p1">P1: USERN.</div>
-              <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>Pts: 0</div>
+              <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>Pts: {p1Score}</div>
             </div>
 
             <button
@@ -379,7 +391,7 @@ export default function GameBoard() {
             <div className="game-panel p2-card">
               <div className="game-panel-header text-p2">{p2Label}</div>
               <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>
-                {isBotThinking ? '🤔 thinking...' : 'Pts: 0'}
+                {isBotThinking ? '🤔 thinking...' : `Pts: ${p2Score}`}
               </div>
             </div>
           </div>
