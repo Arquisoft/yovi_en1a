@@ -190,10 +190,10 @@ describe('GameBoard Component', () => {
     // GameBoard now reads from URL, we mock window.location in beforeAll or dynamically
     const originalLocation = window.location;
     delete (window as any).location;
-    window.location = Object.assign(new URL('http://localhost'), {
+    window.location = {
       ...originalLocation,
       search: '?mode=pvp&difficulty=advanced'
-    }) as any;
+    } as any;
     
     render(<GameBoard />);
     expect(screen.getByText(/Player vs Player/i)).toBeInTheDocument();
@@ -413,10 +413,10 @@ describe('GameBoard Component', () => {
   it('should start game with parameters read from URL', async () => {
     const originalLocation = window.location;
     delete (window as any).location;
-    window.location = Object.assign(new URL('http://localhost'), {
+    window.location = {
       ...originalLocation,
       search: '?mode=pvp&difficulty=advanced'
-    }) as any;
+    } as any;
 
     render(<GameBoard />);
     mockApiSuccess(makeMockSession({ mode: 'hvh', difficulty: 'advanced' }));
