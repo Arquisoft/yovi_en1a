@@ -98,8 +98,43 @@ The system uses **MongoDB**, a NoSQL document database, to store entities.
 
 === Security Concepts
 
-==== User Authentication and Scoping
-* **Authentication:** Players must register and login to manage their profiles and statistics.
+==== User Authentication and Password Storage
+* **Registration:** Players register with a username, email, and password. The User Service hashes all passwords using **bcrypt** (cost factor 10) before persisting them to MongoDB. Plaintext passwords are never stored.
+* **Login:** Upon login the User Service retrieves the stored hash and verifies it against the submitted password via `bcrypt.compare`.
+
+==== Session Management
+* **Current State:** Token-based session management (e.g., JWTs) is not yet implemented. The runtime scenario in Section 6.4 already envisions a JWT-based flow (generate token on login → store in Session Storage → attach to subsequent requests). This will be implemented in a future iteration and this section will be updated accordingly.
+* **Planned Approach:** The User Service will issue a signed **JSON Web Token (JWT)** upon successful login. The React Webapp will store the token in the browser's Session Storage and attach it as an `Authorization: Bearer <token>` header on every API request. The User Service will validate the token on protected endpoints.
+
+==== Configuration and Secrets Management
+Service configuration (ports, upstream URLs, database connection strings) is managed through **environment variables** that are injected via `docker-compose.yml`.
+
+|===
+| Variable | Service | Example Value
+
+| `MONGODB_URI`
+| User Service
+| `mongodb://mongodb:27017/yovi`
+
+| `GAMEY_RUST_URL`
+| Game API
+| `http://gamey:4000`
+
+| `VITE_API_URL`
+| Webapp (build-time)
+| `http://localhost:3000`
+
+| `ALLOWED_ORIGINS`
+| User Service
+| `http://localhost,http://webapp`
+|===
+
+[WARNING]
+====
+The current setup uses plain environment variables in `docker-compose.yml`, which is sufficient for development but **not production-ready** for sensitive values (e.g., database credentials). Migration to Docker Secrets or a vault-based solution is planned for the production hardening phase. This section will be updated once the approach is finalized.
+====
+
+==== Data Scoping and Privacy
 * **Data Privacy:** Requests are secured to ensure players can only access and modify their own personal profiles and match histories.
 
 === User Experience (UX) Concepts
