@@ -27,36 +27,11 @@ B/BR/.R.
 === Architecture and Design Patterns
 
 ==== Microservices Architecture
-To satisfy the requirements for decoupling and scalability, the application is divided into specialized independent microservices:
-* **Frontend Webapp:** Developed in TypeScript/React for optimal user interaction.
-* **User Service:** A Node.js application orchestrating user accounts, authentication, and persistent statistics (running on Port 3000).
-* **Logic Engine:** A high-performance, stateless Rust web service focused exclusively on game rule validation and varying AI move generation strategies (running on Port 4000).
+The concrete service breakdown (Webapp, User Service, Logic Engine) is described in Sections 4 and 5. The cross-cutting design rules that govern the microservice decomposition are:
 
-[plantuml, "microservices-architecture", png]
-----
-@startuml
-skinparam componentStyle uml2
-
-package "Client Layer" {
-  [Browser (React Webapp)] as ReactUI
-  [External Bot] as Bot
-}
-
-package "Backend Services" {
-  [User Service (Node.js)] as UserService
-  [Logic Engine (Rust)] as LogicEngine
-}
-
-database "MongoDB" as Database
-
-ReactUI <--> UserService : REST API (Port 3000)
-ReactUI <--> LogicEngine : REST API (Port 4000)
-Bot <--> LogicEngine : REST API (Port 4000)
-Bot <--> UserService : REST API (Port 3000)
-UserService --> Database : Read/Write User Data & Stats
-
-@enduml
-----
+* **Independent Deployability:** Each service is packaged as its own Docker image with an isolated build pipeline. A new release of one service never requires redeploying another.
+* **Strict Network Boundaries:** Services communicate exclusively over defined HTTP endpoints. There are no shared databases, in-process calls, or file-system dependencies between services.
+* **Single Responsibility:** Each service owns exactly one concern — the Logic Engine owns game rules, the User Service owns identity and persistence, and the Webapp owns presentation. Business logic must not leak across service boundaries.
 
 ==== Stateless Processing
 The Logic Engine is intentionally stateless. Current game states (in JSON format) are passed within each request, allowing the engine to calculate AI behavior or determine win/loss states without storing active match sessions in memory.
@@ -102,10 +77,12 @@ deactivate WebApp
 
 === Data Persistence Concepts
 
-==== Document-based Storage
-The system uses **MongoDB**, a NoSQL document database, to store entities.
-* **Flexibility:** Document storage naturally matches the structured JSON inputs/outputs of the API and YEN notation.
-* **Extensibility:** Enables flexible storage schemas for persistent matchmaking histories, user statistics, and varying game dimensions without rigid table migrations.
+==== Data Mapping Strategy
+The technology choice (MongoDB) is documented in Sections 4 and 7. The cross-cutting design rule for persistence is how domain relationships are mapped to documents:
+
+* **User Documents** are stored as flat, self-contained documents in the `users` collection (fields: `username`, `email`, `password` hash, `createdAt`). No embedding of child objects is used at this stage.
+* **Match History (planned):** Match results will be stored as separate documents in a `matches` collection, **referencing** the participating users by their `_id` rather than embedding the full user object. This avoids data duplication and keeps user updates (e.g., profile changes) consistent without cascading writes.
+* **Design Rule — Referencing over Embedding:** Whenever two entities have independent lifecycles (e.g., a user exists regardless of any single match), the system favours **document references** (`ObjectId` foreign keys) over nested embedding. Embedding is reserved for data that is never queried or updated independently (e.g., a list of coordinates within a single match snapshot).
 
 === Security Concepts
 
@@ -233,7 +210,7 @@ System reliability is continuously verified through multiple layers of testing:
 ==== Continuous Integration and Deployment (CI/CD)
 The development pipeline is automated natively with GitHub Actions:
 * **CI Pipelines:** Push events and pull requests trigger automated test suites and SonarCloud evaluations.
-* **CD Pipelines:** Upon a successful release merge, Docker images are automatically built and orchestrated on the production server.
+* **CD Pipelines:** Upon a successful release merge, Docker images are automatically built from each service's `Dockerfile` and orchestrated on the production server via `docker-compose` (see Sections 2 and 7 for the containerization details).
 
 === Development and Operational Concepts
 
@@ -241,9 +218,6 @@ The development pipeline is automated natively with GitHub Actions:
 The architecture documentation follows a strict **Docs-as-Code** approach:
 * **AsciiDoc & Arc42:** All architectural documentation is written in **AsciiDoc**, structured entirely according to the **arc42** template. This approach ensures technical documentation lives alongside the source code in version control.
 * **PlantUML:** As dictated by our conventions, all architectural diagrams and models must comply with UML standards and are rendered programmatically using **PlantUML**.
-
-==== Containerization
-To guarantee uniform runtime environments across development and production, the entire system is containerized using **Docker** and targeted for an **Ubuntu Linux** host.
 
 ==== Collaboration and Source Control
 * **Git Workflows:** Employs pull requests, mandatory code reviews, and issue tracking.
