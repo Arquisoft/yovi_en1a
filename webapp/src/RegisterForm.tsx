@@ -37,7 +37,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       const endpoint = mode === 'login' ? '/login' : '/createuser';
 
       const payload = mode === 'login'
-        ? { username, password }
+        ? { usernameOrEmail: username, password }
         : { username, email, password };
 
       const res = await fetch(`${API_URL}${endpoint}`, {
@@ -49,7 +49,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
       const data = await res.json();
 
       if (res.ok) {
-        onRegisterSuccess(username);
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+        onRegisterSuccess(data.username || username);
       } else {
         setError(data.error || 'Server error occurred');
       }
@@ -89,14 +92,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         )}
 
         <div className="form-group">
-          <label htmlFor="username">Username</label>
+          <label htmlFor="username">{mode === 'login' ? 'Username or Email' : 'Username'}</label>
           <input
             type="text"
             id="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="form-input"
-            placeholder={mode === 'login' ? "Enter username" : "Choose a username"}
+            placeholder={mode === 'login' ? "Enter username or email" : "Choose a username"}
             required
           />
         </div>

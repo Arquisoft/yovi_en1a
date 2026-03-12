@@ -1,6 +1,7 @@
 const express = require('express');
 const { MongoClient } = require('mongodb');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
 
 const app = express();
@@ -31,6 +32,7 @@ let db;
 
 const MONGO_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
 async function connectToMongo(uri) {
   client = new MongoClient(uri, {
@@ -92,7 +94,7 @@ app.use(async (req, res, next) => {
   }
 });
 
-module.exports = { app, connectToMongo, closeMongoConnection };
+module.exports = { app, connectToMongo, closeMongoConnection, JWT_SECRET };
 
 // -------------------- Routes --------------------
 
@@ -162,11 +164,54 @@ app.post('/createuser', async (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-  const username = req.body?.username;
-  const email = req.body?.email;
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  const message = `Login successful for ${username || email}`;
-  res.json({ message });
+  if (!db) {
+    console.error('Database not available when attempting login');
+    return res.status(500).json({ error: 'Database not available' });
+  }
+
+  const { usernameOrEmail, password } = req.body;
+
+  if (!usernameOrEmail || !password) {
+    return res.status(400).json({
+      error: 'Missing required fields: username/email and password are required'
+    });
+  }
+
+  try {
+    // Look up user by username OR email
+    const user = await db.collection('users').findOne({
+      $or: [
+        { username: usernameOrEmail },
+        { email: usernameOrEmail }
+      ]
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Verify password
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, username: user.username, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    res.status(200).json({
+      message: `Login successful for ${user.username}`,
+      token,
+      username: user.username
+    });
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // -------------------- Server Startup --------------------
