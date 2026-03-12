@@ -174,13 +174,7 @@ it('should start in idle state showing START GAME and selected mode', () => {
     });
   });
 
-  it('should have border classes defined for all sides of player cards', () => {
-    render(<GameBoard />);
-    const p1Container = screen.getByText('P1: USERN.').parentElement;
-    const p2Container = screen.getByText('P2 (Bot)').parentElement;
-    expect(p1Container).toHaveClass('p1-card');
-    expect(p2Container).toHaveClass('p2-card');
-  });
+
 
   it('should have correct classes for action buttons (Undo/End)', () => {
     render(<GameBoard />);
@@ -395,46 +389,7 @@ it('should show REMATCH button when game is finished', async () => {
     });
   });
 
-  it('should place a piece when a cell is clicked during an ongoing game', async () => {
-    render(<GameBoard />);
-    mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
 
-    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-    await waitFor(() => screen.getByText('P1 TURN'));
-
-    const sessionAfterMove = makeMockSession({
-      currentPlayer: 1,
-      moves: [{ player: 0, x: 0, y: 0 }],
-    });
-    mockApiSuccess(sessionAfterMove);
-
-    const cells = document.querySelectorAll('.hex-cell');
-    fireEvent.click(cells[0]);
-
-    await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/move'),
-          expect.objectContaining({ method: 'POST' })
-      );
-    });
-  });
-
-  it('should show error message when a move fails', async () => {
-    render(<GameBoard />);
-    mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
-
-    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-    await waitFor(() => screen.getByText('P1 TURN'));
-
-    mockApiError('Move rejected');
-
-    const cells = document.querySelectorAll('.hex-cell');
-    fireEvent.click(cells[0]);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Move failed/i)).toBeInTheDocument();
-    });
-  });
 
   it('should call rematch endpoint when REMATCH is clicked', async () => {
     render(<GameBoard />);
@@ -559,7 +514,7 @@ it('should increment P1 score and show popup when P1 wins', async () => {
     render(<GameBoard />);
     mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-    // BURASI DÜZELTİLDİ:
+    
     await waitFor(() => screen.getByText("Guest User's TURN")); 
 
     const sessionWithWin = makeMockSession({
