@@ -27,6 +27,7 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('username');
+    localStorage.removeItem('token');
     globalThis.location.href = globalThis.location.pathname;
   };
 
