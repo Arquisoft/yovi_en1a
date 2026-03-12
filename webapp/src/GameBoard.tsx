@@ -11,12 +11,12 @@ type GameStatus = 'idle' | 'ongoing' | 'finished' | 'error';
 interface GameSession {
   gameId: string;
   mode: GameMode;
+  difficulty?: string;
   boardSize: number;
   moves: { player: number; x: number; y: number }[];
   status: 'ongoing' | 'finished';
   currentPlayer: number;
   winner: number | null;
-  winningPath?: { x?: number; y?: number; row?: number; col?: number }[];
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ export function getTurnPanelHeader(
 
 export function getTurnPanelSubtext(gameStatus: GameStatus, currentTurn: PlayerTurn): string {
   if (gameStatus === 'idle') return 'Choose mode below';
-  return currentTurn === 'P1' ? '(blue)' : '(red)';
+  return currentTurn === 'P1' ? '(Blue)' : '(Red)';
 }
 
 export function applyMovesToBoard(moves: GameSession['moves']): CellValue[] {
@@ -96,12 +96,29 @@ export default function GameBoard() {
   const [session, setSession] = useState<GameSession | null>(null);
   const [gameStatus, setGameStatus] = useState<GameStatus>('idle');
   const [winner, setWinner] = useState<PlayerTurn | null>(null);
-  const [winningPathIndices, setWinningPathIndices] = useState<Set<number>>(new Set());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
-  const [selectedMode, setSelectedMode] = useState<GameMode>('hvb');
+
   
-  // ── Session Scores (In-memory only, resets on reload)
+
+  // ── Determine initial mode and difficulty from URL parameters
+  const getInitialParams = () => {
+    if (typeof window === 'undefined') return { mode: 'hvb' as GameMode, diff: 'beginner' };
+    const params = new URLSearchParams(window.location.search);
+    const modeParam = params.get('mode');
+    const diffParam = params.get('difficulty');
+    return {
+      mode: modeParam === 'pvp' ? ('hvh' as GameMode) : ('hvb' as GameMode),
+      diff: diffParam || 'beginner'
+    };
+  };
+
+  const initialParams = getInitialParams();
+  
+  const selectedMode = initialParams.mode;
+  const selectedDifficulty = initialParams.diff;
+  
+  // ── Session Scores (In-memory only, resets on reload) (aus deinem Feature-Branch)
   const [p1Score, setP1Score] = useState(0);
   const [p2Score, setP2Score] = useState(0);
   const [hasScored, setHasScored] = useState(false);
@@ -121,12 +138,6 @@ export default function GameBoard() {
             setHasScored(true);
           }
         }
-        if (s.winningPath) {
-          const indices = s.winningPath.map((p) => coordsToIndex(p.x ?? p.col ?? 0, p.y ?? p.row ?? 0));
-          setWinningPathIndices(new Set(indices));
-        } else {
-          setWinningPathIndices(new Set());
-        }
       },
       []
   );
@@ -135,13 +146,12 @@ export default function GameBoard() {
   const handleStartGame = async () => {
     setErrorMsg(null);
     setWinner(null);
-    setWinningPathIndices(new Set());
     setBoard(new Array(TOTAL_CELLS).fill('.'));
     setCurrentTurn('P1');
-    setHasScored(false);
     try {
       const data = await apiPost<GameSession>('/play/create', {
         mode: selectedMode,
+        difficulty: selectedDifficulty,
         boardSize: BOARD_SIZE,
       });
       syncFromSession(data);
@@ -190,6 +200,7 @@ export default function GameBoard() {
       await fetch(`${API_URL}/play/${session.gameId}`, { method: 'DELETE' });
       const fresh = await apiPost<GameSession>('/play/create', {
         mode: session.mode,
+        difficulty: session.difficulty || selectedDifficulty,
         boardSize: session.boardSize,
       });
       let current: GameSession = fresh;
@@ -199,7 +210,6 @@ export default function GameBoard() {
       syncFromSession(current);
       setErrorMsg(null);
       setWinner(null);
-      setWinningPathIndices(new Set());
     } catch (e: unknown) {
       setErrorMsg(`Undo failed: ${(e as Error).message}`);
     }
@@ -212,9 +222,7 @@ export default function GameBoard() {
       const data = await apiPost<GameSession>(`/play/${session.gameId}/rematch`, {});
       setBoard(new Array(TOTAL_CELLS).fill('.'));
       setWinner(null);
-      setWinningPathIndices(new Set());
       setErrorMsg(null);
-      setHasScored(false);
       syncFromSession(data);
     } catch (e: unknown) {
       setErrorMsg(`Rematch failed: ${(e as Error).message}`);
@@ -223,12 +231,10 @@ export default function GameBoard() {
 
   // ─── Extracted render helpers (reduces cognitive complexity of renderBoard) ──
 
-  const renderCell = (cellIndex: number, cellValue: CellValue, hexWidth: string, isInteractive: boolean) => {
-    const isWinning = winningPathIndices.has(cellIndex);
-    return (
+  const renderCell = (cellIndex: number, cellValue: CellValue, hexWidth: string, isInteractive: boolean) => (
       <button
           key={cellIndex}
-          className={getCellClass(cellValue, isWinning)}
+          className={getCellClass(cellValue, false)}
           style={{
             width: hexWidth,
             opacity: isInteractive ? 1 : 0.6,
@@ -239,8 +245,7 @@ export default function GameBoard() {
       >
         {cellValue === '.' ? '' : cellValue}
       </button>
-    );
-  };
+  );
 
   const renderBoardRow = (row: number, startIndex: number, hexWidth: string, isInteractive: boolean) => {
     const rowCells = [];
@@ -273,9 +278,8 @@ export default function GameBoard() {
 
   const displayTurn = isBotThinking ? 'P2' : currentTurn;
   const activePanelTurn = gameStatus === 'finished' && winner ? winner : displayTurn;
-
-  const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, activePanelTurn);
-  const turnPanelSubtext = getTurnPanelSubtext(gameStatus, activePanelTurn);
+  const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, currentTurn);
+  const turnPanelSubtext = getTurnPanelSubtext(gameStatus, currentTurn);
   const p2Label = selectedMode === 'hvb' ? 'P2 (Bot)' : 'P2: USERN.';
 
   return (
@@ -292,38 +296,23 @@ export default function GameBoard() {
           {/* LEFT SIDEBAR */}
           <div className="game-sidebar">
 
-            <div className={`game-panel ${activePanelTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
-              <div className={`game-panel-header ${activePanelTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
-                {turnPanelHeader}
+           {gameStatus !== 'idle' && (
+              <div className={`game-panel ${activePanelTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
+                <div className={`game-panel-header ${activePanelTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
+                  {turnPanelHeader}
+                </div>
+                <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
+                  {turnPanelSubtext}
+                </div>
               </div>
-              <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
-                {turnPanelSubtext}
-              </div>
-            </div>
+            )}
 
             {gameStatus === 'idle' && (
-                <div className="game-panel" style={{ gap: 6 }}>
-                  <div className="game-panel-header" style={{ color: '#ccc' }}>MODE</div>
-                  <label style={{ color: '#aaa', fontSize: 13, cursor: 'pointer' }}>
-                    <input
-                        type="radio"
-                        name="mode"
-                        value="hvb"
-                        checked={selectedMode === 'hvb'}
-                        onChange={() => setSelectedMode('hvb')}
-                    />{' '}
-                    Human vs Bot
-                  </label>
-                  <label style={{ color: '#aaa', fontSize: 13, cursor: 'pointer' }}>
-                    <input
-                        type="radio"
-                        name="mode"
-                        value="hvh"
-                        checked={selectedMode === 'hvh'}
-                        onChange={() => setSelectedMode('hvh')}
-                    />{' '}
-                    Human vs Human
-                  </label>
+                <div className="game-panel" style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
+                  <div className="game-panel-header" style={{ color: '#ccc' }}>SELECTED MODE</div>
+                  <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
+                    {selectedMode === 'hvh' ? 'Player vs Player' : `Player vs Computer (${selectedDifficulty})`}
+                  </div>
                 </div>
             )}
 
@@ -368,16 +357,6 @@ export default function GameBoard() {
                   />
                 </svg>
                 <div className="board-grid">{renderBoard()}</div>
-                
-                {/* YOU WON Popup overlay */}
-                {gameStatus === 'finished' && winner && (
-                    <div className="winner-popup-overlay">
-                      <div className="winner-popup-content">
-                        <h2>{winner === 'P1' ? 'P1 WINS!' : 'P2 WINS!'}</h2>
-                        <p>Great match!</p>
-                      </div>
-                    </div>
-                )}
               </div>
             </div>
           </div>
