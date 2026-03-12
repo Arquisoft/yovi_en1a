@@ -77,7 +77,7 @@ function getNeighbors(row, col, boardSize) {
   return neighbors;
 }
 
-function touchesSideA(row)       { return row === 0; }         // apex
+function touchesSideA(row, boardSize) { return row === boardSize - 1; } // bottom edge
 function touchesSideB(col)       { return col === 0; }         // left edge
 function touchesSideC(row, col)  { return col === row; }       // right edge
 
@@ -105,7 +105,7 @@ function checkWin(moves, boardSize, player) {
   // Union-Find
   const keys = [...playerCells.keys()];
   const parent = new Map(keys.map(k => [k, k]));
-  const sideA  = new Map(keys.map(k => [k, touchesSideA(playerCells.get(k).row)]));
+  const sideA  = new Map(keys.map(k => [k, touchesSideA(playerCells.get(k).row, boardSize)]));
   const sideB  = new Map(keys.map(k => [k, touchesSideB(playerCells.get(k).col)]));
   const sideC  = new Map(keys.map(k => [k, touchesSideC(playerCells.get(k).row, playerCells.get(k).col)]));
 
@@ -132,11 +132,27 @@ function checkWin(moves, boardSize, player) {
   }
 
   // Check if any root touches all three sides
+  let winningRoot = null;
   for (const key of keys) {
     const root = find(key);
-    if (sideA.get(root) && sideB.get(root) && sideC.get(root)) return true;
+    if (sideA.get(root) && sideB.get(root) && sideC.get(root)) {
+      winningRoot = root;
+      break;
+    }
   }
-  return false;
+
+  if (winningRoot !== null) {
+    const path = [];
+    for (const key of keys) {
+      if (find(key) === winningRoot) {
+        const cell = playerCells.get(key);
+        path.push({ x: cell.col, y: cell.row });
+      }
+    }
+    return { win: true, path };
+  }
+  
+  return { win: false, path: [] };
 }
 
 /**
@@ -154,9 +170,11 @@ function updateWinStatus(s) {
       : [0, 1];
 
   for (const p of toCheck) {
-    if (checkWin(s.moves, s.boardSize, p)) {
+    const result = checkWin(s.moves, s.boardSize, p);
+    if (result.win) {
       s.status = 'finished';
       s.winner = p;
+      s.winningPath = result.path;
       return true;
     }
   }
@@ -245,6 +263,7 @@ function sessionView(s) {
     status: s.status,
     currentPlayer: s.currentPlayer,
     winner: s.winner,
+    winningPath: s.winningPath || [],
     layout: buildLayout(s.moves, s.boardSize),
   };
 }
