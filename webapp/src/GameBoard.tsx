@@ -11,6 +11,7 @@ type GameStatus = 'idle' | 'ongoing' | 'finished' | 'error';
 interface GameSession {
   gameId: string;
   mode: GameMode;
+  difficulty?: string;
   boardSize: number;
   moves: { player: number; x: number; y: number }[];
   status: 'ongoing' | 'finished';
@@ -97,7 +98,22 @@ export default function GameBoard() {
   const [winner, setWinner] = useState<PlayerTurn | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
-  const [selectedMode, setSelectedMode] = useState<GameMode>('hvb');
+
+  // ── Determine initial mode and difficulty from URL parameters
+  const getInitialParams = () => {
+    if (typeof window === 'undefined') return { mode: 'hvb' as GameMode, diff: 'beginner' };
+    const params = new URLSearchParams(window.location.search);
+    const modeParam = params.get('mode');
+    const diffParam = params.get('difficulty');
+    return {
+      mode: modeParam === 'pvp' ? ('hvh' as GameMode) : ('hvb' as GameMode),
+      diff: diffParam || 'beginner'
+    };
+  };
+
+  const initialParams = getInitialParams();
+  const selectedMode = initialParams.mode;
+  const selectedDifficulty = initialParams.diff;
 
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
@@ -122,6 +138,7 @@ export default function GameBoard() {
     try {
       const data = await apiPost<GameSession>('/play/create', {
         mode: selectedMode,
+        difficulty: selectedDifficulty,
         boardSize: BOARD_SIZE,
       });
       syncFromSession(data);
@@ -170,6 +187,7 @@ export default function GameBoard() {
       await fetch(`${API_URL}/play/${session.gameId}`, { method: 'DELETE' });
       const fresh = await apiPost<GameSession>('/play/create', {
         mode: session.mode,
+        difficulty: session.difficulty || selectedDifficulty,
         boardSize: session.boardSize,
       });
       let current: GameSession = fresh;
@@ -263,38 +281,23 @@ export default function GameBoard() {
           {/* LEFT SIDEBAR */}
           <div className="game-sidebar">
 
-            <div className={`game-panel ${currentTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
-              <div className={`game-panel-header ${currentTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
-                {turnPanelHeader}
+            {gameStatus !== 'idle' && (
+              <div className={`game-panel ${currentTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
+                <div className={`game-panel-header ${currentTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
+                  {turnPanelHeader}
+                </div>
+                <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
+                  {turnPanelSubtext}
+                </div>
               </div>
-              <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
-                {turnPanelSubtext}
-              </div>
-            </div>
+            )}
 
             {gameStatus === 'idle' && (
-                <div className="game-panel" style={{ gap: 6 }}>
-                  <div className="game-panel-header" style={{ color: '#ccc' }}>MODE</div>
-                  <label style={{ color: '#aaa', fontSize: 13, cursor: 'pointer' }}>
-                    <input
-                        type="radio"
-                        name="mode"
-                        value="hvb"
-                        checked={selectedMode === 'hvb'}
-                        onChange={() => setSelectedMode('hvb')}
-                    />{' '}
-                    Human vs Bot
-                  </label>
-                  <label style={{ color: '#aaa', fontSize: 13, cursor: 'pointer' }}>
-                    <input
-                        type="radio"
-                        name="mode"
-                        value="hvh"
-                        checked={selectedMode === 'hvh'}
-                        onChange={() => setSelectedMode('hvh')}
-                    />{' '}
-                    Human vs Human
-                  </label>
+                <div className="game-panel" style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
+                  <div className="game-panel-header" style={{ color: '#ccc' }}>SELECTED MODE</div>
+                  <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
+                    {selectedMode === 'hvh' ? 'Player vs Player' : `Player vs Computer (${selectedDifficulty})`}
+                  </div>
                 </div>
             )}
 
