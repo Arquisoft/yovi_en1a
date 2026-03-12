@@ -145,7 +145,8 @@ function checkWin(moves, boardSize, player) {
     const path = [];
     for (const key of keys) {
       if (find(key) === winningRoot) {
-        path.push(playerCells.get(key));
+        const cell = playerCells.get(key);
+        path.push({ x: cell.col, y: cell.row });
       }
     }
     return { win: true, path };
