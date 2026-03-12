@@ -18,6 +18,9 @@ interface GameSession {
   currentPlayer: number;
   winner: number | null;
 }
+interface GameBoardProps {
+  username?: string;
+}
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -61,17 +64,24 @@ export function getCellClass(cellValue: CellValue, isWinning: boolean): string {
   if (cellValue === 'R') return isWinning ? 'hex-cell hex-p2 hex-winning' : 'hex-cell hex-p2';
   return 'hex-cell hex-empty';
 }
-
 export function getTurnPanelHeader(
   gameStatus: GameStatus,
   winner: PlayerTurn | null,
   isBotThinking: boolean,
-  currentTurn: PlayerTurn
+  currentTurn: PlayerTurn,
+  username: string
 ): string {
   if (gameStatus === 'idle') return 'START GAME';
-  if (gameStatus === 'finished') return `${winner} WINS!`;
+  if (gameStatus === 'finished') {
+    const winnerName = winner === 'P1' ? username : 'P2';
+    return `${winnerName} WINS!`;
+  }
   if (isBotThinking) return 'BOT THINKING…';
-  return `${currentTurn} TURN`;
+  if (currentTurn === 'P1') {
+    return `${username}'s TURN`; 
+  } else {
+    return "P2's TURN";
+  }
 }
 
 export function getTurnPanelSubtext(gameStatus: GameStatus, currentTurn: PlayerTurn): string {
@@ -90,7 +100,7 @@ export function applyMovesToBoard(moves: GameSession['moves']): CellValue[] {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function GameBoard() {
+export default function GameBoard({ username = "Guest User" }: GameBoardProps) {
   const [board, setBoard] = useState<CellValue[]>(new Array(TOTAL_CELLS).fill('.'));
   const [currentTurn, setCurrentTurn] = useState<PlayerTurn>('P1');
   const [session, setSession] = useState<GameSession | null>(null);
@@ -291,10 +301,11 @@ export default function GameBoard() {
     return rows;
   };
 
-  const displayTurn = isBotThinking ? 'P2' : currentTurn;
-  const activePanelTurn = gameStatus === 'finished' && winner ? winner : displayTurn;
-  const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, currentTurn);
-  const turnPanelSubtext = getTurnPanelSubtext(gameStatus, currentTurn);
+  //const displayTurn = isBotThinking ? 'P2' : currentTurn;
+ // const activePanelTurn = gameStatus === 'finished' && winner ? winner : displayTurn;
+  const activeTurn = isBotThinking ? 'P2' : currentTurn;
+  const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, currentTurn,username);
+  const turnPanelSubtext = getTurnPanelSubtext(gameStatus, activeTurn);
   const p2Label = selectedMode === 'hvb' ? 'P2 (Bot)' : 'P2: USERN.';
 
   return (
@@ -312,10 +323,10 @@ export default function GameBoard() {
         <div className="game-sidebar">
 
           {gameStatus !== 'idle' && (
-            <div className={`game-panel ${activePanelTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
-              <div className={`game-panel-header ${activePanelTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
-                {turnPanelHeader}
-              </div>
+            <div className={`game-panel ${activeTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
+  <div className={`game-panel-header ${activeTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
+    {turnPanelHeader}
+  </div>
               <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
                 {turnPanelSubtext}
               </div>
@@ -373,15 +384,16 @@ export default function GameBoard() {
               </svg>
               <div className="board-grid">{renderBoard()}</div>
 
-              {/* YOU WON Popup overlay */}
-              {gameStatus === 'finished' && winner && (
-                <div className="winner-popup-overlay">
-                  <div className="winner-popup-content">
-                    <h2>{winner === 'P1' ? 'P1 WINS!' : 'P2 WINS!'}</h2>
-                    <p>Great match!</p>
-                  </div>
-                </div>
-              )}
+             {/* YOU WON Popup overlay */}
+  {gameStatus === 'finished' && winner && (
+    <div className="winner-popup-overlay">
+      <div className="winner-popup-content">
+        
+        <h2>{winner === 'P1' ? `${username} WINS!` : 'P2 WINS!'}</h2>
+        <p>Great match!</p>
+      </div>
+    </div>
+  )}
             </div>
           </div>
         </div>
@@ -389,7 +401,7 @@ export default function GameBoard() {
         {/* RIGHT SIDEBAR */}
         <div className="game-sidebar">
           <div className="game-panel p1-card">
-            <div className="game-panel-header text-p1">P1: USERN.</div>
+            <div className="game-panel-header text-p1">P1:{username}</div>
             <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>Pts: {p1Score}</div>
           </div>
 

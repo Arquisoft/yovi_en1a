@@ -65,25 +65,26 @@ describe('getCellClass', () => {
 });
 
 describe('getTurnPanelHeader', () => {
+  const testUser = 'Ahmet';
+
   it('returns START GAME when idle', () => {
-    expect(getTurnPanelHeader('idle', null, false, 'P1')).toBe('START GAME');
+    expect(getTurnPanelHeader('idle', null, false, 'P1', testUser)).toBe('START GAME');
   });
 
   it('returns winner string when finished', () => {
-    expect(getTurnPanelHeader('finished', 'P1', false, 'P1')).toBe('P1 WINS!');
-    expect(getTurnPanelHeader('finished', 'P2', false, 'P2')).toBe('P2 WINS!');
+    expect(getTurnPanelHeader('finished', 'P1', false, 'P1', testUser)).toBe(`${testUser} WINS!`);
+    expect(getTurnPanelHeader('finished', 'P2', false, 'P2', testUser)).toBe('P2 WINS!');
   });
 
   it('returns BOT THINKING when bot is thinking', () => {
-    expect(getTurnPanelHeader('ongoing', null, true, 'P2')).toBe('BOT THINKING…');
+    expect(getTurnPanelHeader('ongoing', null, true, 'P2', testUser)).toBe('BOT THINKING…');
   });
 
   it('returns current turn when ongoing and not thinking', () => {
-    expect(getTurnPanelHeader('ongoing', null, false, 'P1')).toBe('P1 TURN');
-    expect(getTurnPanelHeader('ongoing', null, false, 'P2')).toBe('P2 TURN');
+    expect(getTurnPanelHeader('ongoing', null, false, 'P1', testUser)).toBe(`P1 ${testUser} TURN`);
+    expect(getTurnPanelHeader('ongoing', null, false, 'P2', testUser)).toBe('P2 TURN');
   });
 });
-
 describe('getTurnPanelSubtext', () => {
   it('returns "Choose mode below" when idle', () => {
     expect(getTurnPanelSubtext('idle', 'P1')).toBe('Choose mode below');
