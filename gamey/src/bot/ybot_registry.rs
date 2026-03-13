@@ -19,7 +19,7 @@ use crate::YBot;
 /// use gamey::{YBotRegistry, GamerBot}; 
 /// 
 /// let registry = YBotRegistry::new();
-///     .with_bot(Arc::new(RandomBot));
+///     .with_bot(Arc::new(GamerBot));
 ///
 /// let bot = registry.find("gamer_bot");
 /// assert!(bot.is_some());
