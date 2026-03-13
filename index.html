@@ -501,9 +501,14 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#section-concepts">8. Cross-cutting Concepts</a>
 <ul class="sectlevel2">
-<li><a href="#_concept_1">8.1. <em>&lt;Concept 1&gt;</em></a></li>
-<li><a href="#_concept_2">8.2. <em>&lt;Concept 2&gt;</em></a></li>
-<li><a href="#_concept_n">8.3. <em>&lt;Concept n&gt;</em></a></li>
+<li><a href="#_domain_concepts">8.1. Domain Concepts</a></li>
+<li><a href="#_architecture_and_design_patterns">8.2. Architecture and Design Patterns</a></li>
+<li><a href="#_communication_and_integration_concepts">8.3. Communication and Integration Concepts</a></li>
+<li><a href="#_data_persistence_concepts">8.4. Data Persistence Concepts</a></li>
+<li><a href="#_security_concepts">8.5. Security Concepts</a></li>
+<li><a href="#_user_experience_ux_concepts">8.6. User Experience (UX) Concepts</a></li>
+<li><a href="#_quality_and_reliability_concepts">8.7. Quality and Reliability Concepts</a></li>
+<li><a href="#_development_and_operational_concepts">8.8. Development and Operational Concepts</a></li>
 </ul>
 </li>
 <li><a href="#section-design-decisions">9. Architecture Decisions</a></li>
@@ -1514,14 +1519,14 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <div class="sect2">
 <h3 id="_scenario_2_human_player_vs_human_player_multiplayer_turn_execution">6.2. Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)</h3>
 <div class="paragraph">
-<p><strong>Description:</strong> This scenario illustrates the data flow of a single turn in a networked multiplayer match between two human players. It demonstrates how a move made by one player is validated, saved, and eventually displayed on the opponent&#8217;s screen.</p>
+<p><strong>Description:</strong> This diagram illustrates the turn flow between two human players. It demonstrates how a move made by one player is validated, saved, and seamlessly pushed to the opponent&#8217;s screen.</p>
 </div>
 <div class="paragraph">
-<p><strong>Notable Aspects:</strong> Unlike the "Human vs. AI" scenario where the Rust engine immediately calculates a counter-move, here the <code>GameY Engine</code> is strictly used for rule validation. The <code>User Service</code> and <code>MongoDB</code> act as the central state managers, holding the updated board so the second player&#8217;s Webapp can retrieve it (either via polling or WebSockets).</p>
+<p><strong>Notable Aspects:</strong> Unlike the "Human vs. AI" scenario where the Rust engine immediately calculates a counter-move, here the GameY Engine (Rust) is strictly used for rule validation. The User Service (Node) acts as the central state manager. It handles saving the updated board to the database internally and directly pushes the new state to the second player&#8217;s client (via WebSockets/Push), initiating their turn without the need for manual retrieval or polling.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/human-vs-human.png" alt="human vs human" width="1233" height="766">
+<img src="./images/human-vs-human.png" alt="human vs human" width="783" height="488">
 </div>
 </div>
 </div>
@@ -1724,126 +1729,369 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <div class="sect1">
 <h2 id="section-concepts">8. Cross-cutting Concepts</h2>
 <div class="sectionbody">
-<div class="sidebarblock arc42help">
+<div class="sect2">
+<h3 id="_domain_concepts">8.1. Domain Concepts</h3>
+<div class="sect3">
+<h4 id="_game_y_and_hexagonal_grids">8.1.1. Game Y and Hexagonal Grids</h4>
+<div class="paragraph">
+<p>The core domain of the application revolves around the "Classic Version" of Game Y. The game environment is based on variable-sized hexagonal boards. The system supports multiple coordinate representations for these grids:
+* <strong>Barycentric Coordinates (x,y,z):</strong> Used to represent three-dimensional positioning in a 2D hexagonal space.
+* <strong>Index-based Coordinates (0&#8230;&#8203;n):</strong> Linear representation for simpler indexing in arrays or matrices.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_yen_notation">8.1.2. YEN Notation</h4>
+<div class="paragraph">
+<p>All game states are uniformly formatted using the <strong>YEN Notation</strong>, which dictates how board sizes, player turns, and piece positions are serialized. This ensures consistent state representation across the Frontend, the Logic Engine, and external bots.</p>
+</div>
+<div class="paragraph">
+<p>A YEN string encodes the complete game state in a compact, human-readable format. For example, on a 3×3 board where Blue has played two cells and Red has played one:</p>
+</div>
+<div class="listingblock">
 <div class="content">
-<div class="paragraph">
-<div class="title">Content</div>
-<p>This section describes overall, principal regulations and solution ideas that are relevant in multiple parts (= cross-cutting) of your system.
-Such concepts are often related to multiple building blocks.
-They can include many different topics, such as</p>
+<pre class="highlight"><code>B/BR/.R.</code></pre>
+</div>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>models, especially domain models</p>
+<p><code>B</code> — It is <strong>B</strong>lue&#8217;s turn.</p>
 </li>
 <li>
-<p>architecture or design patterns</p>
+<p><code>BR/</code> — Row 1 contains a Blue piece, a Red piece, then the row separator.</p>
 </li>
 <li>
-<p>rules for using specific technology</p>
-</li>
-<li>
-<p>principal, often technical decisions of an overarching (= cross-cutting) nature</p>
-</li>
-<li>
-<p>implementation rules</p>
+<p><code>.R.</code> — Row 2 contains an empty cell, a Red piece, and another empty cell.</p>
 </li>
 </ul>
 </div>
-<div class="paragraph">
-<div class="title">Motivation</div>
-<p>Concepts form the basis for <em>conceptual integrity</em> (consistency, homogeneity) of the architecture.
-Thus, they are an important contribution to achieve inner qualities of your system.</p>
 </div>
-<div class="paragraph">
-<p>Some of these concepts cannot be assigned to individual building blocks, e.g. security or safety.</p>
 </div>
+<div class="sect2">
+<h3 id="_architecture_and_design_patterns">8.2. Architecture and Design Patterns</h3>
+<div class="sect3">
+<h4 id="_microservices_architecture">8.2.1. Microservices Architecture</h4>
 <div class="paragraph">
-<div class="title">Form</div>
-<p>The form can be varied:</p>
+<p>The concrete service breakdown (Webapp, User Service, Logic Engine) is described in Sections 4 and 5. The cross-cutting design rules that govern the microservice decomposition are:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>concept papers with any kind of structure</p>
+<p><strong>Independent Deployability:</strong> Each service is packaged as its own Docker image with an isolated build pipeline. A new release of one service never requires redeploying another.</p>
 </li>
 <li>
-<p>cross-cutting model excerpts or scenarios using notations of the architecture views</p>
+<p><strong>Strict Network Boundaries:</strong> Services communicate exclusively over defined HTTP endpoints. There are no shared databases, in-process calls, or file-system dependencies between services.</p>
 </li>
 <li>
-<p>sample implementations, especially for technical concepts</p>
-</li>
-<li>
-<p>reference to typical usage of standard frameworks (e.g. using Hibernate for object/relational mapping)</p>
+<p><strong>Single Responsibility:</strong> Each service owns exactly one concern — the Logic Engine owns game rules, the User Service owns identity and persistence, and the Webapp owns presentation. Business logic must not leak across service boundaries.</p>
 </li>
 </ul>
 </div>
-<div class="paragraph">
-<div class="title">Structure</div>
-<p>A potential (but not mandatory) structure for this section could be:</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>Domain concepts</p>
-</li>
-<li>
-<p>User Experience concepts (UX)</p>
-</li>
-<li>
-<p>Safety and security concepts</p>
-</li>
-<li>
-<p>Architecture and design patterns</p>
-</li>
-<li>
-<p>"Under-the-hood"</p>
-</li>
-<li>
-<p>development concepts</p>
-</li>
-<li>
-<p>operational concepts</p>
-</li>
-</ul>
-</div>
+<div class="sect3">
+<h4 id="_stateless_processing">8.2.2. Stateless Processing</h4>
 <div class="paragraph">
-<p>Note: it might be difficult to assign individual concepts to one specific topic
-on this list.</p>
+<p>The Logic Engine is intentionally stateless. Current game states (in JSON format) are passed within each request, allowing the engine to calculate AI behavior or determine win/loss states without storing active match sessions in memory.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_communication_and_integration_concepts">8.3. Communication and Integration Concepts</h3>
+<div class="sect3">
+<h4 id="_restful_json_apis">8.3.1. RESTful JSON APIs</h4>
+<div class="paragraph">
+<p>Communication both internally (between subsystems) and externally (third-party bots) relies fully on HTTP REST APIs utilizing JSON.
+* <strong>Internal APIs:</strong> The User Service and Logic Engine communicate with the Webapp using predefined JSON schemas strictly validating YEN notation.
+* <strong>External Bot Interface:</strong> The system provides dedicated endpoints (e.g., a <code>play</code> method) for third-party bots to interact with the engine.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_asynchronous_push_communication_websockets">8.3.2. Asynchronous Push Communication (WebSockets)</h4>
+<div class="paragraph">
+<p>For real-time interactions, particularly in the "Human vs. Human" multiplayer scenario, the architecture envisions asynchronous push communication.
+Instead of relying on inefficient client-side polling, the Node.js User Service will actively push game state updates (e.g., opponent moves) directly to the connected React clients via WebSockets.
+* <strong>Current State:</strong> Asynchronous push communication is planned but not yet implemented. The current system relies exclusively on RESTapi calls.
+* <strong>Future Updates:</strong> Once WebSockets (e.g., via Socket.IO) are integrated, this section will be expanded with the specific event structures and network flow diagrams.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/08-concepts-EN.drawio.png" alt="Possible topics for crosscutting concepts">
+<img src="./images/api-communication-flow.png" alt="api communication flow" width="699" height="452">
 </div>
-</div>
-<div class="paragraph">
-<div class="title">Further Information</div>
-<p>See <a href="https://docs.arc42.org/section-8/">Concepts</a> in the arc42 documentation.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_1">8.1. <em>&lt;Concept 1&gt;</em></h3>
+<h3 id="_data_persistence_concepts">8.4. Data Persistence Concepts</h3>
+<div class="sect3">
+<h4 id="_data_mapping_strategy">8.4.1. Data Mapping Strategy</h4>
 <div class="paragraph">
-<p><em>&lt;explanation&gt;</em></p>
+<p>The technology choice (MongoDB) is documented in Sections 4 and 7. The cross-cutting design rule for persistence is how domain relationships are mapped to documents:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>User Documents</strong> are stored as flat, self-contained documents in the <code>users</code> collection (fields: <code>username</code>, <code>email</code>, <code>password</code> hash, <code>createdAt</code>). No embedding of child objects is used at this stage.</p>
+</li>
+<li>
+<p><strong>Match History (planned):</strong> Match results will be stored as separate documents in a <code>matches</code> collection, <strong>referencing</strong> the participating users by their <code>_id</code> rather than embedding the full user object. This avoids data duplication and keeps user updates (e.g., profile changes) consistent without cascading writes.</p>
+</li>
+<li>
+<p><strong>Design Rule — Referencing over Embedding:</strong> Whenever two entities have independent lifecycles (e.g., a user exists regardless of any single match), the system favours <strong>document references</strong> (<code>ObjectId</code> foreign keys) over nested embedding. Embedding is reserved for data that is never queried or updated independently (e.g., a list of coordinates within a single match snapshot).</p>
+</li>
+</ul>
+</div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_2">8.2. <em>&lt;Concept 2&gt;</em></h3>
-<div class="paragraph">
-<p><em>&lt;explanation&gt;</em></p>
+<h3 id="_security_concepts">8.5. Security Concepts</h3>
+<div class="sect3">
+<h4 id="_user_authentication_and_password_storage">8.5.1. User Authentication and Password Storage</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Registration:</strong> Players register with a username, email, and password. The User Service hashes all passwords using <strong>bcrypt</strong> (cost factor 10) before persisting them to MongoDB. Plaintext passwords are never stored.</p>
+</li>
+<li>
+<p><strong>Login:</strong> Upon login the User Service retrieves the stored hash and verifies it against the submitted password via <code>bcrypt.compare</code>.</p>
+</li>
+</ul>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_session_management">8.5.2. Session Management</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Current State:</strong> Token-based session management (e.g., JWTs) is not yet implemented. The runtime scenario in Section 6.4 already envisions a JWT-based flow (generate token on login → store in Session Storage → attach to subsequent requests). This will be implemented in a future iteration and this section will be updated accordingly.</p>
+</li>
+<li>
+<p><strong>Planned Approach:</strong> The User Service will issue a signed <strong>JSON Web Token (JWT)</strong> upon successful login. The React Webapp will store the token in the browser&#8217;s Session Storage and attach it as an <code>Authorization: Bearer &lt;token&gt;</code> header on every API request. The User Service will validate the token on protected endpoints.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_configuration_and_secrets_management">8.5.3. Configuration and Secrets Management</h4>
 <div class="paragraph">
-<p>&#8230;&#8203;</p>
+<p>Service configuration (ports, upstream URLs, database connection strings) is managed through <strong>environment variables</strong> that are injected via <code>docker-compose.yml</code>.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Variable</th>
+<th class="tableblock halign-left valign-top">Service</th>
+<th class="tableblock halign-left valign-top">Example Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>MONGODB_URI</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User Service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>mongodb://mongodb:27017/yovi</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>GAMEY_RUST_URL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code><a href="http://gamey:4000" class="bare">http://gamey:4000</a></code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>VITE_API_URL</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Webapp (build-time)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code><a href="http://localhost:3000" class="bare">http://localhost:3000</a></code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>ALLOWED_ORIGINS</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User Service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code><a href="http://localhost,http://webapp" class="bare">http://localhost,http://webapp</a></code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The current setup uses plain environment variables in <code>docker-compose.yml</code>, which is sufficient for development but <strong>not production-ready</strong> for sensitive values (e.g., database credentials). Migration to Docker Secrets or a vault-based solution is planned for the production hardening phase. This section will be updated once the approach is finalized.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_data_scoping_and_privacy">8.5.4. Data Scoping and Privacy</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Data Privacy:</strong> Requests are secured to ensure players can only access and modify their own personal profiles and match histories.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_cors_cross_origin_resource_sharing">8.5.5. CORS (Cross-Origin Resource Sharing)</h4>
+<div class="paragraph">
+<p>Because the Webapp (Port 80) communicates with backend APIs on different ports (3000, 3001, 4000), CORS must be configured explicitly.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>User Service (Node.js):</strong> Implements a strict <strong>origin whitelist</strong> using the <code>cors</code> middleware. Allowed origins are configured via the <code>ALLOWED_ORIGINS</code> environment variable (comma-separated). By default, only <code>localhost</code> origins are permitted. Requests from unlisted origins are rejected with an error.</p>
+</li>
+<li>
+<p><strong>Game API (<code>gameyapi</code>):</strong> Currently uses a permissive CORS policy (<code>cors()</code> with no origin restriction) to facilitate external bot integration. This will be tightened before production deployment.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_rate_limiting">8.5.6. Rate Limiting</h4>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Rate limiting is not yet implemented. Since the system exposes a public API for external bots (see Section 3), it is susceptible to abuse or accidental overload. Rate limiting middleware (e.g., <code>express-rate-limit</code> on the Node.js services or request throttling via an Nginx reverse proxy) is planned. This section will be updated once the strategy is finalized.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_concept_n">8.3. <em>&lt;Concept n&gt;</em></h3>
+<h3 id="_user_experience_ux_concepts">8.6. User Experience (UX) Concepts</h3>
+<div class="sect3">
+<h4 id="_state_management_and_rendering">8.6.1. State Management and Rendering</h4>
 <div class="paragraph">
-<p><em>&lt;explanation&gt;</em></p>
+<p>In the Frontend Webapp, complex match states and user actions are managed reactively.
+* <strong>State Trees:</strong> React manages the active game properties (board layout, opponent type, current turn) locally to provide instant visual feedback without blocking for server responses during non-validating actions.
+* <strong>Hexagonal UI Representation:</strong> The UI seamlessly maps the engine-provided mathematical coordinate arrays (Barycentric or Index-based) onto visual hexagonal grids for intuitive gameplay.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_quality_and_reliability_concepts">8.7. Quality and Reliability Concepts</h3>
+<div class="sect3">
+<h4 id="_logging_strategy">8.7.1. Logging Strategy</h4>
+<div class="paragraph">
+<p>All services emit logs exclusively to <strong>stdout/stderr</strong>, which allows the Docker container runtime to collect and forward them transparently. No dedicated log-aggregation sidecar is required for the current setup.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Rust Logic Engine (<code>gamey</code>):</strong> Uses the <a href="https://docs.rs/tracing"><code>tracing</code></a> crate with <code>tracing_subscriber</code>. This produces structured, level-based log output (<code>INFO</code>, <code>DEBUG</code>, <code>WARN</code>) that is machine-readable and can be forwarded to an aggregator (e.g., Loki/Grafana) in a future step. Fatal startup errors are written to <code>stderr</code> via <code>eprintln!</code>.</p>
+</li>
+<li>
+<p><strong>Node.js Services (<code>users</code>, <code>gameyapi</code>):</strong> Use the built-in <code>console.log</code> / <code>console.warn</code> / <code>console.error</code> API. Output is written directly to the process stdout/stderr, which Docker captures. Log lines are prefixed with context tags (e.g., <code>[CREATE]</code>, <code>[MOVE]</code>, <code>[BOT]</code>) to aid filtering.</p>
+</li>
+<li>
+<p><strong>React Frontend (<code>webapp</code>):</strong> Browser <code>console.*</code> calls are available during development. No log forwarding to the backend occurs from the client.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Centralized log aggregation (e.g., shipping Docker logs to a Loki stack alongside the existing Prometheus/Grafana setup) is planned for a later iteration.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_error_handling_and_cross_service_error_propagation">8.7.2. Error Handling and Cross-Service Error Propagation</h4>
+<div class="paragraph">
+<p>The system uses a layered error propagation model based on standard HTTP semantics. The example described in Scenario 5 (Section 6.5) illustrates a concrete instance of this pattern.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/error-propagation.png" alt="error propagation" width="754" height="561">
+</div>
+</div>
+<div class="paragraph">
+<p>The concrete error handling layers are:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Rust Logic Engine:</strong> Returns precise HTTP error codes (<code>400 Bad Request</code> for invalid YEN/rule violations, <code>500 Internal Server Error</code> for unexpected failures). The JSON body contains a machine-readable <code>error</code> field.</p>
+</li>
+<li>
+<p><strong>Node.js Middleware (Game API / User Service):</strong> Catches errors from upstream Rust calls, logs them via <code>console.error</code>, and maps them to sanitized, client-facing JSON responses. Internal error details (stack traces, Rust error messages) are not forwarded to the browser.</p>
+</li>
+<li>
+<p><strong>React Frontend:</strong> Reads HTTP status codes from API responses. Non-2xx responses trigger UI-level feedback (e.g., warning toasts, reverting optimistic state updates). The Webapp never crashes on expected error payloads.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_observability_and_monitoring">8.7.3. Observability and Monitoring</h4>
+<div class="paragraph">
+<p>To satisfy availability evaluation metrics, the system incorporates rigorous operational monitoring:
+* <strong>Metrics Ingestion:</strong> Both the Node.js API and the Rust Gamey Engine emit structured operational metrics.
+* <strong>Visualization:</strong> <strong>Prometheus</strong> scrapes system health, latency, and throughput metrics, which are then aggregated and visualized using <strong>Grafana</strong> dashboards.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_testing_and_quality_assurance">8.7.4. Testing and Quality Assurance</h4>
+<div class="paragraph">
+<p>System reliability is continuously verified through multiple layers of testing:
+* <strong>Multi-Layer Testing:</strong> The system utilizes unit tests for individual algorithmic checks (especially Rust logic), integration tests for API endpoints, and End-to-End (E2E) UI tests for critical user journeys.
+* <strong>Static Analysis:</strong> Code quality and security are strictly evaluated via <strong>SonarCloud</strong> against defined Quality Gates prior to any merge.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_continuous_integration_and_deployment_cicd">8.7.5. Continuous Integration and Deployment (CI/CD)</h4>
+<div class="paragraph">
+<p>The development pipeline is automated natively with GitHub Actions:
+* <strong>CI Pipelines:</strong> Push events and pull requests trigger automated test suites and SonarCloud evaluations.
+* <strong>CD Pipelines:</strong> Upon a successful release merge, Docker images are automatically built from each service&#8217;s <code>Dockerfile</code> and orchestrated on the production server via <code>docker-compose</code> (see Sections 2 and 7 for the containerization details).</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_development_and_operational_concepts">8.8. Development and Operational Concepts</h3>
+<div class="sect3">
+<h4 id="_documentation_strategy">8.8.1. Documentation Strategy</h4>
+<div class="paragraph">
+<p>The architecture documentation follows a strict <strong>Docs-as-Code</strong> approach:
+* <strong>AsciiDoc &amp; Arc42:</strong> All architectural documentation is written in <strong>AsciiDoc</strong>, structured entirely according to the <strong>arc42</strong> template. This approach ensures technical documentation lives alongside the source code in version control.
+* <strong>PlantUML:</strong> As dictated by our conventions, all architectural diagrams and models must comply with UML standards and are rendered programmatically using <strong>PlantUML</strong>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_collaboration_and_source_control">8.8.2. Collaboration and Source Control</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Git Workflows:</strong> Employs pull requests, mandatory code reviews, and issue tracking.</p>
+</li>
+<li>
+<p><strong>Traceability:</strong> Documentation must constantly be maintained following the <strong>arc42</strong> structure (including ADRs) to comply with academic quality evaluation criteria.</p>
+</li>
+</ul>
 </div>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 </div>
@@ -2094,7 +2342,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-02-16 11:32:09 +0100
+Last updated 2026-03-13 21:16:36 +0100
 </div>
 </div>
 </body>
