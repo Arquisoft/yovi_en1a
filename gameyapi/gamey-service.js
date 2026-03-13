@@ -384,6 +384,32 @@ gameyService.post('/play/:gameId/bot-move', async (req, res) => {
   }
 });
 
+gameyService.post('/play/:gameId/undo', (req, res) => {
+  const s = sessions.get(req.params.gameId);
+  if (!s) return res.status(404).json({ error: 'Game not found' });
+  if (s.moves.length === 0) return res.status(400).json({ error: 'No moves to undo' });
+
+  // In hvb mode, undo both the bot's and human's move if the bot already responded
+  // (currentPlayer === 0 means it's human's turn, so bot already moved).
+  // If currentPlayer === 1, only the human has moved — undo just 1.
+  // In hvh mode, always undo just the last move.
+  let undoCount = 1;
+  if (s.mode === 'hvb' && s.currentPlayer === 0 && s.moves.length >= 2) {
+    undoCount = 2;
+  }
+  const undoCount_safe = Math.min(undoCount, s.moves.length);
+  s.moves.splice(-undoCount_safe, undoCount_safe);
+
+  // Recalculate game state
+  s.currentPlayer = s.moves.length % 2 === 0 ? 0 : 1;
+  s.status = 'ongoing';
+  s.winner = null;
+  s.winningPath = undefined;
+
+  console.log(`[UNDO] game=${s.id} removed=${undoCount_safe} remaining=${s.moves.length}`);
+  return res.json(sessionView(s));
+});
+
 gameyService.post('/play/:gameId/rematch', (req, res) => {
   const old = sessions.get(req.params.gameId);
   if (!old) return res.status(404).json({ error: 'Game not found' });

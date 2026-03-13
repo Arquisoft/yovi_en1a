@@ -241,6 +241,36 @@ paths:
                     type: string
                     example: "connect ECONNREFUSED 127.0.0.1:4000"
 
+  /play/{gameId}/undo:
+    post:
+      tags: [Game]
+      summary: Undo the last move(s)
+      description: >
+        Reverts the last move(s) from the game session. In hvb mode, undoes both
+        the human's and bot's last moves (2 moves) if the bot has already responded.
+        If only the human has moved (currentPlayer = 1), undoes just 1 move.
+        In hvh mode, always undoes exactly 1 move.
+      parameters:
+        - $ref: '#/components/parameters/gameId'
+      responses:
+        '200':
+          description: Undo successful — returns updated game state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameSession'
+        '400':
+          description: No moves to undo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                noMoves:
+                  value: { error: "No moves to undo" }
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /play/{gameId}/rematch:
     post:
       tags: [Game]
