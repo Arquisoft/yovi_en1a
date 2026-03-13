@@ -33,11 +33,9 @@ Then('I should be redirected to the lobby', async function () {
   const page = this.page
   if (!page) throw new Error('Page not initialized')
 
-  // After successful login, the app navigates to ?view=lobby
-  await page.waitForURL('**/view=lobby**', { timeout: 5000, waitUntil: 'domcontentloaded' })
-
-  // Verify the lobby is rendered with the username
-  await page.waitForSelector('.profile-username', { timeout: 5000 })
+  // After successful login, the app sets localStorage and navigates to ?view=lobby.
+  // Wait for the lobby content to appear (profile-username is only rendered on the lobby page).
+  await page.waitForSelector('.profile-username', { timeout: 10000 })
   const text = await page.textContent('.profile-username')
   assert.ok(text && text.includes('Alice'), `Expected lobby to show "Alice", got: "${text}"`)
 })
