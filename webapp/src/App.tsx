@@ -32,8 +32,8 @@ function App() {
     globalThis.location.href = globalThis.location.pathname;
   };
 
-  if (isGameWindow) {
-    return <GameBoard />;
+if (isGameWindow) {
+    return <GameBoard username={storedUsername || "Guest User"} />;
   }
 
   if (isLobbyWindow && storedUsername) {
