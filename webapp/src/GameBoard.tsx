@@ -202,21 +202,10 @@ export default function GameBoard() {
   // ── Undo
   const handleUndo = async () => {
     if (!session || session.moves.length === 0) return;
-    const movesToKeep =
-      session.mode === 'hvb' ? session.moves.slice(0, -2) : session.moves.slice(0, -1);
 
     try {
-      await fetch(`${API_URL}/play/${session.gameId}`, { method: 'DELETE' });
-      const fresh = await apiPost<GameSession>('/play/create', {
-        mode: session.mode,
-        difficulty: session.difficulty || selectedDifficulty,
-        boardSize: session.boardSize,
-      });
-      let current: GameSession = fresh;
-      for (const m of movesToKeep) {
-        current = await apiPost<GameSession>(`/play/${fresh.gameId}/move`, m);
-      }
-      syncFromSession(current);
+      const data = await apiPost<GameSession>(`/play/${session.gameId}/undo`, {});
+      syncFromSession(data);
       setErrorMsg(null);
       setWinner(null);
       setWinningPathIndices(new Set());
@@ -396,7 +385,7 @@ export default function GameBoard() {
           <button
             className="game-action-btn btn-undo"
             onClick={handleUndo}
-            disabled={!session || session.moves.length === 0 || gameStatus !== 'ongoing'}
+            disabled={!session || session.moves.length === 0 || gameStatus !== 'ongoing' || isBotThinking}
           >
             UNDO
           </button>
