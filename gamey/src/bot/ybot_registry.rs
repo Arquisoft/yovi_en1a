@@ -16,8 +16,8 @@ use crate::YBot;
 ///
 /// ```rust
 /// use std::sync::Arc;
-/// use gamey::{YBotRegistry, GamerBot}; 
-/// 
+/// use gamey::{YBotRegistry, GamerBot};
+///
 /// let registry = YBotRegistry::new()
 ///     .with_bot(Arc::new(GamerBot));
 ///
