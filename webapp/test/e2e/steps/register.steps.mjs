@@ -34,7 +34,7 @@ Then('I should be redirected to the lobby', async function () {
   if (!page) throw new Error('Page not initialized')
 
   // After successful login, the app navigates to ?view=lobby
-  await page.waitForURL('**/view=lobby**', { timeout: 5000 })
+  await page.waitForURL('**/view=lobby**', { timeout: 5000, waitUntil: 'domcontentloaded' })
 
   // Verify the lobby is rendered with the username
   await page.waitForSelector('.profile-username', { timeout: 5000 })
