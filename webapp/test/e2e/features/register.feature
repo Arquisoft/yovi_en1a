@@ -3,5 +3,5 @@ Feature: Register
 
   Scenario: Successful registration
     Given the register page is open
-    When I enter "Alice" as the username and submit
-    Then I should see a welcome message containing "Hello Alice"
+    When I enter "Alice" as the username and "password123" as the password and submit
+    Then I should be redirected to the lobby

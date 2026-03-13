@@ -42,6 +42,7 @@ services:
   gamey-service:
     build: ./gameyapi
     container_name: gamey-service
+    image: ghcr.io/arquisoft/yovi_en1a-gameyapi:latest
     ports:
       - "3001:3001"
     environment:
