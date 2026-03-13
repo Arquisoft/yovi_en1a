@@ -16,9 +16,9 @@ use crate::YBot;
 ///
 /// ```
 /// use std::sync::Arc;
-/// use gamey::{YBotRegistry, RandomBot};
-///
-/// let registry = YBotRegistry::new()
+/// use gamey::{YBotRegistry, GamerBot}; 
+/// 
+/// let registry = YBotRegistry::new();
 ///     .with_bot(Arc::new(RandomBot));
 ///
 /// let bot = registry.find("gamer_bot");
