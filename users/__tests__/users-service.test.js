@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { app, connectToMongo, closeMongoConnection } from '../users-service.js';
+import { app, connectToMongo, closeMongoConnection, JWT_SECRET } from '../users-service.js';
 
 vi.mock('bcrypt', async (importOriginal) => {
     const actual = await importOriginal();
@@ -199,40 +199,69 @@ describe('POST /createuser', () => {
 describe('POST /login', () => {
     afterEach(() => vi.restoreAllMocks());
 
-    it('returns 200 with a success message using username', async () => {
+    const testUser = { username: 'LoginUser', email: 'login@example.com', password: 'secret123' };
+
+    it('returns 200 with token when logging in with correct username', async () => {
+        await request(app).post('/createuser').send(testUser);
+
         const res = await request(app)
             .post('/login')
-            .send({ username: 'Alice', email: 'a@example.com', password: 'secret' });
+            .send({ usernameOrEmail: 'LoginUser', password: 'secret123' });
 
         expect(res.status).toBe(200);
-        expect(res.body.message).toMatch(/Login successful for Alice/i);
+        expect(res.body.message).toMatch(/Login successful for LoginUser/i);
+        expect(res.body).toHaveProperty('token');
+        expect(res.body.username).toBe('LoginUser');
     });
 
-    it('falls back to email when username is absent', async () => {
+    it('returns 200 with token when logging in with correct email', async () => {
+        await request(app).post('/createuser').send(testUser);
+
         const res = await request(app)
             .post('/login')
-            .send({ email: 'bob@example.com' });
+            .send({ usernameOrEmail: 'login@example.com', password: 'secret123' });
 
         expect(res.status).toBe(200);
-        expect(res.body.message).toMatch(/Login successful for bob@example.com/i);
+        expect(res.body.message).toMatch(/Login successful for LoginUser/i);
+        expect(res.body).toHaveProperty('token');
     });
 
-    it('returns 200 with no password provided', async () => {
+    it('returns 401 when password is wrong', async () => {
+        await request(app).post('/createuser').send(testUser);
+
         const res = await request(app)
             .post('/login')
-            .send({ username: 'Bob' });
+            .send({ usernameOrEmail: 'LoginUser', password: 'wrongpassword' });
 
-        expect(res.status).toBe(200);
-        expect(res.body.message).toMatch(/Login successful for Bob/i);
+        expect(res.status).toBe(401);
+        expect(res.body.error).toMatch(/invalid credentials/i);
     });
 
-    it('handles login with no body (username is undefined)', async () => {
+    it('returns 401 when user does not exist', async () => {
         const res = await request(app)
             .post('/login')
-            .set('Accept', 'application/json');
+            .send({ usernameOrEmail: 'NonExistentUser', password: 'secret123' });
 
-        expect(res.status).toBe(200);
-        expect(res.body.message).toMatch(/Login successful for undefined/i);
+        expect(res.status).toBe(401);
+        expect(res.body.error).toMatch(/invalid credentials/i);
+    });
+
+    it('returns 400 when usernameOrEmail is missing', async () => {
+        const res = await request(app)
+            .post('/login')
+            .send({ password: 'secret123' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/missing required fields/i);
+    });
+
+    it('returns 400 when password is missing', async () => {
+        const res = await request(app)
+            .post('/login')
+            .send({ usernameOrEmail: 'LoginUser' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/missing required fields/i);
     });
 
     it('returns 5xx when database is unavailable (middleware guard)', async () => {
@@ -240,7 +269,7 @@ describe('POST /login', () => {
 
         const res = await request(app)
             .post('/login')
-            .send({ username: 'Alice' });
+            .send({ usernameOrEmail: 'Alice', password: 'secret' });
 
         await connectToMongo(mongoUri);
 
@@ -300,9 +329,12 @@ describe('CORS headers', () => {
     });
 
     it('allows requests with no Origin header (e.g. curl / server-to-server)', async () => {
+        // Create a user first so the login request succeeds
+        await request(app).post('/createuser').send({ username: 'CurlUser', email: 'curl@example.com', password: 'pass' });
+
         const res = await request(app)
             .post('/login')
-            .send({ username: 'Alice' });
+            .send({ usernameOrEmail: 'CurlUser', password: 'pass' });
 
         expect(res.status).toBe(200);
     });
@@ -428,6 +460,9 @@ describe('DB health middleware — ping failure paths', () => {
     afterEach(() => vi.restoreAllMocks());
 
     it('MW-4: continues the request when ping fails but reconnect succeeds', async () => {
+        // Create a user first so the login works after reconnect
+        await request(app).post('/createuser').send({ username: 'PingFail', email: 'pf@example.com', password: 'pass' });
+
         const { MongoClient } = await import('mongodb');
         const probe = new MongoClient(mongoUri);
         await probe.connect();
@@ -438,7 +473,7 @@ describe('DB health middleware — ping failure paths', () => {
 
         const res = await request(app)
             .post('/login')
-            .send({ username: 'PingFail' });
+            .send({ usernameOrEmail: 'PingFail', password: 'pass' });
 
         await probe.close();
 

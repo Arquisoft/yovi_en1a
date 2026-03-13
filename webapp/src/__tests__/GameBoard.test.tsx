@@ -52,15 +52,15 @@ afterEach(() => {
 
 describe('getCellClass', () => {
   it('returns hex-empty for empty cell', () => {
-    expect(getCellClass('.')).toBe('hex-cell hex-empty');
+    expect(getCellClass('.', false)).toBe('hex-cell hex-empty');
   });
 
   it('returns hex-p1 for blue cell', () => {
-    expect(getCellClass('B')).toBe('hex-cell hex-p1');
+    expect(getCellClass('B', false)).toBe('hex-cell hex-p1');
   });
 
   it('returns hex-p2 for red cell', () => {
-    expect(getCellClass('R')).toBe('hex-cell hex-p2');
+    expect(getCellClass('R', false)).toBe('hex-cell hex-p2');
   });
 });
 
@@ -89,16 +89,16 @@ describe('getTurnPanelSubtext', () => {
     expect(getTurnPanelSubtext('idle', 'P1')).toBe('Choose mode below');
   });
 
-  it('returns (Blue) for P1 when ongoing', () => {
-    expect(getTurnPanelSubtext('ongoing', 'P1')).toBe('(Blue)');
+  it('returns (blue) for P1 when ongoing', () => {
+    expect(getTurnPanelSubtext('ongoing', 'P1')).toBe('(blue)');
   });
 
-  it('returns (Red) for P2 when ongoing', () => {
-    expect(getTurnPanelSubtext('ongoing', 'P2')).toBe('(Red)');
+  it('returns (red) for P2 when ongoing', () => {
+    expect(getTurnPanelSubtext('ongoing', 'P2')).toBe('(red)');
   });
 
-  it('returns (Red) for P2 when finished', () => {
-    expect(getTurnPanelSubtext('finished', 'P2')).toBe('(Red)');
+  it('returns (red) for P2 when finished', () => {
+    expect(getTurnPanelSubtext('finished', 'P2')).toBe('(red)');
   });
 });
 
@@ -143,11 +143,11 @@ describe('GameBoard Component', () => {
     expect(screen.getByRole('button', { name: /END TURN/i })).toBeInTheDocument();
   });
 
-  it('should start in idle state showing START GAME and mode selector', () => {
+  it('should start in idle state showing START GAME and selected mode', () => {
     render(<GameBoard />);
     const startGameElements = screen.getAllByText('START GAME');
-    expect(startGameElements.length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Choose mode below')).toBeInTheDocument();
+    expect(startGameElements.length).toBe(1);
+    expect(screen.getByText('SELECTED MODE')).toBeInTheDocument();
     expect(screen.getByText('P1: USERN.').parentElement).toHaveClass('p1-card');
   });
 
@@ -181,24 +181,28 @@ describe('GameBoard Component', () => {
     expect(screen.getByText('END TURN')).toHaveClass('btn-end');
   });
 
-  it('should show mode selector with Human vs Bot and Human vs Human options in idle state', () => {
+  it('should show correct mode text in idle state', () => {
     render(<GameBoard />);
-    expect(screen.getByLabelText(/Human vs Bot/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Human vs Human/i)).toBeInTheDocument();
-    const hvbRadio = screen.getByLabelText(/Human vs Bot/i) as HTMLInputElement;
-    expect(hvbRadio.checked).toBe(true);
+    expect(screen.getByText(/Player vs Computer \(beginner\)/i)).toBeInTheDocument();
   });
 
-  it('should toggle selected mode when a radio button is clicked', () => {
+  it('should toggle selected mode via URL mockup (mocking window.location)', () => {
+    // GameBoard now reads from URL, we mock window.location in beforeAll or dynamically
+    const originalLocation = window.location;
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: '?mode=pvp&difficulty=advanced'
+    } as any;
+    
     render(<GameBoard />);
-    const hvhRadio = screen.getByLabelText(/Human vs Human/i) as HTMLInputElement;
-    const hvbRadio = screen.getByLabelText(/Human vs Bot/i) as HTMLInputElement;
-    expect(hvbRadio.checked).toBe(true);
-    expect(hvhRadio.checked).toBe(false);
-    fireEvent.click(hvhRadio);
-    expect(hvhRadio.checked).toBe(true);
-    expect(hvbRadio.checked).toBe(false);
+    expect(screen.getByText(/Player vs Player/i)).toBeInTheDocument();
+    
+    // restore
+    window.location = originalLocation as any;
   });
+
+  // removed test: 'should toggle selected mode when a radio button is clicked' since radio buttons are gone
 
   it('should show START GAME button in idle state', () => {
     render(<GameBoard />);
@@ -206,23 +210,19 @@ describe('GameBoard Component', () => {
     expect(startBtn).toBeInTheDocument();
   });
 
-  it('should display P2 (Bot) label in hvb mode and P2: USERN. in hvh mode', () => {
+  it('should display P2 (Bot) label initially (since defaultValue is hvb)', () => {
     render(<GameBoard />);
     expect(screen.getByText('P2 (Bot)')).toBeInTheDocument();
-    const hvhRadio = screen.getByLabelText(/Human vs Human/i);
-    fireEvent.click(hvhRadio);
-    expect(screen.getByText('P2: USERN.')).toBeInTheDocument();
-    expect(screen.queryByText('P2 (Bot)')).not.toBeInTheDocument();
   });
 
-  it('should hide mode selector and START GAME button after game starts', async () => {
+  it('should hide mode display and START GAME button after game starts', async () => {
     render(<GameBoard />);
     mockApiSuccess(makeMockSession());
 
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
 
     await waitFor(() => {
-      expect(screen.queryByLabelText(/Human vs Bot/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Player vs Computer/i)).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /START GAME/i })).not.toBeInTheDocument();
     });
   });
@@ -249,14 +249,14 @@ describe('GameBoard Component', () => {
     });
   });
 
-  it('should show (Blue) subtext when it is P1 turn', async () => {
+  it('should show (blue) subtext when it is P1 turn', async () => {
     render(<GameBoard />);
     mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
 
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('(Blue)')).toBeInTheDocument();
+      expect(screen.getByText('(blue)')).toBeInTheDocument();
     });
   });
 
@@ -268,7 +268,8 @@ describe('GameBoard Component', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /REMATCH/i })).toBeInTheDocument();
-      expect(screen.getByText('P1 WINS!')).toBeInTheDocument();
+      const p1WinsElements = screen.getAllByText('P1 WINS!');
+      expect(p1WinsElements.length).toBeGreaterThan(0);
     });
   });
 
@@ -279,7 +280,8 @@ describe('GameBoard Component', () => {
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('P2 WINS!')).toBeInTheDocument();
+      const p2WinsElements = screen.getAllByText('P2 WINS!');
+      expect(p2WinsElements.length).toBeGreaterThan(0);
     });
   });
 
@@ -410,16 +412,101 @@ describe('GameBoard Component', () => {
     expect(mockFetch.mock.calls.length).toBe(initialCallCount);
   });
 
-  it('should start game in hvh mode when selected', async () => {
+  it('should start game with parameters read from URL', async () => {
+    const originalLocation = window.location;
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: '?mode=pvp&difficulty=advanced'
+    } as any;
+
     render(<GameBoard />);
-    fireEvent.click(screen.getByLabelText(/Human vs Human/i));
-    mockApiSuccess(makeMockSession({ mode: 'hvh' }));
+    mockApiSuccess(makeMockSession({ mode: 'hvh', difficulty: 'advanced' }));
 
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
 
     await waitFor(() => {
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(body.mode).toBe('hvh');
+      expect(body.difficulty).toBe('advanced');
+    });
+
+    window.location = originalLocation as any;
+  });
+
+  // ── New Tests for Scoreboard, Winning Path & Popup ──
+
+  it('should initialize scores at 0 for both players', () => {
+    render(<GameBoard />);
+    const scoreElements = screen.getAllByText('Pts: 0');
+    expect(scoreElements.length).toBe(2);
+  });
+
+  it('should increment P1 score and show popup when P1 wins', async () => {
+    render(<GameBoard />);
+    // Initial start
+    mockApiSuccess(makeMockSession());
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+    await waitFor(() => screen.getByText('P1 TURN'));
+
+    // P1 wins
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+    const cells = document.querySelectorAll('.hex-cell');
+    fireEvent.click(cells[0]);
+
+    await waitFor(() => {
+      // Expect P1 score to be 1 and P2 to be 0
+      expect(screen.getByText('Pts: 1')).toBeInTheDocument();
+      const popupMsg = screen.getAllByText('P1 WINS!');
+      expect(popupMsg.length).toBeGreaterThan(0);
+      expect(screen.getByText('Great match!')).toBeInTheDocument();
+    });
+  });
+
+  it('should apply hex-winning class to cells in the winning path', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+    await waitFor(() => screen.getByText('P1 TURN'));
+
+    const sessionWithWin = makeMockSession({
+      status: 'finished',
+      winner: 0,
+      moves: [{ player: 0, x: 0, y: 0 }],
+      winningPath: [{ x: 0, y: 0 }]
+    });
+    mockApiSuccess(sessionWithWin);
+
+    const cells = document.querySelectorAll('.hex-cell');
+    fireEvent.click(cells[0]);
+
+    await waitFor(() => {
+      // Cell 0 should now have the hex-winning class
+      const newCells = document.querySelectorAll('.hex-cell');
+      expect(newCells[0]).toHaveClass('hex-winning');
+    });
+  });
+
+  it('should reset hasScored allowing scores to continue across multiple matches', async () => {
+    render(<GameBoard />);
+    
+    // First match P1 wins
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+    await waitFor(() => expect(screen.getByText('Pts: 1')).toBeInTheDocument());
+
+    // Rematch
+    mockApiSuccess(makeMockSession({ status: 'ongoing', currentPlayer: 0 }));
+    fireEvent.click(screen.getByRole('button', { name: /REMATCH/i }));
+    await waitFor(() => expect(screen.queryByText('Great match!')).not.toBeInTheDocument()); // popup gone
+
+    // Second match P1 wins again
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+    const cells = document.querySelectorAll('.hex-cell');
+    fireEvent.click(cells[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Pts: 2')).toBeInTheDocument();
     });
   });
 });

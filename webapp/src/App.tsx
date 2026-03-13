@@ -7,8 +7,9 @@ import GameBoard from './GameBoard';
 function App() {
   const storedUsername = localStorage.getItem('username');
 
-  const isLobbyWindow = globalThis.location.search === '?view=lobby';
-  const isGameWindow = globalThis.location.search === '?view=game';
+  const searchParams = new URLSearchParams(globalThis.location.search);
+  const isLobbyWindow = searchParams.get('view') === 'lobby';
+  const isGameWindow = searchParams.get('view') === 'game';
 
   React.useEffect(() => {
     if (isLobbyWindow && !storedUsername) {
@@ -21,12 +22,13 @@ function App() {
     globalThis.location.href = globalThis.location.pathname + '?view=lobby';
   };
 
-  const handleGoToGame = () => {
-    globalThis.location.href = globalThis.location.pathname + '?view=game';
+  const handleGoToGame = (mode: string, difficulty: string) => {
+    globalThis.location.href = globalThis.location.pathname + `?view=game&mode=${mode}&difficulty=${difficulty}`;
   };
 
   const handleLogout = () => {
     localStorage.removeItem('username');
+    localStorage.removeItem('token');
     globalThis.location.href = globalThis.location.pathname;
   };
 
