@@ -12,6 +12,7 @@ services:
       - monitor-net
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/yovi
+      - ALLOWED_ORIGINS=http://localhost,http://localhost:3000,http://localhost:80
 
   webapp:
     build:
