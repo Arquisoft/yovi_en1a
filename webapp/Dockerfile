@@ -7,13 +7,15 @@ RUN npm ci --silent
 
 COPY . .
 
-ARG VITE_API_URL="http://localhost:3000"
-ARG VITE_GAMEY_URL="http://localhost:4000"
-ARG VITE_GAMEY_API_URL="http://localhost:3001"
-RUN VITE_API_URL=${VITE_API_URL} \
-    VITE_GAMEY_URL=${VITE_GAMEY_URL} \
-    VITE_GAMEY_API_URL=${VITE_GAMEY_API_URL} \
-    npm run build
+ARG VITE_API_URL
+ARG VITE_GAMEY_URL
+ARG VITE_GAMEY_API_URL
+
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_GAMEY_URL=${VITE_GAMEY_URL}
+ENV VITE_GAMEY_API_URL=${VITE_GAMEY_API_URL}
+
+RUN npm run build
 
 # Production image
 FROM nginx:stable-alpine

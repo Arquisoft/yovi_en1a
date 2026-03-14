@@ -24,7 +24,7 @@ interface GameBoardProps {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const API_URL = import.meta.env.VITE_GAMEY_API_URL ?? 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_GAMEY_API_URL;
 const BOARD_SIZE = 11;
 const TOTAL_CELLS = (BOARD_SIZE * (BOARD_SIZE + 1)) / 2;
 
