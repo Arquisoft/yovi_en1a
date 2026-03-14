@@ -24,7 +24,14 @@ interface GameBoardProps {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const API_URL = import.meta.env.VITE_GAMEY_API_URL;
+// DYNAMIC DETECTION: Determines host (Local or Azure) in the user's browser
+const getApiUrl = (port: string) => {
+  if (typeof window === 'undefined') return `http://localhost:${port}`;
+  const { hostname, protocol } = window.location;
+  return `${protocol}//${hostname}:${port}`;
+};
+
+const API_URL = getApiUrl('3001');
 const BOARD_SIZE = 11;
 const TOTAL_CELLS = (BOARD_SIZE * (BOARD_SIZE + 1)) / 2;
 

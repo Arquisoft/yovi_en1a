@@ -33,7 +33,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
 
     setLoading(true);
     try {
-      const API_URL = import.meta.env.VITE_API_URL;
+    try {
+      // DYNAMIC DETECTION: Determines host (Local or Azure) in the user's browser
+      const { hostname, protocol } = window.location;
+      const API_URL = `${protocol}//${hostname}:3000`;
+      
       const endpoint = mode === 'login' ? '/login' : '/createuser';
 
       const payload = mode === 'login'
