@@ -115,19 +115,16 @@ describe('Profile Component', () => {
 
     it('renders the username', () => {
         render(<Profile username="HexMaster" />);
-        // CSS text-transform:uppercase is visual only — DOM contains the original casing
         expect(screen.getByText('HexMaster')).toBeInTheDocument();
     });
 
     it('renders the default username when none is provided', () => {
         render(<Profile />);
-        // Default prop is 'Username', not uppercase in the DOM
         expect(screen.getByText('Username')).toBeInTheDocument();
     });
 
     it('renders the Stats section label', () => {
         render(<Profile />);
-        // There are two panel labels: Stats and Match History
         const labels = screen.getAllByText(/stats/i);
         expect(labels.length).toBeGreaterThan(0);
     });
@@ -139,8 +136,7 @@ describe('Profile Component', () => {
 
     it('renders the best score', () => {
         render(<Profile bestScore={1200} />);
-        // toLocaleString() produces '1,200' in Node 18+ with full Intl support
-        expect(screen.getByText('1,200')).toBeInTheDocument();
+       expect(screen.getByText('1,200')).toBeInTheDocument();
     });
 
     it('renders Match History section label', () => {
