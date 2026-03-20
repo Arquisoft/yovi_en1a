@@ -185,15 +185,14 @@
 .winrate-track {
     fill: none;
     stroke: #333;
-    stroke-width: 5;
+    stroke-width: 4;
 }
 
 .winrate-fill {
     fill: none;
     stroke: #483dff;
-    stroke-width: 5;
+    stroke-width: 4;
     stroke-linecap: round;
-    stroke-dasharray: 100;
     transform: rotate(-90deg);
     transform-origin: 50% 50%;
     transition: stroke-dashoffset 0.6s ease;
@@ -303,6 +302,7 @@
     text-transform: uppercase;
 }
 
+/* Result badges — P1 cyan / P2 red */
 .result-badge {
     display: inline-block;
     font-size: clamp(0.6rem, 0.8vw, 0.75rem);

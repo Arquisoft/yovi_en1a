@@ -33,22 +33,27 @@ const DEFAULT_HISTORY: MatchEntry[] = [
 
 // ── Winrate ring ──────────────────────────────────────────────────────────────
 
-const WinrateRing: React.FC<{ pct: number }> = ({ pct }) => (
-    <div className="profile-winrate-row">
-        <svg width="clamp(72px, 9vw, 110px)" height="clamp(72px, 9vw, 110px)" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-            <circle className="winrate-track" cx="18" cy="18" r="16" />
-            <circle
-                className="winrate-fill"
-                cx="18" cy="18" r="16"
-                style={{ strokeDashoffset: 100 - pct }}
-            />
-        </svg>
-        <div style={{ textAlign: 'center' }}>
-            <span className="winrate-pct">{pct}%</span>
-            <span className="winrate-sub">Win rate</span>
+const WinrateRing: React.FC<{ pct: number }> = ({ pct }) => {
+    // r=14, stroke-width=4 → half-stroke=2, so circle edge sits at 14+2=16 < 18 (centre), safe within 36x36 viewBox
+    const CIRC = 2 * Math.PI * 14; // ≈ 87.96
+    const offset = CIRC - (pct / 100) * CIRC;
+    return (
+        <div className="profile-winrate-row">
+            <svg width="clamp(72px, 9vw, 110px)" height="clamp(72px, 9vw, 110px)" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+                <circle className="winrate-track" cx="18" cy="18" r="14" />
+                <circle
+                    className="winrate-fill"
+                    cx="18" cy="18" r="14"
+                    style={{ strokeDasharray: CIRC, strokeDashoffset: offset }}
+                />
+            </svg>
+            <div style={{ textAlign: 'center' }}>
+                <span className="winrate-pct">{pct}%</span>
+                <span className="winrate-sub">Win rate</span>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 // ── Avatar SVG ────────────────────────────────────────────────────────────────
 
