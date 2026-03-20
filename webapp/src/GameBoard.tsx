@@ -18,8 +18,10 @@ interface GameSession {
   currentPlayer: number;
   winner: number | null;
 }
+
 interface GameBoardProps {
   username?: string;
+  onProfile?: () => void;
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -64,12 +66,13 @@ export function getCellClass(cellValue: CellValue, isWinning: boolean): string {
   if (cellValue === 'R') return isWinning ? 'hex-cell hex-p2 hex-winning' : 'hex-cell hex-p2';
   return 'hex-cell hex-empty';
 }
+
 export function getTurnPanelHeader(
-  gameStatus: GameStatus,
-  winner: PlayerTurn | null,
-  isBotThinking: boolean,
-  currentTurn: PlayerTurn,
-  username: string
+    gameStatus: GameStatus,
+    winner: PlayerTurn | null,
+    isBotThinking: boolean,
+    currentTurn: PlayerTurn,
+    username: string
 ): string {
   if (gameStatus === 'idle') return 'START GAME';
   if (gameStatus === 'finished') {
@@ -77,11 +80,8 @@ export function getTurnPanelHeader(
     return `${winnerName} WINS!`;
   }
   if (isBotThinking) return 'BOT THINKING…';
-  if (currentTurn === 'P1') {
-    return `${username}'s TURN`; 
-  } else {
-    return "P2's TURN";
-  }
+  if (currentTurn === 'P1') return `${username}'s TURN`;
+  return "P2's TURN";
 }
 
 export function getTurnPanelSubtext(gameStatus: GameStatus, currentTurn: PlayerTurn): string {
@@ -100,7 +100,7 @@ export function applyMovesToBoard(moves: GameSession['moves']): CellValue[] {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function GameBoard({ username = "Guest User" }: GameBoardProps) {
+export default function GameBoard({ username = "Guest User", onProfile }: GameBoardProps) {
   const [board, setBoard] = useState<CellValue[]>(new Array(TOTAL_CELLS).fill('.'));
   const [currentTurn, setCurrentTurn] = useState<PlayerTurn>('P1');
   const [session, setSession] = useState<GameSession | null>(null);
@@ -110,8 +110,6 @@ export default function GameBoard({ username = "Guest User" }: GameBoardProps) {
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [winningPathIndices, setWinningPathIndices] = useState<Set<number>>(new Set());
 
-
-
   // ── Determine initial mode and difficulty from URL parameters
   const getInitialParams = () => {
     if (typeof window === 'undefined') return { mode: 'hvb' as GameMode, diff: 'beginner' };
@@ -120,43 +118,42 @@ export default function GameBoard({ username = "Guest User" }: GameBoardProps) {
     const diffParam = params.get('difficulty');
     return {
       mode: modeParam === 'pvp' ? ('hvh' as GameMode) : ('hvb' as GameMode),
-      diff: diffParam || 'beginner'
+      diff: diffParam || 'beginner',
     };
   };
 
   const initialParams = getInitialParams();
-
   const selectedMode = initialParams.mode;
   const selectedDifficulty = initialParams.diff;
 
-  // ── Session Scores (In-memory only, resets on reload) (aus deinem Feature-Branch)
+  // ── Session Scores (in-memory only, resets on reload)
   const [p1Score, setP1Score] = useState(0);
   const [p2Score, setP2Score] = useState(0);
   const [hasScored, setHasScored] = useState(false);
 
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
-    (s: GameSession & { layout?: string; botMove?: { x: number; y: number } | null; winningPath?: { x: number; y: number }[] }) => {
-      setSession(s);
-      setBoard(applyMovesToBoard(s.moves));
-      setCurrentTurn(s.currentPlayer === 0 ? 'P1' : 'P2');
-      setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
+      (s: GameSession & { layout?: string; botMove?: { x: number; y: number } | null; winningPath?: { x: number; y: number }[] }) => {
+        setSession(s);
+        setBoard(applyMovesToBoard(s.moves));
+        setCurrentTurn(s.currentPlayer === 0 ? 'P1' : 'P2');
+        setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
 
-      if (s.winningPath) {
-        const indices = new Set(s.winningPath.map(p => coordsToIndex(p.x, p.y)));
-        setWinningPathIndices(indices);
-      }
-
-      if (s.status === 'finished') {
-        setWinner(s.winner === 0 ? 'P1' : 'P2');
-        if (!hasScored) {
-          if (s.winner === 0) setP1Score((prev) => prev + 1);
-          if (s.winner === 1) setP2Score((prev) => prev + 1);
-          setHasScored(true);
+        if (s.winningPath) {
+          const indices = new Set(s.winningPath.map(p => coordsToIndex(p.x, p.y)));
+          setWinningPathIndices(indices);
         }
-      }
-    },
-    []
+
+        if (s.status === 'finished') {
+          setWinner(s.winner === 0 ? 'P1' : 'P2');
+          if (!hasScored) {
+            if (s.winner === 0) setP1Score((prev) => prev + 1);
+            if (s.winner === 1) setP2Score((prev) => prev + 1);
+            setHasScored(true);
+          }
+        }
+      },
+      [hasScored]
   );
 
   // ── Start a new game
@@ -197,8 +194,8 @@ export default function GameBoard({ username = "Guest User" }: GameBoardProps) {
 
     try {
       const data = await apiPost<GameSession & { botMove?: { x: number; y: number } | null }>(
-        `/play/${session.gameId}/move`,
-        { player: playerNum, x, y }
+          `/play/${session.gameId}/move`,
+          { player: playerNum, x, y }
       );
       syncFromSession(data);
     } catch (e: unknown) {
@@ -212,7 +209,6 @@ export default function GameBoard({ username = "Guest User" }: GameBoardProps) {
   // ── Undo
   const handleUndo = async () => {
     if (!session || session.moves.length === 0) return;
-
     try {
       const data = await apiPost<GameSession>(`/play/${session.gameId}/undo`, {});
       syncFromSession(data);
@@ -240,24 +236,24 @@ export default function GameBoard({ username = "Guest User" }: GameBoardProps) {
     }
   };
 
-  // ─── Extracted render helpers (reduces cognitive complexity of renderBoard) ──
+  // ─── Render helpers ───────────────────────────────────────────────────────────
 
   const renderCell = (cellIndex: number, cellValue: CellValue, hexWidth: string, isInteractive: boolean) => {
     const isWinning = winningPathIndices.has(cellIndex);
     return (
-      <button
-        key={cellIndex}
-        className={getCellClass(cellValue, isWinning)}
-        style={{
-          width: hexWidth,
-          opacity: isInteractive ? 1 : 0.6,
-          cursor: isInteractive && cellValue === '.' ? 'pointer' : 'default',
-        }}
-        onClick={() => handleCellClick(cellIndex)}
-        disabled={!isInteractive}
-      >
-        {cellValue === '.' ? '' : cellValue}
-      </button>
+        <button
+            key={cellIndex}
+            className={getCellClass(cellValue, isWinning)}
+            style={{
+              width: hexWidth,
+              opacity: isInteractive ? 1 : 0.6,
+              cursor: isInteractive && cellValue === '.' ? 'pointer' : 'default',
+            }}
+            onClick={() => handleCellClick(cellIndex)}
+            disabled={!isInteractive}
+        >
+          {cellValue === '.' ? '' : cellValue}
+        </button>
     );
   };
 
@@ -268,13 +264,13 @@ export default function GameBoard({ username = "Guest User" }: GameBoardProps) {
       rowCells.push(renderCell(cellIndex, board[cellIndex], hexWidth, isInteractive));
     }
     return (
-      <div
-        key={row}
-        className="hex-row"
-        style={{ marginTop: row === 0 ? '0' : `calc(${hexWidth} * -0.208 + 2px)` }}
-      >
-        {rowCells}
-      </div>
+        <div
+            key={row}
+            className="hex-row"
+            style={{ marginTop: row === 0 ? '0' : `calc(${hexWidth} * -0.208 + 2px)` }}
+        >
+          {rowCells}
+        </div>
     );
   };
 
@@ -290,131 +286,135 @@ export default function GameBoard({ username = "Guest User" }: GameBoardProps) {
     return rows;
   };
 
-  //const displayTurn = isBotThinking ? 'P2' : currentTurn;
- // const activePanelTurn = gameStatus === 'finished' && winner ? winner : displayTurn;
   const activeTurn = isBotThinking ? 'P2' : currentTurn;
-  const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, currentTurn,username);
+  const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, currentTurn, username);
   const turnPanelSubtext = getTurnPanelSubtext(gameStatus, activeTurn);
   const p2Label = selectedMode === 'hvb' ? 'P2 (Bot)' : 'P2: USERN.';
 
   return (
-    <div className="game-container">
+      <div className="game-container">
 
-      {/* TOP BAR */}
-      <div className="game-top-bar">
-        <h1 className="game-title">GAME Y</h1>
-        <div className="game-profile-btn" title="Stats / Profile">Profile 👤</div>
-      </div>
-
-      <div className="game-main-layout">
-
-        {/* LEFT SIDEBAR */}
-        <div className="game-sidebar">
-
-          {gameStatus !== 'idle' && (
-            <div className={`game-panel ${activeTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
-  <div className={`game-panel-header ${activeTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
-    {turnPanelHeader}
-  </div>
-              <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
-                {turnPanelSubtext}
-              </div>
-            </div>
-          )}
-
-          {gameStatus === 'idle' && (
-            <div className="game-panel" style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
-              <div className="game-panel-header" style={{ color: '#ccc' }}>SELECTED MODE</div>
-              <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
-                {selectedMode === 'hvh' ? 'Player vs Player' : `Player vs Computer (${selectedDifficulty})`}
-              </div>
-            </div>
-          )}
-
-          {gameStatus === 'idle' && (
-            <button className="game-action-btn btn-end" onClick={handleStartGame}>
-              START GAME
-            </button>
-          )}
-          {gameStatus === 'finished' && (
-            <button className="game-action-btn btn-end" onClick={handleRematch}>
-              REMATCH
-            </button>
-          )}
-
-          {errorMsg && (
-            <div style={{ color: '#ff4444', fontSize: 12, padding: '4px 8px', wordBreak: 'break-word' }}>
-              ⚠ {errorMsg}
-            </div>
-          )}
-
-          <div className="game-panel chat-panel">
-            <div className="game-panel-header" style={{ color: '#ccc' }}>CHAT</div>
-            <div className="chat-content">...</div>
-          </div>
-        </div>
-
-        {/* CENTER: Board */}
-        <div className="board-column">
-          <div className="board-wrapper">
-            <div className="board-relative">
-              <svg
-                className="board-svg-bg"
-                preserveAspectRatio="none"
-                viewBox="0 0 100 100"
-              >
-                <polygon
-                  points="50,4 0,98 100,98"
-                  fill="#0a0a0a"
-                  stroke="#555555"
-                  strokeWidth="0.8"
-                  vectorEffect="nonScalingStroke"
-                />
-              </svg>
-              <div className="board-grid">{renderBoard()}</div>
-
-             {/* YOU WON Popup overlay */}
-  {gameStatus === 'finished' && winner && (
-    <div className="winner-popup-overlay">
-      <div className="winner-popup-content">
-        
-        <h2>{winner === 'P1' ? `${username} WINS!` : 'P2 WINS!'}</h2>
-        <p>Great match!</p>
-      </div>
-    </div>
-  )}
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT SIDEBAR */}
-        <div className="game-sidebar">
-          <div className="game-panel p1-card">
-            <div className="game-panel-header text-p1">P1:{username}</div>
-            <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>Pts: {p1Score}</div>
-          </div>
-
+        {/* TOP BAR */}
+        <div className="game-top-bar">
+          <h1 className="game-title">GAME Y</h1>
+          {/* Profile button — navigates to UserProfile */}
           <button
-            className="game-action-btn btn-undo"
-            onClick={handleUndo}
-            disabled={!session || session.moves.length === 0 || gameStatus !== 'ongoing' || isBotThinking}
+              className="game-profile-btn"
+              title="View Profile"
+              onClick={onProfile}
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            UNDO
+            Profile 👤
           </button>
-
-          <button className="game-action-btn btn-end" disabled>
-            END TURN
-          </button>
-
-          <div className="game-panel p2-card">
-            <div className="game-panel-header text-p2">{p2Label}</div>
-            <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>
-              {isBotThinking ? '🤔 thinking...' : `Pts: ${p2Score}`}
-            </div>
-          </div>
         </div>
 
+        <div className="game-main-layout">
+
+          {/* LEFT SIDEBAR */}
+          <div className="game-sidebar">
+
+            {gameStatus !== 'idle' && (
+                <div className={`game-panel ${activeTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
+                  <div className={`game-panel-header ${activeTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
+                    {turnPanelHeader}
+                  </div>
+                  <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
+                    {turnPanelSubtext}
+                  </div>
+                </div>
+            )}
+
+            {gameStatus === 'idle' && (
+                <div className="game-panel" style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
+                  <div className="game-panel-header" style={{ color: '#ccc' }}>SELECTED MODE</div>
+                  <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
+                    {selectedMode === 'hvh' ? 'Player vs Player' : `Player vs Computer (${selectedDifficulty})`}
+                  </div>
+                </div>
+            )}
+
+            {gameStatus === 'idle' && (
+                <button className="game-action-btn btn-end" onClick={handleStartGame}>
+                  START GAME
+                </button>
+            )}
+            {gameStatus === 'finished' && (
+                <button className="game-action-btn btn-end" onClick={handleRematch}>
+                  REMATCH
+                </button>
+            )}
+
+            {errorMsg && (
+                <div style={{ color: '#ff4444', fontSize: 12, padding: '4px 8px', wordBreak: 'break-word' }}>
+                  ⚠ {errorMsg}
+                </div>
+            )}
+
+            <div className="game-panel chat-panel">
+              <div className="game-panel-header" style={{ color: '#ccc' }}>CHAT</div>
+              <div className="chat-content">...</div>
+            </div>
+          </div>
+
+          {/* CENTER: Board */}
+          <div className="board-column">
+            <div className="board-wrapper">
+              <div className="board-relative">
+                <svg
+                    className="board-svg-bg"
+                    preserveAspectRatio="none"
+                    viewBox="0 0 100 100"
+                >
+                  <polygon
+                      points="50,4 0,98 100,98"
+                      fill="#0a0a0a"
+                      stroke="#555555"
+                      strokeWidth="0.8"
+                      vectorEffect="nonScalingStroke"
+                  />
+                </svg>
+                <div className="board-grid">{renderBoard()}</div>
+
+                {gameStatus === 'finished' && winner && (
+                    <div className="winner-popup-overlay">
+                      <div className="winner-popup-content">
+                        <h2>{winner === 'P1' ? `${username} WINS!` : 'P2 WINS!'}</h2>
+                        <p>Great match!</p>
+                      </div>
+                    </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT SIDEBAR */}
+          <div className="game-sidebar">
+            <div className="game-panel p1-card">
+              <div className="game-panel-header text-p1">P1: {username}</div>
+              <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>Pts: {p1Score}</div>
+            </div>
+
+            <button
+                className="game-action-btn btn-undo"
+                onClick={handleUndo}
+                disabled={!session || session.moves.length === 0 || gameStatus !== 'ongoing' || isBotThinking}
+            >
+              UNDO
+            </button>
+
+            <button className="game-action-btn btn-end" disabled>
+              END TURN
+            </button>
+
+            <div className="game-panel p2-card">
+              <div className="game-panel-header text-p2">{p2Label}</div>
+              <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>
+                {isBotThinking ? '🤔 thinking...' : `Pts: ${p2Score}`}
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
-    </div>
   );
 }
