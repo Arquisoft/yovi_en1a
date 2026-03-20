@@ -29,11 +29,13 @@ describe('App & Lobby Coverage Booster', () => {
 
         const playBtn = screen.getByRole('button', { name: /^PLAY$/i });
 
+        // PVP
         fireEvent.click(screen.getByText(/PLAYER VS\. PLAYER/i));
         fireEvent.click(playBtn);
         expect(onPlayMock).toHaveBeenLastCalledWith('pvp', 'beginner');
 
-         fireEvent.click(screen.getByText(/PLAYER VS\. COMPUTER/i));
+        // PVC + medium
+        fireEvent.click(screen.getByText(/PLAYER VS\. COMPUTER/i));
         fireEvent.click(screen.getByText(/^MEDIUM$/i));
         fireEvent.click(playBtn);
         expect(onPlayMock).toHaveBeenLastCalledWith('pvc', 'medium');
@@ -57,6 +59,7 @@ describe('App & Lobby Coverage Booster', () => {
     it('Lobby: Calls onProfile when profile button is clicked', () => {
         const onProfileMock = vi.fn();
         render(<Lobby onPlay={vi.fn()} onLogout={vi.fn()} onProfile={onProfileMock} username="Tester" />);
+        // The profile card button shows the username
         fireEvent.click(screen.getByText(/Tester/i).closest('button')!);
         expect(onProfileMock).toHaveBeenCalled();
     });
@@ -77,6 +80,7 @@ describe('App & Lobby Coverage Booster', () => {
     it('App: Shows RegisterForm on home view', () => {
         stubLocation('');
         render(<App />);
+        // RegisterForm renders the login toggle and submit button
         expect(screen.getByRole('button', { name: /LOGIN/i })).toBeInTheDocument();
     });
 
@@ -111,29 +115,32 @@ describe('Profile Component', () => {
 
     it('renders the username', () => {
         render(<Profile username="HexMaster" />);
+        // CSS text-transform:uppercase is visual only — DOM contains the original casing
         expect(screen.getByText('HexMaster')).toBeInTheDocument();
     });
 
     it('renders the default username when none is provided', () => {
         render(<Profile />);
+        // Default prop is 'Username', not uppercase in the DOM
         expect(screen.getByText('Username')).toBeInTheDocument();
     });
 
     it('renders the Stats section label', () => {
         render(<Profile />);
+        // There are two panel labels: Stats and Match History
         const labels = screen.getAllByText(/stats/i);
         expect(labels.length).toBeGreaterThan(0);
     });
 
     it('renders the winrate percentage', () => {
         render(<Profile winRate={72} />);
-        // The pct and % are in the same span so getByText needs a regex
         expect(screen.getByText(/72/)).toBeInTheDocument();
     });
 
     it('renders the best score', () => {
         render(<Profile bestScore={1200} />);
-        expect(screen.getByText('1200')).toBeInTheDocument();
+        // toLocaleString() produces '1,200' in Node 18+ with full Intl support
+        expect(screen.getByText('1,200')).toBeInTheDocument();
     });
 
     it('renders Match History section label', () => {
