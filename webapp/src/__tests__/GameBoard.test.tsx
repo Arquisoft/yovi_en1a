@@ -114,18 +114,18 @@ describe('getTurnPanelSubtext', () => {
 
 describe('applyMovesToBoard', () => {
   it('returns empty board for no moves', () => {
-    const board = applyMovesToBoard([]);
+    const board = applyMovesToBoard([], 66);
     expect(board.every(c => c === '.')).toBe(true);
     expect(board).toHaveLength(66);
   });
 
   it('places B for player 0', () => {
-    const board = applyMovesToBoard([{ player: 0, x: 0, y: 0 }]);
+    const board = applyMovesToBoard([{ player: 0, x: 0, y: 0 }], 66);
     expect(board[0]).toBe('B');
   });
 
   it('places R for player 1', () => {
-    const board = applyMovesToBoard([{ player: 1, x: 0, y: 0 }]);
+    const board = applyMovesToBoard([{ player: 1, x: 0, y: 0 }], 66);
     expect(board[0]).toBe('R');
   });
 
@@ -134,7 +134,7 @@ describe('applyMovesToBoard', () => {
       { player: 0, x: 0, y: 0 },
       { player: 1, x: 1, y: 1 },
       { player: 0, x: 0, y: 2 },
-    ]);
+    ], 66);
     expect(board[0]).toBe('B');  // (0,0) → index 0
     expect(board[2]).toBe('R');  // (1,1) → index 2
     expect(board[3]).toBe('B');  // (0,2) → index 3
