@@ -3,7 +3,7 @@ import './Lobby.css';
 
 interface LobbyProps {
   username?: string;
-  onPlay?: (mode: string, difficulty: string) => void;
+  onPlay?: (mode: string, difficulty: string, boardSize: number) => void;
   onLogout?: () => void;
   onProfile?: () => void;
 }
@@ -11,6 +11,7 @@ interface LobbyProps {
 const Lobby: React.FC<LobbyProps> = ({ username = "Guest User", onPlay, onLogout, onProfile }) => {
   const [selectedMode, setSelectedMode] = useState('pvp');
   const [selectedDifficulty, setSelectedDifficulty] = useState('beginner');
+  const [boardSize, setBoardSize] = useState(11);
   const friends = ["Alice_99", "Bob_Builder", "Charlie_Hex"];
 
   return (
@@ -54,8 +55,21 @@ const Lobby: React.FC<LobbyProps> = ({ username = "Guest User", onPlay, onLogout
                       disabled={selectedMode === 'pvp'}
                   >ADVANCED</button>
                 </div>
+
+                <div className="white-panel size-panel">
+                  <h4 className="panel-title">BOARD SIZE: {boardSize}</h4>
+                  <input
+                    type="range"
+                    min="3"
+                    max="12"
+                    value={boardSize}
+                    onChange={(e) => setBoardSize(Number(e.target.value))}
+                    className="size-slider"
+                    style={{ width: '100%', marginTop: '10px' }}
+                  />
+                </div>
               </div>
-              <button className="primary-play-btn" onClick={() => onPlay?.(selectedMode, selectedDifficulty)}>
+              <button className="primary-play-btn" onClick={() => onPlay?.(selectedMode, selectedDifficulty, boardSize)}>
                 PLAY
               </button>
             </div>
