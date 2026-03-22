@@ -340,3 +340,101 @@ body, html {
   font-weight: bold;
   opacity: 0.9;
 }
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  max-width: 500px;
+  margin: 20px auto;
+}
+
+.p1-card, .p2-card, .btn-undo, .btn-end {
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+.winner-popup-overlay {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  /* Force the outer container to be a wrapping flexbox */
+  .game-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100vh !important;
+    padding: 10px !important;
+  }
+
+  /* CRITICAL: This 'unwraps' the sidebars. 
+     If P1 is in a left sidebar and P2 is in a right sidebar, 
+     they will now act as if they are in the same div.
+  */
+  .game-main-layout, 
+  .game-sidebar {
+    display: contents !important;
+  }
+
+  /* 1. TURN (Full Width) */
+  .game-panel:first-of-type,
+  .game-panel.idle-panel {
+    order: 1 !important;
+    width: 100% !important;
+    margin-bottom: 5px !important;
+  }
+
+  /* 2. P1 & P2 (Side-by-Side) */
+  .p1-card {
+    order: 2 !important;
+    width: calc(50% - 5px) !important;
+    margin-right: 5px !important;
+    display: block !important;
+    float: none !important;
+  }
+
+  .p2-card {
+    order: 3 !important;
+    width: calc(50% - 5px) !important;
+    display: block !important;
+    float: none !important;
+  }
+
+  /* 3. BOARD (Middle) */
+  .board-column {
+    order: 4 !important;
+    flex: 1 !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  /* 4. UNDO & END TURN (Side-by-Side) */
+  .btn-undo {
+    order: 5 !important;
+    width: calc(50% - 5px) !important;
+    margin-right: 5px !important;
+    margin-top: 10px !important;
+  }
+
+  .btn-end, .start-game-panel button, .rematch-btn {
+    order: 6 !important;
+    width: calc(50% - 5px) !important;
+    margin-top: 10px !important;
+  }
+
+  /* 5. CHAT (Bottom) */
+  .chat-panel {
+    order: 7 !important;
+    width: 100% !important;
+    height: 100px !important;
+    margin-top: 10px !important;
+  }
+}

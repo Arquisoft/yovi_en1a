@@ -254,3 +254,68 @@ body {
   color: #fff;
   font-size: 0.6rem;
 }
+
+@media (max-width: 768px) {
+  .lobby-layout-container {
+    display: flex;
+    flex-direction: column;
+    padding: 0 5vw;
+    gap: 0;
+  }
+
+  .social-sidebar-column {
+    display: contents;
+  }
+
+  /* 1. Profile - Reduced padding and bottom margin */
+  .user-profile-button {
+    order: 1;
+    padding: 5px 0;
+    margin-bottom: 0px; 
+    border-bottom: 1px solid #333;
+  }
+
+  /* 2. Game Setup - Tightened internal gaps */
+  .game-setup-column {
+    order: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .panel-title {
+    margin-top: 15px; /* Space between sections */
+    margin-bottom: 8px; /* Space above buttons */
+    padding-bottom: 2px;
+    font-size: 0.75rem;
+  }
+
+  .setup-options-row {
+    flex-direction: column;
+    gap: 4px; /* Space between individual buttons */
+  }
+
+  .mode-option-btn {
+    padding: 10px;
+    margin-bottom: 0;
+    font-size: 0.9rem;
+  }
+
+  /* 3. Play Button - Reduced top margin */
+  .primary-play-btn {
+    order: 3;
+    margin: 15px 0;
+    padding: 12px;
+  }
+
+  /* 4. Friends List */
+  .friends-panel {
+    order: 4;
+    margin-top: 10px;
+    padding-top: 5px !important;
+  }
+
+  .friend-item {
+    padding: 0.5rem 0;
+  }
+}

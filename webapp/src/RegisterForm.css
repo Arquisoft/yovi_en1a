@@ -176,3 +176,27 @@
         transform: translateY(0);
     }
 }
+
+@media (max-width: 480px) {
+  .start-page-container {
+    justify-content: center;
+  }
+
+  .game-title-large {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .auth-form {
+    max-width: 100%;
+    padding: 0 5vw;
+  }
+
+  .form-input {
+    font-size: 16px; /* Prevents iOS auto-zoom on focus */
+  }
+
+  .toggle-btn {
+    font-size: 1rem;
+  }
+}
