@@ -101,7 +101,7 @@ export function applyMovesToBoard(moves: GameSession['moves'], totalCells: numbe
 export default function GameBoard({ username = "Guest User", onProfile }: GameBoardProps) {
   // ── Determine initial mode and difficulty from URL parameters
   const getInitialParams = () => {
-    if (typeof globalThis.window === 'undefined') return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11 };
+    if (globalThis.window === undefined) return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11 };
     const params = new URLSearchParams(globalThis.window.location.search);
     const modeParam = params.get('mode');
     const diffParam = params.get('difficulty');
