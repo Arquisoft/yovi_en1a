@@ -32,13 +32,13 @@ describe('App & Lobby Coverage Booster', () => {
         // PVP
         fireEvent.click(screen.getByText(/PLAYER VS\. PLAYER/i));
         fireEvent.click(playBtn);
-        expect(onPlayMock).toHaveBeenLastCalledWith('pvp', 'beginner');
+        expect(onPlayMock).toHaveBeenLastCalledWith('pvp', 'beginner', 11);
 
         // PVC + medium
         fireEvent.click(screen.getByText(/PLAYER VS\. COMPUTER/i));
         fireEvent.click(screen.getByText(/^MEDIUM$/i));
         fireEvent.click(playBtn);
-        expect(onPlayMock).toHaveBeenLastCalledWith('pvc', 'medium');
+        expect(onPlayMock).toHaveBeenLastCalledWith('pvc', 'medium', 11);
     });
 
     it('Lobby: Disables difficulty when PVP is selected', () => {

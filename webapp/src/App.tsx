@@ -24,8 +24,8 @@ function App() {
     globalThis.location.href = globalThis.location.pathname + '?view=lobby';
   };
 
-  const handleGoToGame = (mode: string, difficulty: string) => {
-    globalThis.location.href = globalThis.location.pathname + `?view=game&mode=${mode}&difficulty=${difficulty}`;
+  const handleGoToGame = (mode: string, difficulty: string, boardSize: number = 11) => {
+    globalThis.location.href = globalThis.location.pathname + `?view=game&mode=${mode}&difficulty=${difficulty}&size=${boardSize}`;
   };
 
   const handleGoToProfile = () => {

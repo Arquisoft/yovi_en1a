@@ -254,3 +254,8 @@ body {
   color: #fff;
   font-size: 0.6rem;
 }
+
+.size-slider {
+  accent-color: #483dff;
+  cursor: pointer;
+}

@@ -27,8 +27,6 @@ interface GameBoardProps {
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const API_URL = import.meta.env.VITE_GAMEY_API_URL ?? 'http://localhost:3001';
-const BOARD_SIZE = 11;
-const TOTAL_CELLS = (BOARD_SIZE * (BOARD_SIZE + 1)) / 2;
 
 // ─── Coordinate helpers ───────────────────────────────────────────────────────
 
@@ -89,8 +87,8 @@ export function getTurnPanelSubtext(gameStatus: GameStatus, currentTurn: PlayerT
   return currentTurn === 'P1' ? '(blue)' : '(red)';
 }
 
-export function applyMovesToBoard(moves: GameSession['moves']): CellValue[] {
-  const newBoard: CellValue[] = new Array(TOTAL_CELLS).fill('.');
+export function applyMovesToBoard(moves: GameSession['moves'], totalCells: number): CellValue[] {
+  const newBoard: CellValue[] = new Array(totalCells).fill('.');
   for (const m of moves) {
     const idx = coordsToIndex(m.x, m.y);
     newBoard[idx] = m.player === 0 ? 'B' : 'R';
@@ -101,7 +99,27 @@ export function applyMovesToBoard(moves: GameSession['moves']): CellValue[] {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function GameBoard({ username = "Guest User", onProfile }: GameBoardProps) {
-  const [board, setBoard] = useState<CellValue[]>(new Array(TOTAL_CELLS).fill('.'));
+  // ── Determine initial mode and difficulty from URL parameters
+  const getInitialParams = () => {
+    if (globalThis.window === undefined) return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11 };
+    const params = new URLSearchParams(globalThis.window.location.search);
+    const modeParam = params.get('mode');
+    const diffParam = params.get('difficulty');
+    const sizeParam = params.get('size');
+    return {
+      mode: modeParam === 'pvp' ? ('hvh' as GameMode) : ('hvb' as GameMode),
+      diff: diffParam || 'beginner',
+      size: sizeParam ? Number.parseInt(sizeParam, 10) : 11,
+    };
+  };
+
+  const initialParams = getInitialParams();
+  const selectedMode = initialParams.mode;
+  const selectedDifficulty = initialParams.diff;
+  const boardSize = initialParams.size;
+  const totalCells = (boardSize * (boardSize + 1)) / 2;
+
+  const [board, setBoard] = useState<CellValue[]>(new Array(totalCells).fill('.'));
   const [currentTurn, setCurrentTurn] = useState<PlayerTurn>('P1');
   const [session, setSession] = useState<GameSession | null>(null);
   const [gameStatus, setGameStatus] = useState<GameStatus>('idle');
@@ -109,22 +127,6 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [winningPathIndices, setWinningPathIndices] = useState<Set<number>>(new Set());
-
-  // ── Determine initial mode and difficulty from URL parameters
-  const getInitialParams = () => {
-    if (typeof window === 'undefined') return { mode: 'hvb' as GameMode, diff: 'beginner' };
-    const params = new URLSearchParams(window.location.search);
-    const modeParam = params.get('mode');
-    const diffParam = params.get('difficulty');
-    return {
-      mode: modeParam === 'pvp' ? ('hvh' as GameMode) : ('hvb' as GameMode),
-      diff: diffParam || 'beginner',
-    };
-  };
-
-  const initialParams = getInitialParams();
-  const selectedMode = initialParams.mode;
-  const selectedDifficulty = initialParams.diff;
 
   // ── Session Scores (in-memory only, resets on reload)
   const [p1Score, setP1Score] = useState(0);
@@ -135,7 +137,9 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
   const syncFromSession = useCallback(
       (s: GameSession & { layout?: string; botMove?: { x: number; y: number } | null; winningPath?: { x: number; y: number }[] }) => {
         setSession(s);
-        setBoard(applyMovesToBoard(s.moves));
+        const actualSize = s.boardSize || boardSize;
+        const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
+        setBoard(applyMovesToBoard(s.moves, actualTotalCells));
         setCurrentTurn(s.currentPlayer === 0 ? 'P1' : 'P2');
         setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
 
@@ -153,7 +157,7 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
           }
         }
       },
-      [hasScored]
+      [hasScored, boardSize]
   );
 
   // ── Start a new game
@@ -162,13 +166,13 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
     setWinner(null);
     setWinningPathIndices(new Set());
     setHasScored(false);
-    setBoard(new Array(TOTAL_CELLS).fill('.'));
+    setBoard(new Array(totalCells).fill('.'));
     setCurrentTurn('P1');
     try {
       const data = await apiPost<GameSession>('/play/create', {
         mode: selectedMode,
         difficulty: selectedDifficulty,
-        boardSize: BOARD_SIZE,
+        boardSize: boardSize,
       });
       syncFromSession(data);
     } catch (e: unknown) {
@@ -225,7 +229,9 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
     if (!session) return handleStartGame();
     try {
       const data = await apiPost<GameSession>(`/play/${session.gameId}/rematch`, {});
-      setBoard(new Array(TOTAL_CELLS).fill('.'));
+      const actualSize = data.boardSize || boardSize;
+      const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
+      setBoard(new Array(actualTotalCells).fill('.'));
       setWinner(null);
       setWinningPathIndices(new Set());
       setHasScored(false);
@@ -279,7 +285,8 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
     const isInteractive = gameStatus === 'ongoing' && !isBotThinking;
     const rows = [];
     let currentIndex = 0;
-    for (let row = 0; row < BOARD_SIZE; row++) {
+    const currentBoardSize = session?.boardSize || boardSize;
+    for (let row = 0; row < currentBoardSize; row++) {
       rows.push(renderBoardRow(row, currentIndex, hexWidth, isInteractive));
       currentIndex += row + 1;
     }
