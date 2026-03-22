@@ -1,4 +1,4 @@
-== 12. Glossary
+== Glossary
 
 [options="header",cols="1,3"]
 |===
