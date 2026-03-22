@@ -101,15 +101,15 @@ export function applyMovesToBoard(moves: GameSession['moves'], totalCells: numbe
 export default function GameBoard({ username = "Guest User", onProfile }: GameBoardProps) {
   // ── Determine initial mode and difficulty from URL parameters
   const getInitialParams = () => {
-    if (typeof window === 'undefined') return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11 };
-    const params = new URLSearchParams(window.location.search);
+    if (typeof globalThis.window === 'undefined') return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11 };
+    const params = new URLSearchParams(globalThis.window.location.search);
     const modeParam = params.get('mode');
     const diffParam = params.get('difficulty');
     const sizeParam = params.get('size');
     return {
       mode: modeParam === 'pvp' ? ('hvh' as GameMode) : ('hvb' as GameMode),
       diff: diffParam || 'beginner',
-      size: sizeParam ? parseInt(sizeParam, 10) : 11,
+      size: sizeParam ? Number.parseInt(sizeParam, 10) : 11,
     };
   };
 
