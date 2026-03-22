@@ -1,44 +1,97 @@
-ifndef::imagesdir[:imagesdir: ../images]
+== 12. Glossary
 
-[[section-glossary]]
-== Glossary
-
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Contents
-The most important domain and technical terms that your stakeholders use when discussing the system.
-
-You can also see the glossary as source for translations if you work in multi-language teams.
-
-.Motivation
-You should clearly define your terms, so that all stakeholders
-
-* have an identical understanding of these terms
-* do not use synonyms and homonyms
-
-
-.Form
-
-A table with columns <Term> and <Definition>.
-
-Potentially more columns in case you need translations.
-
-
-.Further Information
-
-See https://docs.arc42.org/section-12/[Glossary] in the arc42 documentation.
-
-****
-endif::arc42help[]
-
-[cols="e,2e" options="header"]
+[options="header",cols="1,3"]
 |===
-|Term |Definition
+| Term | Definition
 
-|<Term-1>
-|<definition-1>
+| ADR
+| Architectural Decision Record - a document capturing an important architectural decision, its context, consequences, and rationale.
 
-|<Term-2>
-|<definition-2>
+| AI
+| Artificial Intelligence - the computer-controlled opponent in the game.
+
+| arc42
+| A template for documenting software and system architectures, used as the foundation for this documentation.
+
+| Barycentric Coordinates
+| A coordinate system for hexagonal grids using three coordinates (x, y, z) that sum to zero. Used in the game to represent cell positions.
+
+| Classic Version
+| The variant of Game Y implemented in this project, following the standard rules of the game.
+
+| CORS
+| Cross-Origin Resource Sharing - a security mechanism that allows a web page to access resources from a different origin.
+
+| Docker
+| A containerization platform used to package and run the application services consistently across environments.
+
+| FR
+| Functional Requirement - a requirement that specifies a function the system must perform.
+
+| Game Y
+| The core game implemented in the project - a connection-based board game played on a triangular grid of hexagonal cells.
+
+| GameY Engine
+| The Rust‑based subsystem that contains the game logic, move validation, win detection, and AI move generation.
+
+| GameY API
+| The Node.js‑based subsystem responsible for user registration, authentication, and persistence of statistics.
+
+| Grafana
+| An observability platform used to visualize metrics collected by Prometheus.
+
+| Index-based Coordinates
+| A linear coordinate system (0…n) for simpler indexing of board cells, used as an alternative to barycentric coordinates.
+
+| JSON
+| JavaScript Object Notation - the data interchange format used for all communication between subsystems.
+
+| JWT
+| JSON Web Token - a compact, URL-safe token format used for authentication and session management (planned).
+
+| Micrati
+| A stakeholder group that expects a functional prototype meeting all success criteria.
+
+| MongoDB
+| A document‑oriented NoSQL database used to store user profiles and match histories.
+
+| Node.js
+| The JavaScript runtime used for the User Service.
+
+| PlantUML
+| A tool for creating UML diagrams from plain text, used to generate all architectural diagrams in this documentation.
+
+| Player‑vs‑Machine (AI)
+| The game mode where a human player competes against the AI opponent.
+
+| Prometheus
+| A monitoring system that scrapes and stores metrics from the services.
+
+| React
+| The JavaScript library used to build the frontend web application (Webapp).
+
+| REST
+| Representational State Transfer - the architectural style used for the HTTP APIs between subsystems and external bots.
+
+| Rust
+| The programming language used for the GameY Engine, chosen for memory safety and performance.
+
+| TypeScript
+| The programming language used for the frontend (Webapp).
+
+| User Service
+| The Node.js‑based subsystem responsible for user registration, authentication, and persistence of statistics.
+
+| Webapp
+| The React frontend application that provides the user interface and orchestrates requests to the backend services.
+
+| WebSockets
+| A protocol enabling real‑time, bidirectional communication between client and server, planned for multiplayer scenarios.
+
+| YEN Notation
+| Y Exchange Notation - a compact, JSON‑based format for representing the complete game state (board size, player turn, piece positions).
+
+| YOVI
+| The name of the project and the game.
+
 |===
