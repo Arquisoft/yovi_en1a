@@ -14,12 +14,12 @@ use crate::YBot;
 ///
 /// # Example
 ///
-/// ```
+/// ```rust
 /// use std::sync::Arc;
-/// use gamey::{YBotRegistry, RandomBot};
+/// use gamey::{YBotRegistry, GamerBot};
 ///
 /// let registry = YBotRegistry::new()
-///     .with_bot(Arc::new(RandomBot));
+///     .with_bot(Arc::new(GamerBot));
 ///
 /// let bot = registry.find("gamer_bot");
 /// assert!(bot.is_some());

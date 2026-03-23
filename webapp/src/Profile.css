@@ -1,0 +1,352 @@
+/* ─── Profile — matches prototype + app aesthetic ───────────────── */
+
+.profile-page-container {
+    width: 100vw;
+    min-height: 100vh;
+    background-color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+/* ─── Navbar — identical to lobby-navbar ───────────────────────── */
+
+.profile-navbar {
+    width: 100%;
+    height: 10vh;
+    min-height: 56px;
+    background-color: transparent;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 4%;
+    box-sizing: border-box;
+    border-bottom: 0.1rem solid #333;
+}
+
+.profile-nav-logo {
+    font-size: 2.2rem;
+    font-weight: bold;
+    color: #483dff;
+    margin: 0;
+}
+
+.profile-nav-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.profile-nav-play-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 0.85rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+    font-family: inherit;
+}
+
+.profile-nav-play-btn:hover {
+    color: #fff;
+}
+
+.profile-nav-logout-btn {
+    background: transparent;
+    border: 1px solid #555;
+    color: #aaa;
+    padding: 0.5rem 1.5rem;
+    border-radius: 4px;
+    font-weight: normal;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.profile-nav-logout-btn:hover {
+    color: #fff;
+    border-color: #fff;
+}
+
+/* ─── Body — fills remaining height after navbar ────────────────── */
+
+.profile-body {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    padding: 3vh 4%;
+    box-sizing: border-box;
+}
+
+/* ─── Card — fills available space, no fixed max-width cap ─────── */
+
+.profile-card {
+    width: 100%;
+    max-width: 92vw;
+    border: 1px solid #333;
+    padding: 3vh 3vw;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3vh;
+}
+
+/* ─── Avatar + username ─────────────────────────────────────────── */
+
+.profile-avatar-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1vh;
+}
+
+.profile-avatar-icon {
+    width: clamp(56px, 7vw, 90px);
+    height: clamp(56px, 7vw, 90px);
+    border-radius: 50%;
+    border: 1px solid #555;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-username-text {
+    font-size: clamp(0.75rem, 1.2vw, 1rem);
+    font-weight: bold;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0;
+}
+
+/* ─── Stats + history row — fills card width, stretches vertically ─ */
+
+.profile-data-row {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    border: 1px solid #333;
+}
+
+/* ─── Stats panel (left box) ────────────────────────────────────── */
+
+.profile-stats-panel {
+    flex: 0 0 32%;
+    min-width: 180px;
+    border-right: 1px solid #333;
+    padding: 3vh 2.5vw;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4vh;
+}
+
+.profile-panel-label {
+    font-size: clamp(0.65rem, 1vw, 0.85rem);
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #888;
+    padding-bottom: 1vh;
+    border-bottom: 1px solid #333;
+    margin: 0;
+    width: 100%;
+    text-align: center;
+}
+
+/* Winrate ring */
+.profile-winrate-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5vh;
+    padding: 1vh 0;
+}
+
+.winrate-track {
+    fill: none;
+    stroke: #333;
+    stroke-width: 4;
+}
+
+.winrate-fill {
+    fill: none;
+    stroke: #483dff;
+    stroke-width: 4;
+    stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+    transition: stroke-dashoffset 0.6s ease;
+}
+
+.winrate-pct {
+    font-size: clamp(1.3rem, 2.5vw, 2rem);
+    font-weight: bold;
+    color: #fff;
+    line-height: 1;
+    display: block;
+}
+
+.winrate-sub {
+    font-size: clamp(0.65rem, 0.9vw, 0.8rem);
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-top: 4px;
+}
+
+/* Best score */
+.profile-score-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6vh;
+}
+
+.profile-score-label {
+    font-size: clamp(0.65rem, 0.9vw, 0.8rem);
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #666;
+    margin: 0;
+}
+
+.profile-score-value {
+    font-size: clamp(1.4rem, 2.5vw, 2rem);
+    font-weight: bold;
+    color: #fff;
+    margin: 0;
+}
+
+/* ─── Match history panel (right box) ──────────────────────────── */
+
+.profile-history-panel {
+    flex: 1;
+    padding: 2vh 1.5vw;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5vh;
+    min-width: 0;
+}
+
+.profile-history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.profile-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.profile-history-table thead tr th {
+    font-size: clamp(0.6rem, 0.9vw, 0.8rem);
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #666;
+    text-align: center;
+    padding: 0 1vw 1vh 1vw;
+    border-bottom: 1px solid #333;
+    width: 33.33%;
+}
+
+.profile-history-table tbody tr {
+    border-bottom: 1px solid #2a2a2a;
+    transition: background-color 0.15s;
+}
+
+.profile-history-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.profile-history-table tbody tr:hover {
+    background-color: rgba(255,255,255,0.02);
+}
+
+.profile-history-table tbody tr td {
+    padding: 1.4vh 1vw;
+    font-size: clamp(0.8rem, 1.1vw, 1rem);
+    color: #ccc;
+    text-align: center;
+}
+
+.profile-history-table tbody tr td:last-child {
+    text-align: center;
+    color: #666;
+    font-size: clamp(0.65rem, 0.9vw, 0.85rem);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* Result badges — P1 cyan / P2 red */
+.result-badge {
+    display: inline-block;
+    font-size: clamp(0.6rem, 0.8vw, 0.75rem);
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 0.3vh 0.6vw;
+    border-radius: 2px;
+}
+
+.result-badge.win {
+    color: #00E5FF;
+    background-color: rgba(0, 229, 255, 0.08);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.result-badge.lose {
+    color: #FF0055;
+    background-color: rgba(255, 0, 85, 0.08);
+    border: 1px solid rgba(255, 0, 85, 0.2);
+}
+
+.pts-value {
+    font-weight: bold;
+    color: #fff;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+    .profile-data-row {
+        flex-direction: column;
+    }
+
+    .profile-stats-panel {
+        flex: none;
+        width: 100%;
+        min-width: unset;
+        border-right: none;
+        border-bottom: 1px solid #333;
+    }
+
+    .profile-card {
+        padding: 2vh 4vw;
+        max-width: 100%;
+    }
+}

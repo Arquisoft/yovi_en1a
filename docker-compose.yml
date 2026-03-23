@@ -13,6 +13,7 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/yovi
       - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGINS=http://localhost,http://localhost:3000,http://localhost:80,http://20.251.170.191
 
   webapp:
     build:
@@ -43,6 +44,7 @@ services:
   gamey-service:
     build: ./gameyapi
     container_name: gamey-service
+    image: ghcr.io/arquisoft/yovi_en1a-gameyapi:latest
     ports:
       - "3001:3001"
     environment:

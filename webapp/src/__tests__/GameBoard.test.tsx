@@ -62,25 +62,35 @@ describe('getCellClass', () => {
   it('returns hex-p2 for red cell', () => {
     expect(getCellClass('R', false)).toBe('hex-cell hex-p2');
   });
+
+  it('returns hex-p1 hex-winning for winning blue cell', () => {
+    expect(getCellClass('B', true)).toBe('hex-cell hex-p1 hex-winning');
+  });
+
+  it('returns hex-p2 hex-winning for winning red cell', () => {
+    expect(getCellClass('R', true)).toBe('hex-cell hex-p2 hex-winning');
+  });
 });
 
 describe('getTurnPanelHeader', () => {
+  const testUser = 'Ahmet';
+
   it('returns START GAME when idle', () => {
-    expect(getTurnPanelHeader('idle', null, false, 'P1')).toBe('START GAME');
+    expect(getTurnPanelHeader('idle', null, false, 'P1', testUser)).toBe('START GAME');
   });
 
   it('returns winner string when finished', () => {
-    expect(getTurnPanelHeader('finished', 'P1', false, 'P1')).toBe('P1 WINS!');
-    expect(getTurnPanelHeader('finished', 'P2', false, 'P2')).toBe('P2 WINS!');
+    expect(getTurnPanelHeader('finished', 'P1', false, 'P1', testUser)).toBe(`${testUser} WINS!`);
+    expect(getTurnPanelHeader('finished', 'P2', false, 'P2', testUser)).toBe('P2 WINS!');
   });
 
   it('returns BOT THINKING when bot is thinking', () => {
-    expect(getTurnPanelHeader('ongoing', null, true, 'P2')).toBe('BOT THINKING…');
+    expect(getTurnPanelHeader('ongoing', null, true, 'P2', testUser)).toBe('BOT THINKING…');
   });
 
   it('returns current turn when ongoing and not thinking', () => {
-    expect(getTurnPanelHeader('ongoing', null, false, 'P1')).toBe('P1 TURN');
-    expect(getTurnPanelHeader('ongoing', null, false, 'P2')).toBe('P2 TURN');
+    expect(getTurnPanelHeader('ongoing', null, false, 'P1', testUser)).toBe(`${testUser}'s TURN`);
+    expect(getTurnPanelHeader('ongoing', null, false, 'P2', testUser)).toBe("P2's TURN");
   });
 });
 
@@ -104,18 +114,18 @@ describe('getTurnPanelSubtext', () => {
 
 describe('applyMovesToBoard', () => {
   it('returns empty board for no moves', () => {
-    const board = applyMovesToBoard([]);
+    const board = applyMovesToBoard([], 66);
     expect(board.every(c => c === '.')).toBe(true);
     expect(board).toHaveLength(66);
   });
 
   it('places B for player 0', () => {
-    const board = applyMovesToBoard([{ player: 0, x: 0, y: 0 }]);
+    const board = applyMovesToBoard([{ player: 0, x: 0, y: 0 }], 66);
     expect(board[0]).toBe('B');
   });
 
   it('places R for player 1', () => {
-    const board = applyMovesToBoard([{ player: 1, x: 0, y: 0 }]);
+    const board = applyMovesToBoard([{ player: 1, x: 0, y: 0 }], 66);
     expect(board[0]).toBe('R');
   });
 
@@ -124,7 +134,7 @@ describe('applyMovesToBoard', () => {
       { player: 0, x: 0, y: 0 },
       { player: 1, x: 1, y: 1 },
       { player: 0, x: 0, y: 2 },
-    ]);
+    ], 66);
     expect(board[0]).toBe('B');  // (0,0) → index 0
     expect(board[2]).toBe('R');  // (1,1) → index 2
     expect(board[3]).toBe('B');  // (0,2) → index 3
@@ -143,12 +153,22 @@ describe('GameBoard Component', () => {
     expect(screen.getByRole('button', { name: /END TURN/i })).toBeInTheDocument();
   });
 
+  // FIX: label is now 'P1: Guest User' (with space)
   it('should start in idle state showing START GAME and selected mode', () => {
     render(<GameBoard />);
     const startGameElements = screen.getAllByText('START GAME');
     expect(startGameElements.length).toBe(1);
     expect(screen.getByText('SELECTED MODE')).toBeInTheDocument();
-    expect(screen.getByText('P1: USERN.').parentElement).toHaveClass('p1-card');
+    expect(screen.getByText('P1: Guest User').parentElement).toHaveClass('p1-card');
+  });
+
+  // FIX: label is now 'P1: Guest User' (with space)
+  it('should have border classes defined for all sides of player cards', () => {
+    render(<GameBoard />);
+    const p1Container = screen.getByText('P1: Guest User').parentElement;
+    const p2Container = screen.getByText('P2 (Bot)').parentElement;
+    expect(p1Container).toHaveClass('p1-card');
+    expect(p2Container).toHaveClass('p2-card');
   });
 
   it('should render the correct number of hex cells on the board', () => {
@@ -167,14 +187,6 @@ describe('GameBoard Component', () => {
     });
   });
 
-  it('should have border classes defined for all sides of player cards', () => {
-    render(<GameBoard />);
-    const p1Container = screen.getByText('P1: USERN.').parentElement;
-    const p2Container = screen.getByText('P2 (Bot)').parentElement;
-    expect(p1Container).toHaveClass('p1-card');
-    expect(p2Container).toHaveClass('p2-card');
-  });
-
   it('should have correct classes for action buttons (Undo/End)', () => {
     render(<GameBoard />);
     expect(screen.getByText('UNDO')).toHaveClass('btn-undo');
@@ -187,22 +199,18 @@ describe('GameBoard Component', () => {
   });
 
   it('should toggle selected mode via URL mockup (mocking window.location)', () => {
-    // GameBoard now reads from URL, we mock window.location in beforeAll or dynamically
     const originalLocation = window.location;
     delete (window as any).location;
     window.location = {
       ...originalLocation,
       search: '?mode=pvp&difficulty=advanced'
     } as any;
-    
+
     render(<GameBoard />);
     expect(screen.getByText(/Player vs Player/i)).toBeInTheDocument();
-    
-    // restore
+
     window.location = originalLocation as any;
   });
-
-  // removed test: 'should toggle selected mode when a radio button is clicked' since radio buttons are gone
 
   it('should show START GAME button in idle state', () => {
     render(<GameBoard />);
@@ -245,62 +253,7 @@ describe('GameBoard Component', () => {
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('P1 TURN')).toBeInTheDocument();
-    });
-  });
-
-  it('should show (blue) subtext when it is P1 turn', async () => {
-    render(<GameBoard />);
-    mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
-
-    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('(blue)')).toBeInTheDocument();
-    });
-  });
-
-  it('should show REMATCH button when game is finished', async () => {
-    render(<GameBoard />);
-    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
-
-    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /REMATCH/i })).toBeInTheDocument();
-      const p1WinsElements = screen.getAllByText('P1 WINS!');
-      expect(p1WinsElements.length).toBeGreaterThan(0);
-    });
-  });
-
-  it('should show P2 WINS when winner is player 1', async () => {
-    render(<GameBoard />);
-    mockApiSuccess(makeMockSession({ status: 'finished', winner: 1 }));
-
-    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-
-    await waitFor(() => {
-      const p2WinsElements = screen.getAllByText('P2 WINS!');
-      expect(p2WinsElements.length).toBeGreaterThan(0);
-    });
-  });
-
-  it('UNDO button is disabled when no session', () => {
-    render(<GameBoard />);
-    const undoBtn = screen.getByRole('button', { name: /UNDO/i });
-    expect(undoBtn).toBeDisabled();
-  });
-
-  it('should enable hex cells after game starts', async () => {
-    render(<GameBoard />);
-    mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
-
-    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-
-    await waitFor(() => {
-      const cells = document.querySelectorAll('.hex-cell');
-      const enabledCells = Array.from(cells).filter(c => !(c as HTMLButtonElement).disabled);
-      expect(enabledCells.length).toBeGreaterThan(0);
+      expect(screen.getByText("Guest User's TURN")).toBeInTheDocument();
     });
   });
 
@@ -309,7 +262,7 @@ describe('GameBoard Component', () => {
     mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
 
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-    await waitFor(() => screen.getByText('P1 TURN'));
+    await waitFor(() => screen.getByText("Guest User's TURN"));
 
     const sessionAfterMove = makeMockSession({
       currentPlayer: 1,
@@ -333,7 +286,7 @@ describe('GameBoard Component', () => {
     mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
 
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-    await waitFor(() => screen.getByText('P1 TURN'));
+    await waitFor(() => screen.getByText("Guest User's TURN"));
 
     mockApiError('Move rejected');
 
@@ -342,6 +295,102 @@ describe('GameBoard Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Move failed/i)).toBeInTheDocument();
+    });
+  });
+
+  it('should apply hex-winning class to cells in the winning path', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+    await waitFor(() => screen.getByText("Guest User's TURN"));
+
+    const sessionWithWin = makeMockSession({
+      status: 'finished',
+      winner: 0,
+      moves: [{ player: 0, x: 0, y: 0 }],
+      winningPath: [{ x: 0, y: 0 }]
+    });
+    mockApiSuccess(sessionWithWin);
+
+    const cells = document.querySelectorAll('.hex-cell');
+    fireEvent.click(cells[0]);
+
+    await waitFor(() => {
+      const newCells = document.querySelectorAll('.hex-cell');
+      expect(newCells[0]).toHaveClass('hex-winning');
+    });
+  });
+
+  it('should show (blue) subtext when it is P1 turn', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
+
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('(blue)')).toBeInTheDocument();
+    });
+  });
+
+  it('should show P2 WINS when winner is player 1', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 1 }));
+
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+
+    await waitFor(() => {
+      const p2WinsElements = screen.getAllByText('P2 WINS!');
+      expect(p2WinsElements.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('UNDO button is disabled when no session', () => {
+    render(<GameBoard />);
+    const undoBtn = screen.getByRole('button', { name: /UNDO/i });
+    expect(undoBtn).toBeDisabled();
+  });
+
+  it('should show REMATCH button when game is finished', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /REMATCH/i })).toBeInTheDocument();
+      const p1WinsElements = screen.getAllByText('Guest User WINS!');
+      expect(p1WinsElements.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('should increment P1 score and show popup when P1 wins', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession());
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+    await waitFor(() => screen.getByText("Guest User's TURN"));
+
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+    const cells = document.querySelectorAll('.hex-cell');
+    fireEvent.click(cells[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('Pts: 1')).toBeInTheDocument();
+      const popupMsg = screen.getAllByText('Guest User WINS!');
+      expect(popupMsg.length).toBeGreaterThan(0);
+      expect(screen.getByText('Great match!')).toBeInTheDocument();
+    });
+  });
+
+  it('should enable hex cells after game starts', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
+
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+
+    await waitFor(() => {
+      const cells = document.querySelectorAll('.hex-cell');
+      const enabledCells = Array.from(cells).filter(c => !(c as HTMLButtonElement).disabled);
+      expect(enabledCells.length).toBeGreaterThan(0);
     });
   });
 
@@ -387,13 +436,12 @@ describe('GameBoard Component', () => {
     mockApiSuccess(sessionWithMove);
 
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-    await waitFor(() => screen.getByText('P2 TURN'));
+    await waitFor(() => screen.getByText("P2's TURN"));
 
     const initialCallCount = mockFetch.mock.calls.length;
     const cells = document.querySelectorAll('.hex-cell');
-    fireEvent.click(cells[0]); // cell[0] is already 'B'
+    fireEvent.click(cells[0]);
 
-    // fetch should not be called again
     expect(mockFetch.mock.calls.length).toBe(initialCallCount);
   });
 
@@ -403,7 +451,7 @@ describe('GameBoard Component', () => {
     mockApiSuccess(botTurnSession);
 
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-    await waitFor(() => screen.getByText('P2 TURN'));
+    await waitFor(() => screen.getByText("P2's TURN"));
 
     const initialCallCount = mockFetch.mock.calls.length;
     const cells = document.querySelectorAll('.hex-cell');
@@ -434,73 +482,23 @@ describe('GameBoard Component', () => {
     window.location = originalLocation as any;
   });
 
-  // ── New Tests for Scoreboard, Winning Path & Popup ──
-
   it('should initialize scores at 0 for both players', () => {
     render(<GameBoard />);
     const scoreElements = screen.getAllByText('Pts: 0');
     expect(scoreElements.length).toBe(2);
   });
 
-  it('should increment P1 score and show popup when P1 wins', async () => {
-    render(<GameBoard />);
-    // Initial start
-    mockApiSuccess(makeMockSession());
-    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-    await waitFor(() => screen.getByText('P1 TURN'));
-
-    // P1 wins
-    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
-    const cells = document.querySelectorAll('.hex-cell');
-    fireEvent.click(cells[0]);
-
-    await waitFor(() => {
-      // Expect P1 score to be 1 and P2 to be 0
-      expect(screen.getByText('Pts: 1')).toBeInTheDocument();
-      const popupMsg = screen.getAllByText('P1 WINS!');
-      expect(popupMsg.length).toBeGreaterThan(0);
-      expect(screen.getByText('Great match!')).toBeInTheDocument();
-    });
-  });
-
-  it('should apply hex-winning class to cells in the winning path', async () => {
-    render(<GameBoard />);
-    mockApiSuccess(makeMockSession({ currentPlayer: 0 }));
-    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-    await waitFor(() => screen.getByText('P1 TURN'));
-
-    const sessionWithWin = makeMockSession({
-      status: 'finished',
-      winner: 0,
-      moves: [{ player: 0, x: 0, y: 0 }],
-      winningPath: [{ x: 0, y: 0 }]
-    });
-    mockApiSuccess(sessionWithWin);
-
-    const cells = document.querySelectorAll('.hex-cell');
-    fireEvent.click(cells[0]);
-
-    await waitFor(() => {
-      // Cell 0 should now have the hex-winning class
-      const newCells = document.querySelectorAll('.hex-cell');
-      expect(newCells[0]).toHaveClass('hex-winning');
-    });
-  });
-
   it('should reset hasScored allowing scores to continue across multiple matches', async () => {
     render(<GameBoard />);
-    
-    // First match P1 wins
+
     mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
     await waitFor(() => expect(screen.getByText('Pts: 1')).toBeInTheDocument());
 
-    // Rematch
     mockApiSuccess(makeMockSession({ status: 'ongoing', currentPlayer: 0 }));
     fireEvent.click(screen.getByRole('button', { name: /REMATCH/i }));
-    await waitFor(() => expect(screen.queryByText('Great match!')).not.toBeInTheDocument()); // popup gone
+    await waitFor(() => expect(screen.queryByText('Great match!')).not.toBeInTheDocument());
 
-    // Second match P1 wins again
     mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
     const cells = document.querySelectorAll('.hex-cell');
     fireEvent.click(cells[0]);

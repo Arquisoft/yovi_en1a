@@ -8,6 +8,8 @@
 
 ### 🌐 [▶ Play now! → http://20.251.170.191](http://20.251.170.191)
 
+### 💻 [▶ Presentation about our project!](https://www.canva.com/design/DAHEDEt87NU/3sfOKeuWXhSWBLjhyTD-tA/view?utm_content=DAHEDEt87NU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h9077cf4937)
+
 *Outsmart your rivals — or the bot — on a triangular board where every move counts.*<br/>
 *Built for the ASW course at Universidad de Oviedo — requested by Micrati.*
 
