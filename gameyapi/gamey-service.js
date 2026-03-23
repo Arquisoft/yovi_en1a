@@ -10,7 +10,10 @@ const PORT = process.env.PORT || 3001;
 const GAMEY_RUST_URL = process.env.GAMEY_RUST_URL || 'http://localhost:4000';
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET && process.env.NODE_ENV !== 'test') {
+  throw new Error('JWT_SECRET environment variable is not set');
+}
 const BOT_ID = 'gamer_bot';
 const API_VERSION = 'v1';
 
