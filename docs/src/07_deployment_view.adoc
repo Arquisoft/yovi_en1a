@@ -5,7 +5,7 @@
 
 ==== Motivation
 
-The system runs on a single Azure Virtual Machine (Ubuntu 24.04 LTS). Azure was chosen for its reliability and easy VM setup. A single VM keeps costs low while still resembling a real production environment. All components are containerized with Docker so that the setup works the same way in development and in production, and deployments via GitHub Actions stay simple.
+The system runs on a single Azure Virtual Machine (Ubuntu 24.04 LTS). Azure was chosen for its reliability and straightforward VM provisioning. A single VM keeps costs low while still resembling a real production environment. All components are containerised with Docker and orchestrated via Docker Compose, ensuring identical behaviour in development and production. Deployments are automated through GitHub Actions, pulling pre-built images from the GitHub Container Registry (`ghcr.io/arquisoft/yovi_en1a`).
 
 [plantuml, level1-whitebox, svg]
 ----
@@ -27,10 +27,11 @@ skinparam database {
 skinparam ArrowColor #2980B9
 
 node "Azure Cloud" {
-  node "Azure Virtual Machine\n(Ubuntu 24.04 LTS)" as vm {
+  node "Azure Virtual Machine\n(Ubuntu 24.04 LTS)\nIP: 20.251.170.191" as vm {
 
-    component "webapp\n(Nginx + React/Vite)\n:80" as webapp
+    component "webapp\n(React/Vite)\n:80" as webapp
     component "users\n(Node.js REST API)\n:3000" as users
+    component "gamey-service\n(Node.js API Gateway)\n:3001" as gameyapi
     component "gamey\n(Rust Game Engine)\n:4000" as gamey
     component "prometheus\n(Metrics Scraper)\n:9090" as prometheus
     component "grafana\n(Dashboards)\n:9091" as grafana
@@ -43,13 +44,10 @@ actor "End User\n(Browser)" as user
 actor "Admin / Ops" as admin
 
 user  --> webapp      : HTTP :80
-user  --> users       : HTTP :3000\n(API)
-user  --> gamey       : HTTP :4000\n(Game moves)
+user  --> users       : HTTP :3000
+user  --> gameyapi    : HTTP :3001
 admin --> prometheus  : HTTP :9090
 admin --> grafana     : HTTP :9091
-
-users --> mongodb     : read/write
-gamey --> mongodb     : read/write
 
 @enduml
 ----
@@ -58,37 +56,83 @@ gamey --> mongodb     : read/write
 
 ==== Motivation
 
-Docker Compose manages all containers in a single configuration file. All services run on a shared internal network (`monitor-net`) so they can talk to each other without exposing unnecessary ports to the outside. The Webapp is compiled with the backend URLs baked in at build time (`VITE_API_URL`, `VITE_GAMEY_URL`), so no extra runtime configuration is needed.
+Docker Compose manages all containers in a single configuration file. All services run on a shared internal bridge network (`monitor-net`) so they can communicate without exposing unnecessary ports. Container images are pulled from the GitHub Container Registry.
 
-The diagram below shows how containers are connected inside `monitor-net`. Grafana maps its internal port 3000 to host port 9091 to avoid clashing with the Users service.
+The webapp receives backend URLs at build time via Vite environment variables (`VITE_API_URL`, `VITE_GAMEY_URL`, `VITE_GAMEY_API_URL`). The `gamey-service` Node.js gateway acts as an intermediary between the webapp and the Rust `gamey` engine, handling protocol and API translation. MongoDB includes a health check so dependent services only start once the database is ready.
 
-[plantuml, level2-docker, svg]
+
+==== Level 2a: Application Services
+
+[plantuml, level2-app, svg]
 ----
 @startuml
 skinparam componentStyle rectangle
 skinparam defaultTextAlignment center
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #EBF5FB
+  BorderColor #2980B9
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+}
+skinparam ArrowColor #2980B9
 
-actor User
+actor "End User" as user
 
 node "Docker Network: monitor-net" {
 
-  component "webapp\n:80" as webapp
-  component "users\n:3000" as users
-  component "gamey\n:4000" as gamey
-  database  "mongodb\n:27017" as mongo #lightblue
-  component "prometheus\n:9090" as prometheus
-  component "grafana\n:9091" as grafana
+  component "webapp\n(React/Vite)\n:80" as webapp
+  component "users\n(Node.js)\n:3000" as users
+  component "gamey-service\n(Node.js API Gateway)\n:3001" as gameyapi
+  component "gamey\n(Rust)\n:4000" as gamey
+  database  "mongodb\n:27017" as mongo
 
 }
 
-User --> webapp : HTTP :80
+user --> webapp     : HTTP :80
 
-webapp --> users  : VITE_API_URL
-webapp --> gamey  : VITE_GAMEY_URL
-users  --> mongo  : store
+webapp --> users     : VITE_API_URL\n(:3000)
+webapp --> gameyapi  : VITE_GAMEY_API_URL\n(:3001)
+webapp --> gamey     : VITE_GAMEY_URL\n(:4000)
 
-prometheus --> users     : scrape metrics
-grafana    --> prometheus : query
+gameyapi --> gamey   : GAMEY_RUST_URL\n(http://gamey:4000)
+
+users    --> mongo   : MONGODB_URI\n(read/write)
+
+@enduml
+----
+
+==== Level 2b: Observability Stack
+
+[plantuml, level2-obs, svg]
+----
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #EBF5FB
+  BorderColor #2980B9
+}
+skinparam ArrowColor #2980B9
+
+actor "Admin / Ops" as admin
+
+node "Docker Network: monitor-net" {
+
+  component "users\n(Node.js)\n:3000" as users
+  component "prometheus\n:9090" as prometheus
+  component "grafana\n(host :9091 → internal :3000)" as grafana
+
+}
+
+admin --> prometheus : HTTP :9090
+admin --> grafana    : HTTP :9091
+
+prometheus --> users     : scrape /metrics
+grafana    --> prometheus : query (PromQL)
 
 @enduml
 ----
@@ -100,41 +144,45 @@ grafana    --> prometheus : query
 |Building Block |Infrastructure Element |Description
 
 |webapp
-|Docker Container (Nginx)
-|Serves the React/Vite frontend. Accessible via Port 80.
+|Docker Container (React/Vite)
+|Serves the compiled frontend. Accessible on Port 80. Backend URLs are baked in at build time via Vite env vars.
 
 |users
 |Docker Container (Node.js)
-|Handles identity, history, and stats. Accessible via Port 3000.
+|Handles identity, match history, and stats. Accessible on Port 3000. Requires MongoDB to be healthy before starting.
+
+|gamey-service
+|Docker Container (Node.js API Gateway)
+|Intermediary gateway between the webapp and the Rust game engine. Accessible on Port 3001. Forwards requests to `gamey` via `GAMEY_RUST_URL`.
 
 |gamey
 |Docker Container (Rust)
-|Logic for Game Y moves and win validation. Accessible via Port 4000.
+|Core game logic, move validation, and win detection. Accessible on Port 4000.
 
 |mongodb
 |Docker Container (MongoDB)
-|Persistent document store for user profiles and match history. Accessible internally on Port 27017.
+|Persistent document store for user profiles and match history. Includes a health check (`mongosh ping`) used by dependent services.
 
 |prometheus
-|Docker Container
-|Scrapes metrics from the services via the internal network.
+|Docker Container (prom/prometheus)
+|Scrapes metrics from `users` via the internal network. Configuration is bind-mounted from the repository.
 
 |grafana
-|Docker Container
-|Visualizes metrics. Mapped to Port 9091 to avoid conflict with the Users service.
+|Docker Container (grafana/grafana)
+|Visualises metrics from Prometheus. Internal port 3000 is mapped to host port 9091 to avoid conflict with the `users` service.
 |===
 
 === Infrastructure Level 3: Data Persistence
 
 ==== Motivation
 
-The application requires its data to survive when containers restart. Prometheus and Grafana use bind mounts so their configuration files live directly in the repository and are version-controlled like any other code. MongoDB uses a named Docker volume so that user and game data persists across `docker-compose down` and `up` cycles without any manual intervention.
+Data must survive container restarts and redeployments. Prometheus and Grafana use bind mounts so their configuration lives directly in the repository and is version-controlled. MongoDB uses a named Docker volume so that user and game data persists independently of the container lifecycle.
 
 [cols="1,2,2"]
 |===
-|Element |Storage Strategy |Path
+|Element |Storage Strategy |Path / Volume
 
-|Metrics Config
+|Prometheus Config
 |Docker Bind Mount
 |`./users/monitoring/prometheus` → `/etc/prometheus`
 
@@ -143,16 +191,22 @@ The application requires its data to survive when containers restart. Prometheus
 |`./users/monitoring/grafana/provisioning` → `/etc/grafana/provisioning`
 
 |User & Game Data
-|Docker Named Volume (`mongodb_data`)
-|Managed by Docker. Data survives restarts and redeployments independently of the container image.
+|Docker Named Volume (`mongo_data`)
+|Managed by Docker. Mounted at `/data/db`. Persists across `docker-compose down/up` independently of the container image.
 |===
 
 === Network and Connectivity
 
-All containers communicate over the `monitor-net` bridge network. Only the following ports are exposed to the host:
+All containers communicate over the `monitor-net` bridge network (Docker default bridge driver). The following ports are exposed to the host:
 
-- *Port 80*: Web application entry point.
-- *Port 3000*: Users REST API (used by Webapp and Bots).
-- *Port 4000*: Game Engine API (YEN notation).
-- *Port 27017*: MongoDB — internal only, not exposed to the host.
-- *Port 9090 / 9091*: Prometheus and Grafana for system observability.
+- *Port 80*: Webapp entry point (React/Vite frontend).
+- *Port 3000*: Users REST API (consumed by webapp and external bots).
+- *Port 3001*: Gamey-service API Gateway (consumed by webapp).
+- *Port 4000*: Rust Game Engine (consumed by gamey-service and directly by webapp for real-time moves).
+- *Port 27017*: MongoDB - exposed to the host in port 27017.
+- *Port 9090*: Prometheus - metrics scraping and admin queries.
+- *Port 9091*: Grafana dashboards (remapped from internal port 3000).
+
+==== Startup Dependencies
+
+MongoDB must pass its health check (`mongosh --eval "db.adminCommand('ping')"`, every 5 s, up to 5 retries) before the `users` service starts. The `webapp` waits for both `users` and `gamey-service` to be available. The `gamey-service` waits for `gamey` to be available.

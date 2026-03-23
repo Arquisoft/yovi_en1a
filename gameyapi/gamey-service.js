@@ -276,12 +276,22 @@ function randomFreeCell(moves, boardSize) {
   return free[Math.floor(Math.random() * free.length)];
 }
 
-async function getBotMove(moves, boardSize, nextPlayer) {
+async function getBotMove(moves, boardSize, nextPlayer,difficulty) {
   const yen = buildYEN(moves, boardSize, nextPlayer);
   console.log('[YEN sent to Rust]', JSON.stringify(yen));
 
+  let botToCall = 'gamer_bot';
+  
+  if (difficulty === 'beginner') {
+    botToCall = 'easy_level_bot'; 
+  } else if (difficulty === 'advanced') {
+    botToCall = 'gamer_bot'; 
+  }
+
+  console.log(`[BOT] Difficulty: ${difficulty} -> Target Bot: ${botToCall}`);
+
   const res = await fetch(
-      `${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${BOT_ID}`,
+      `${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -313,8 +323,19 @@ async function getBotMove(moves, boardSize, nextPlayer) {
 
 // ─── Session helpers ──────────────────────────────────────────────────────────
 
-function newSession(id, mode, boardSize, userId) {
-  return { id, mode, boardSize, moves: [], status: 'ongoing', currentPlayer: 0, winner: null, userId: userId || null, createdAt: new Date() };
+function newSession(id, mode, boardSize, userId, difficulty) {
+  return { 
+    id, 
+    mode, 
+    boardSize, 
+    difficulty: difficulty || 'medium', 
+    moves: [], 
+    status: 'ongoing', 
+    currentPlayer: 0, 
+    winner: null, 
+    userId: userId || null, 
+    createdAt: new Date() 
+  };
 }
 
 function sessionView(s) {
@@ -338,7 +359,7 @@ function isBoardFull(moves, boardSize) {
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 gameyService.post('/play/create', (req, res) => {
-  const { mode, boardSize = 11 } = req.body;
+  const { mode, boardSize = 11, difficulty } = req.body;
   if (!['hvh', 'hvb'].includes(mode))
     return res.status(400).json({ error: "mode must be 'hvh' or 'hvb'" });
   if (!Number.isInteger(boardSize) || boardSize < 2 || boardSize > 11)
@@ -346,8 +367,8 @@ gameyService.post('/play/create', (req, res) => {
 
   const userId = getUserIdFromRequest(req);
   const id = uuidv4();
-  sessions.set(id, newSession(id, mode, boardSize, userId));
-  console.log(`[CREATE] game=${id} mode=${mode} size=${boardSize} user=${userId}`);
+  sessions.set(id, newSession(id, mode, boardSize, userId, difficulty));
+  console.log(`[CREATE] game=${id} mode=${mode} size=${boardSize} user=${userId} diff=${difficulty}`);
   return res.status(201).json(sessionView(sessions.get(id)));
 });
 
@@ -392,7 +413,7 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
 
   if (s.mode === 'hvb' && s.status === 'ongoing') {
     try {
-      const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer);
+      const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty);
 
       if (!botCoords) {
         s.status = 'finished';
@@ -436,7 +457,7 @@ gameyService.post('/play/:gameId/bot-move', async (req, res) => {
   if (s.currentPlayer !== 1) return res.status(400).json({ error: "It is the human's turn" });
 
   try {
-    const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer);
+    const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty);
     s.moves.push({ player: 1, ...botCoords });
     s.currentPlayer = 0;
 
@@ -481,7 +502,7 @@ gameyService.post('/play/:gameId/rematch', (req, res) => {
   const old = sessions.get(req.params.gameId);
   if (!old) return res.status(404).json({ error: 'Game not found' });
   const id = uuidv4();
-  sessions.set(id, newSession(id, old.mode, old.boardSize));
+  sessions.set(id, newSession(id, old.mode, old.boardSize, old.difficulty));
   sessions.delete(old.id);
   console.log(`[REMATCH] new=${id} old=${old.id}`);
   return res.status(201).json(sessionView(sessions.get(id)));
