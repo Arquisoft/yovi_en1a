@@ -161,7 +161,6 @@ export default function GameBoard({ username = "Guest User" }: GameBoardProps) {
 
   // ── Start a new game
   const handleStartGame = async () => {
-    alert(`TEST ALERT: Starting game in "${selectedDifficulty}" difficulty!`);
     setErrorMsg(null);
     setWinner(null);
     setWinningPathIndices(new Set());
