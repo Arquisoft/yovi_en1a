@@ -10,6 +10,8 @@
 pub mod ybot;
 pub mod ybot_registry;
 pub mod gamer_bot;
+pub mod easy_level_bot;
 pub use ybot::*;
 pub use ybot_registry::*;
 pub use gamer_bot::*;
+pub use easy_level_bot::*;
