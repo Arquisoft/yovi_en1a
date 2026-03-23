@@ -44,9 +44,13 @@ function coordsToIndex(x: number, y: number): number {
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const token = localStorage.getItem('token');
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
   const res = await fetch(`${API_URL}${path}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify(body),
   });
   const data = await res.json();
