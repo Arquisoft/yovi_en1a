@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 const gameyService = express();
 const PORT = process.env.PORT || 3001;
 const GAMEY_RUST_URL = process.env.GAMEY_RUST_URL || 'http://localhost:4000';
-const BOT_ID = 'gamer_bot';
+
 const API_VERSION = 'v1';
 
 gameyService.use(cors());
@@ -221,7 +221,9 @@ async function getBotMove(moves, boardSize, nextPlayer,difficulty) {
   
   if (difficulty === 'beginner') {
     botToCall = 'easy_level_bot'; 
-  } else if (difficulty === 'advanced') {
+  }else if (difficulty === 'medium') {
+     botToCall = 'gamer_bot'; }
+  else if (difficulty === 'advanced') {
     botToCall = 'gamer_bot'; 
   }
 
@@ -261,7 +263,7 @@ async function getBotMove(moves, boardSize, nextPlayer,difficulty) {
 // ─── Session helpers ──────────────────────────────────────────────────────────
 
 function newSession(id, mode, boardSize, difficulty) {
-  return { id, mode, boardSize, difficulty: difficulty || 'medium', moves: [], status: 'ongoing', currentPlayer: 0, winner: null };
+  return { id, mode, boardSize, difficulty: difficulty, moves: [], status: 'ongoing', currentPlayer: 0, winner: null };
 }
 
 function sessionView(s) {
