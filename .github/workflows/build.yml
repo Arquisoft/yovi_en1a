@@ -8,6 +8,12 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+
+
+
+
     steps:
     - uses: actions/checkout@v4
       with:

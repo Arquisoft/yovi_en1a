@@ -15,6 +15,12 @@ jobs:
   test-node:
     name: Run node unit tests
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ${{ secrets.DEPLOY_JWT_SECRET }}
+
+
+
+
     strategy:
       matrix:
         service: [webapp, users]
@@ -55,6 +61,11 @@ jobs:
   e2e:
     name: Run E2E tests
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+
+
+
     needs: [test-node, test-rust]
     steps:
       - name: Checkout
@@ -174,6 +185,9 @@ jobs:
           user: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
           command: |
+            echo "JWT_SECRET=${{ secrets.DEPLOY_JWT_SECRET }}" > .env
+
             wget https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/master/docker-compose.yml -O docker-compose.yml
             docker compose down
             docker compose up -d --pull always
+
