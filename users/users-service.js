@@ -97,7 +97,7 @@ app.use(async (req, res, next) => {
   }
 });
 
-module.exports = { app, connectToMongo, closeMongoConnection, JWT_SECRET };
+
 
 // -------------------- Routes --------------------
 
@@ -226,20 +226,25 @@ const PORT = process.env.PORT || 3000;
 // Firewall / reverse-proxy (nginx, ALB, etc.) should control external exposure.
 const HOST = process.env.HOST || '0.0.0.0';
 
-if (process.env.NODE_ENV !== 'test') {
-  (async () => {
-    try {
-      if (!MONGO_URI) {
-        throw new Error('MONGODB_URI environment variable is not set');
-      }
-      await connectToMongo(MONGO_URI);
+async function startServer(uri = MONGO_URI, port = PORT, host = HOST) {
+  if (!uri) {
+    throw new Error('MONGODB_URI environment variable is not set');
+  }
+  await connectToMongo(uri);
 
-      app.listen(PORT, HOST, () => {
-        console.log(`User service listening at http://${HOST}:${PORT}`);
-      });
-    } catch (err) {
-      console.error('Failed to start server:', err.message);
-      process.exit(1);
-    }
-  })();
+  return new Promise((resolve) => {
+    const server = app.listen(port, host, () => {
+      console.log(`User service listening at http://${host}:${port}`);
+      resolve(server);
+    });
+  });
 }
+
+if (process.env.NODE_ENV !== 'test') {
+  startServer().catch((err) => {
+    console.error('Failed to start server:', err.message);
+    process.exit(1);
+  });
+}
+
+module.exports = { app, connectToMongo, closeMongoConnection, JWT_SECRET, startServer };

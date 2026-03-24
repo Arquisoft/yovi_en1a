@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { app, connectToMongo, closeMongoConnection, JWT_SECRET } from '../users-service.js';
+import { app, connectToMongo, closeMongoConnection, JWT_SECRET, startServer } from '../users-service.js';
 
 vi.mock('bcrypt', async (importOriginal) => {
     const actual = await importOriginal();
@@ -540,5 +540,34 @@ describe('POST /createuser — reconnect retry success path', () => {
         // Either 200 (retry worked) or 5xx (retry was also intercepted) —
         // the important thing is we exercised the retry branch
         expect([200, 503]).toContain(res.status);
+    });
+});
+
+// ─────────────────────────────────────────────
+// Server Startup (startServer)
+// ─────────────────────────────────────────────
+describe('startServer', () => {
+    afterEach(async () => {
+        vi.restoreAllMocks();
+    });
+
+    it('throws if no MongoDB URI is provided', async () => {
+        await expect(startServer(null, 0, '127.0.0.1')).rejects.toThrow(/MONGODB_URI environment variable is not set/);
+    });
+
+    it('connects to mongo and starts listening on provided port', async () => {
+        const spyListen = vi.spyOn(app, 'listen').mockImplementation((port, host, cb) => {
+            if (cb) process.nextTick(cb);
+            return { close: vi.fn() }; // mock server object
+        });
+        
+        const server = await startServer(mongoUri, 0, '127.0.0.1');
+        
+        expect(spyListen).toHaveBeenCalled();
+        expect(server).toBeDefined();
+        expect(typeof server.close).toBe('function');
+        
+        // Re-establish testing connection just in case
+        await connectToMongo(mongoUri);
     });
 });
