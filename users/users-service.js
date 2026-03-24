@@ -102,10 +102,6 @@ app.use(async (req, res, next) => {
 // -------------------- Routes --------------------
 
 app.post('/createuser', async (req, res) => {
-  if (!db) {
-    console.error('Database not available when attempting to create user');
-    return res.status(500).json({ error: 'Database not available' });
-  }
 
   const { username, email, password } = req.body;
 
@@ -167,10 +163,6 @@ app.post('/createuser', async (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-  if (!db) {
-    console.error('Database not available when attempting login');
-    return res.status(500).json({ error: 'Database not available' });
-  }
 
   const { usernameOrEmail, password } = req.body;
 
