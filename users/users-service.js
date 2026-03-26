@@ -33,7 +33,7 @@ let db;
 const MONGO_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
+if (!JWT_SECRET && process.env.NODE_ENV !== 'test') {
   throw new Error('JWT_SECRET environment variable is not set');
 }
 
