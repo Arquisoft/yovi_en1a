@@ -29,12 +29,19 @@ interface GameBoardProps {
 const API_URL = import.meta.env.VITE_GAMEY_API_URL ?? 'http://localhost:3001';
 
 function calculateDynamicHexSize(boardSize: number, screenWidth: number, screenHeight: number): string {
-  const availableWidth = screenWidth * 0.5;
+  // Account for fixed UI sidebars (2 x 220px) plus padding/gaps (~60px)
+  const sidebarsWidth = 500;
+  // Ensure we have a fallback minimum available width on very small screens
+  const availableWidth = Math.max(screenWidth - sidebarsWidth, screenWidth * 0.3);
   const availableHeight = screenHeight * 0.65;
-  const maxHexWidthByWidth = availableWidth / (boardSize * 0.85);
-  const maxHexWidthByHeight = availableHeight / (boardSize * 0.75);
+  
+  // Use a larger division factor to ensure the board fits nicely with cell margins
+  const maxHexWidthByWidth = availableWidth / (boardSize * 1.1);
+  const maxHexWidthByHeight = availableHeight / (boardSize * 0.85);
+  
   const maxHexWidth = Math.min(maxHexWidthByWidth, maxHexWidthByHeight);
-  const hexWidth = Math.min(Math.max(maxHexWidth, 20), 80);
+  // Reduce lower bound from 20 to 10 so it's not forced to be too large on smaller screens
+  const hexWidth = Math.min(Math.max(maxHexWidth, 10), 80);
   return `${hexWidth}px`;
 }
 
