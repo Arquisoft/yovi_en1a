@@ -22,6 +22,7 @@ interface GameSession {
 interface GameBoardProps {
   username?: string;
   onProfile?: () => void;
+  onLobby?: () => void;
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
@@ -115,7 +116,7 @@ export function applyMovesToBoard(moves: GameSession['moves'], totalCells: numbe
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function GameBoard({ username = "Guest User", onProfile }: GameBoardProps) {
+export default function GameBoard({ username = "Guest User", onProfile, onLobby }: GameBoardProps) {
   // ── Determine initial mode and difficulty from URL parameters
   const getInitialParams = () => {
     if (globalThis.window === undefined) return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11 };
@@ -371,11 +372,6 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
                   START GAME
                 </button>
             )}
-            {gameStatus === 'finished' && (
-                <button className="game-action-btn btn-end" onClick={handleRematch}>
-                  REMATCH
-                </button>
-            )}
 
             {errorMsg && (
                 <div style={{ color: '#ff4444', fontSize: 12, padding: '4px 8px', wordBreak: 'break-word' }}>
@@ -413,6 +409,14 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
                       <div className="winner-popup-content">
                         <h2>{winner === 'P1' ? `${username} WINS!` : 'P2 WINS!'}</h2>
                         <p>Great match!</p>
+                        <div className="winner-popup-buttons">
+                          <button className="winner-btn btn-rematch" onClick={handleRematch}>
+                            REMATCH
+                          </button>
+                          <button className="winner-btn btn-lobby" onClick={onLobby}>
+                            GO TO LOBBY
+                          </button>
+                        </div>
                       </div>
                     </div>
                 )}
