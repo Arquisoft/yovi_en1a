@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import './GameBoard.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -27,6 +27,16 @@ interface GameBoardProps {
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const API_URL = import.meta.env.VITE_GAMEY_API_URL ?? 'http://localhost:3001';
+
+function calculateDynamicHexSize(boardSize: number, screenWidth: number, screenHeight: number): string {
+  const availableWidth = screenWidth * 0.5;
+  const availableHeight = screenHeight * 0.65;
+  const maxHexWidthByWidth = availableWidth / (boardSize * 0.85);
+  const maxHexWidthByHeight = availableHeight / (boardSize * 0.75);
+  const maxHexWidth = Math.min(maxHexWidthByWidth, maxHexWidthByHeight);
+  const hexWidth = Math.min(Math.max(maxHexWidth, 20), 80);
+  return `${hexWidth}px`;
+}
 
 // ─── Coordinate helpers ───────────────────────────────────────────────────────
 
@@ -132,6 +142,15 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
   const [p1Score, setP1Score] = useState(0);
   const [p2Score, setP2Score] = useState(0);
   const [hasScored, setHasScored] = useState(false);
+
+  // ── Screen size for dynamic board sizing
+  const [screenSize, setScreenSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const handleResize = () => setScreenSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
@@ -281,11 +300,11 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
   };
 
   const renderBoard = () => {
-    const hexWidth = 'clamp(30px, 8.5vmin, 130px)';
+    const currentBoardSize = session?.boardSize || boardSize;
+    const hexWidth = calculateDynamicHexSize(currentBoardSize, screenSize.width, screenSize.height);
     const isInteractive = gameStatus === 'ongoing' && !isBotThinking;
     const rows = [];
     let currentIndex = 0;
-    const currentBoardSize = session?.boardSize || boardSize;
     for (let row = 0; row < currentBoardSize; row++) {
       rows.push(renderBoardRow(row, currentIndex, hexWidth, isInteractive));
       currentIndex += row + 1;
