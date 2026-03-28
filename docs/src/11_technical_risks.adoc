@@ -18,8 +18,8 @@ The system exposes a public REST API for external bots. Currently, there is no r
 | High
 | Risk
 | **Permissive CORS Policy** +
-The Game API (`gameyapi`) currently uses a permissive CORS policy (`cors()` with no origin restriction) to easily facilitate external bot integration during development. This allows any domain to send requests to the logic engine.
-| Tighten the CORS configuration by implementing a strict origin whitelist for the Game API, similar to the `ALLOWED_ORIGINS` setup used in the User Service.
+The GameY API (`gameyapi`) currently uses a permissive CORS policy (`cors()` with no origin restriction) to easily facilitate external bot integration during development. This allows any domain to send requests to the logic engine.
+| Tighten the CORS configuration by implementing a strict origin whitelist for the GameY API, similar to the `ALLOWED_ORIGINS` setup used in the User Service.
 
 | Medium
 | Debt
