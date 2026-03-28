@@ -9,7 +9,7 @@ The Building Block View provides a hierarchical decomposition of the YOVI_0 syst
 
 Level 1 represents the highest level of abstraction, showing the main subsystems of the YOVI_0 system and their interactions. Each subsystem is responsible for a specific aspect of the system's functionality, and they communicate with each other to fulfill the requirements of the project.
 
-The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).
+The following diagram shows the top-level decomposition of the YOVI_0 system into its four primary subsystems: the Frontend (Webapp), the User Management (User Service), the API Gateway (GameY API), and the Logic Engine (GameY).
 [plantuml, level1-whitebox, png]
 ----
 @startuml
@@ -18,13 +18,15 @@ skinparam componentStyle uml2
 package "YOVI_0 System" {
     component [Webapp] as webapp <<React>>
     component [User Service] as usersvc <<Node.js>>
+    component [GameY API Gateway] as gameyapi <<Node.js>>
     component [GameY Engine] as gamey <<Rust>>
     database "MongoDB" as db <<DBMS>>
 }
 
 ' Connections
 webapp --> usersvc : "HTTPS / JSON (Auth & Stats)"
-webapp --> gamey : "HTTPS / YEN JSON (Game Logic)"
+webapp --> gameyapi : "HTTPS / JSON (REST API)"
+gameyapi --> gamey : "HTTP / YEN JSON (Game Logic)"
 usersvc --> db : "Mongoose / Binary JSON (Persistence)"
 
 note right of db
@@ -40,13 +42,14 @@ end note
 |Name |Responsibility
 |**Webapp** |The central UI and gateway. Manages hexagonal grid rendering and provides the documented API for external bots.
 |**User Service** |Handles administrative logic: user registration, session management, and persists match statistics to the DBMS.
+|**GameY API Gateway** |A Node.js proxy serving as the public REST API. It handles route management and passes JSON payloads to the underlying Rust engine.
 |**GameY Engine** |The high-performance "brain." Written in Rust for memory safety and speed; it validates game rules and provides AI moves via YEN notation.
 |**MongoDB** |The Document-based DBMS. It persists all non-transient data, chosen for its native support of JSON-like structures (perfect for YEN payloads).
 |===
 
 //==============================================================================
 === Level 2: Webapp (Frontend Subsystem)
-The Webapp is a Single Page Application (SPA) built with React and Vite. It acts as the primary user interface and the orchestrator of requests between the User Service and the GameY Engine.
+The Webapp is a Single Page Application (SPA) built with React and Vite. It acts as the primary user interface and the orchestrator of requests between the User Service and the GameY API Gateway.
 
 [plantuml, webapp-level2, png]
 ----
@@ -60,14 +63,14 @@ package "Webapp (src/)" {
 
 node "External Services" {
 [User Service (Port 3000)] as usersvc
-[GameY Engine (Port 4000)] as gamey
+[GameY API Gateway (Port 3001)] as gameyapi
 }
 
 main --> app : "Renders"
 app --> form : "Includes"
 form ..> env : "Uses Environment Vars"
 form --> usersvc : "POST /createuser"
-form --> gamey : "GET /status"
+form --> gameyapi : "GET /status"
 @enduml
 ----
 
@@ -87,16 +90,16 @@ The internal behavior of this module is driven by the state within RegisterForm.
 
 1. **Service Discovery**: The module does not hardcode URLs. It uses an Environment-Aware approach:
 
-- It defaults to http://localhost:3000 (Users) and http://localhost:4000 (GameY) for local development.
+- It defaults to http://localhost:3000 (Users) and http://localhost:3001 (GameY API) for local development.
 
-- It allows overrides via VITE_API_URL and VITE_GAMEY_URL for production/containerized environments.
+- It allows overrides via VITE_API_URL and VITE_GAMEY_API_URL for production/containerized environments.
 
 2. **Asynchronous Lifecycle**: 
 - **User Registration**: Initiates a fetch POST request with a JSON payload containing the username.
 
-- **Chained Validation**: Upon a successful (200 OK) response from the User Service, it triggers the checkGamey() function. This ensures that the player is only notified that "Game is ready" if the Rust engine is reachable.
+- **Chained Validation**: Upon a successful (200 OK) response from the User Service, it triggers the checkGamey() function. This ensures that the player is only notified that "Game is ready" if the API Gateway is reachable.
 
-3. **Resilience**: The UI is designed to be fail-safe. If the GameY engine is down, the user is still successfully registered, but the system displays a "Game is not ready" warning to manage user expectations.
+3. **Resilience**: The UI is designed to be fail-safe. If the GameY API is down, the user is still successfully registered, but the system displays a "Game is not ready" warning to manage user expectations.
 
 //==============================================================================
 === Level 2: GameY Engine (Logic Subsystem)
@@ -181,7 +184,8 @@ System_Boundary(c1, "YOVI Architecture") {
     
     Container(user_service, "User Service", "Node.js/Express", "Handles user creation and authentication logic.")
     
-    Container(gamey_service, "GameY Service", "Custom Engine", "Handles game logic and status.")
+    Container(gamey_api, "GameY API Gateway", "Node.js", "Routes public game API requests to the engine.")
+    Container(gamey_engine, "GameY Engine", "Custom Engine", "Handles game logic and status internally.")
 
     ContainerDb(nosql, "Database", "MongoDB", "Stores user profiles and credentials securely.")
 
@@ -194,7 +198,8 @@ System_Boundary(c1, "YOVI Architecture") {
 ' Relationships
 Rel(user, webapp, "Uses", "HTTPS/80")
 Rel(webapp, user_service, "API Calls", "JSON/HTTP (Port 3000)")
-Rel(webapp, gamey_service, "API Calls", "JSON/HTTP (Port 4000)")
+Rel(webapp, gamey_api, "API Calls", "JSON/HTTP (Port 3001)")
+Rel(gamey_api, gamey_engine, "Internal Game Logic", "HTTP (Port 4000)")
 
 Rel(user_service, nosql, "Reads/Writes", "MongoDB Wire Protocol")
 Rel(prometheus, user_service, "Scrapes /metrics", "HTTP")
