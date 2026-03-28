@@ -17,6 +17,7 @@ Our primary architectural decisions focus on how to integrate these given constr
 To effectively integrate the mandated technologies, the system follows a Microservices-oriented decomposition. This ensures a clean separation of concerns and independent scalability:
 
 * **Webapp (React):** Serves as the presentation layer and the primary entry point for human users.
+* **API Gateway (Node.js):** The `gameyapi` service acting as the public REST interface, routing YEN payloads to the underlying Rust engine (Port 3001).
 * **Logic Engine (Rust):** A stateless, isolated service dedicated purely to high-performance game rule validation and AI calculations (Port 4000).
 * **User Service (Node.js):** Acts as the orchestrator for user accounts and statistics, handling concurrent API requests and communicating directly with our chosen MongoDB cluster (Port 3000).
 
