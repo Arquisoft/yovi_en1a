@@ -5,7 +5,7 @@
 
 *Description:* This scenario illustrates the core game loop when a human player interacts with the frontend to play against the system's AI. It highlights the transformation of UI interactions into the standardized YEN notation and the delegation of logic to the high-performance Rust engine.
 
-*Notable Aspects:* The Webapp acts as a pure presentation layer. It does not calculate game rules. All coordinate conversions (Barycentric/Index) and move validations are strictly handled by the `GameY Engine`.
+*Notable Aspects:* The Webapp acts as a pure presentation layer. Move validations are routed through the `GameY API (Node.js)`, which proxies the request to the `GameY Engine (Rust)`. All coordinate conversions and rule logic are strictly handled by the Rust engine.
 
 [plantuml, target="human-vs-ai-move", format="png"]
 ----
@@ -13,19 +13,24 @@
 autonumber
 actor "Human Player" as User
 participant "Webapp\n(React)" as UI
+participant "GameY API\n(Node.js)" as API
 participant "GameY Engine\n(Rust)" as Rust
 
 User -> UI : Clicks a hexagonal cell
 UI -> UI : Convert pixel coordinates\nto Barycentric/Index
-UI -> Rust : POST /next-move \n(Current State + Player Move in YEN)
+UI -> API : POST /next-move \n(Current State + Player Move in YEN)
+activate API
+API -> Rust : POST /next-move \n(Forward payload)
 activate Rust
 
 Rust -> Rust : Validate Player Move
 Rust -> Rust : Calculate AI Response \n(Difficulty Strategy)
 Rust -> Rust : Update Board State
 
-Rust --> UI : 200 OK \n(New Board State in YEN JSON)
+Rust --> API : 200 OK \n(New Board State in YEN JSON)
 deactivate Rust
+API --> UI : 200 OK \n(Forward response)
+deactivate API
 
 UI -> UI : Parse YEN JSON
 UI -> User : Render updated hexagonal grid
@@ -45,6 +50,7 @@ skinparam maxMessageSize 150
 
 actor "Player 1" as P1
 participant "Client (P1)" as UI1
+participant "GameY API\n(Node.js)" as API
 participant "GameY Engine\n(Rust)" as Rust
 participant "User Service\n(Node)" as Node
 participant "Client (P2)" as UI2
@@ -52,8 +58,14 @@ actor "Player 2" as P2
 
 
 P1 -> UI1 : Make a move (Hex)
-UI1 -> Rust : POST /validate-move (YEN)
-Rust --> UI1 : 200 OK (Move Valid)
+UI1 -> API : POST /validate-move (YEN)
+activate API
+API -> Rust : POST /validate-move (YEN)
+activate Rust
+Rust --> API : 200 OK (Move Valid)
+deactivate Rust
+API --> UI1 : 200 OK (Move Valid)
+deactivate API
 
 
 UI1 -> Node : POST /update-match
@@ -78,15 +90,20 @@ UI2 -> P2 : Render board (P2's turn starts)
 autonumber
 actor "Player" as User
 participant "Webapp\n(React)" as UI
+participant "GameY API\n(Node.js)" as API
 participant "GameY Engine\n(Rust)" as Rust
 participant "User Service\n(Node.js)" as Node
 database "MongoDB" as DB
 
 User -> UI : Makes the winning move
-UI -> Rust : POST /validate (YEN Notation)
+UI -> API : POST /validate (YEN Notation)
+activate API
+API -> Rust : POST /validate (YEN Notation)
 activate Rust
-Rust -> UI : Result: "WIN_PLAYER_1" (YEN JSON)
+Rust --> API : Result: "WIN_PLAYER_1" (YEN JSON)
 deactivate Rust
+API --> UI : Result: "WIN_PLAYER_1" (YEN JSON)
+deactivate API
 
 UI -> Node : POST /save-match \n(Match Details & Winner)
 activate Node
@@ -154,17 +171,22 @@ UI -> User : Redirect to Game Lobby
 autonumber
 actor "Player" as User
 participant "Webapp\n(React)" as UI
+participant "GameY API\n(Node.js)" as API
 participant "GameY Engine\n(Rust)" as Rust
 
 User -> UI : Attempts illegal move\n(e.g., occupied cell)
-UI -> Rust : POST /next-move \n(Invalid YEN Notation)
+UI -> API : POST /next-move \n(Invalid YEN Notation)
+activate API
+API -> Rust : POST /next-move \n(Invalid YEN Notation)
 activate Rust
 
 Rust -> Rust : Parse YEN & Evaluate Rule Set
 Rust -> Rust : Detect Rule Violation 
 
-Rust --> UI : 400 Bad Request \n(Error: "CELL_ALREADY_OCCUPIED")
+Rust --> API : 400 Bad Request \n(Error: "CELL_ALREADY_OCCUPIED")
 deactivate Rust
+API --> UI : 400 Bad Request \n(Error: "CELL_ALREADY_OCCUPIED")
+deactivate API
 
 UI -> UI : Revert optimistic UI updates
 UI -> User : Display warning: "Invalid move!"
