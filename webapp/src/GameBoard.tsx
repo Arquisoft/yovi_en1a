@@ -299,62 +299,61 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
   const p2Label = selectedMode === 'hvb' ? 'P2 (Bot)' : 'P2: USERN.';
 
   return (
+    <>
+      {/* TOP BAR - Ahora fuera del contenedor principal */}
+      <nav className="game-top-bar" style={{ padding: '10px 20px' }}>
+        <h1 className="game-title">GAME Y</h1>
+        <button
+          className="game-profile-btn"
+          title="View Profile"
+          onClick={onProfile}
+          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+        >
+          Profile 👤
+        </button>
+      </nav>
+
       <div className="game-container">
-
-        {/* TOP BAR */}
-        <div className="game-top-bar">
-          <h1 className="game-title">GAME Y</h1>
-          {/* Profile button — navigates to UserProfile */}
-          <button
-              className="game-profile-btn"
-              title="View Profile"
-              onClick={onProfile}
-              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            Profile 👤
-          </button>
-        </div>
-
         <div className="game-main-layout">
 
           {/* LEFT SIDEBAR */}
           <div className="game-sidebar">
-
             {gameStatus !== 'idle' && (
-                <div className={`game-panel ${activeTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
-                  <div className={`game-panel-header ${activeTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
-                    {turnPanelHeader}
-                  </div>
-                  <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
-                    {turnPanelSubtext}
-                  </div>
+              <div className={`game-panel ${activeTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
+                <div className={`game-panel-header ${activeTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
+                  {turnPanelHeader}
                 </div>
+                <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
+                  {turnPanelSubtext}
+                </div>
+              </div>
             )}
 
             {gameStatus === 'idle' && (
-                <div className="game-panel" style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
-                  <div className="game-panel-header" style={{ color: '#ccc' }}>SELECTED MODE</div>
-                  <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
-                    {selectedMode === 'hvh' ? 'Player vs Player' : `Player vs Computer (${selectedDifficulty})`}
-                  </div>
+              <div className="game-panel" style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
+                <div className="game-panel-header" style={{ color: '#ccc' }}>SELECTED MODE</div>
+                <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
+                  {selectedMode === 'hvh' ? 'Player vs Player' : `Player vs Computer (${selectedDifficulty})`}
                 </div>
+              </div>
             )}
 
             {gameStatus === 'idle' && (
-                <button className="game-action-btn btn-end" onClick={handleStartGame}>
-                  START GAME
-                </button>
+              <button className="game-action-btn btn-end" onClick={handleStartGame}>
+                START GAME
+              </button>
             )}
+            
             {gameStatus === 'finished' && (
-                <button className="game-action-btn btn-end" onClick={handleRematch}>
-                  REMATCH
-                </button>
+              <button className="game-action-btn btn-end" onClick={handleRematch}>
+                REMATCH
+              </button>
             )}
 
             {errorMsg && (
-                <div style={{ color: '#ff4444', fontSize: 12, padding: '4px 8px', wordBreak: 'break-word' }}>
-                  ⚠ {errorMsg}
-                </div>
+              <div style={{ color: '#ff4444', fontSize: 12, padding: '4px 8px', wordBreak: 'break-word' }}>
+                ⚠ {errorMsg}
+              </div>
             )}
 
             <div className="game-panel chat-panel">
@@ -368,27 +367,27 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
             <div className="board-wrapper">
               <div className="board-relative">
                 <svg
-                    className="board-svg-bg"
-                    preserveAspectRatio="none"
-                    viewBox="0 0 100 100"
+                  className="board-svg-bg"
+                  preserveAspectRatio="none"
+                  viewBox="0 0 100 100"
                 >
                   <polygon
-                      points="50,4 0,98 100,98"
-                      fill="#0a0a0a"
-                      stroke="#555555"
-                      strokeWidth="0.8"
-                      vectorEffect="nonScalingStroke"
+                    points="50,4 0,98 100,98"
+                    fill="#0a0a0a"
+                    stroke="#555555"
+                    strokeWidth="0.8"
+                    vectorEffect="nonScalingStroke"
                   />
                 </svg>
                 <div className="board-grid">{renderBoard()}</div>
 
                 {gameStatus === 'finished' && winner && (
-                    <div className="winner-popup-overlay">
-                      <div className="winner-popup-content">
-                        <h2>{winner === 'P1' ? `${username} WINS!` : 'P2 WINS!'}</h2>
-                        <p>Great match!</p>
-                      </div>
+                  <div className="winner-popup-overlay">
+                    <div className="winner-popup-content">
+                      <h2>{winner === 'P1' ? `${username} WINS!` : 'P2 WINS!'}</h2>
+                      <p>Great match!</p>
                     </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -402,9 +401,9 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
             </div>
 
             <button
-                className="game-action-btn btn-undo"
-                onClick={handleUndo}
-                disabled={!session || session.moves.length === 0 || gameStatus !== 'ongoing' || isBotThinking}
+              className="game-action-btn btn-undo"
+              onClick={handleUndo}
+              disabled={!session || session.moves.length === 0 || gameStatus !== 'ongoing' || isBotThinking}
             >
               UNDO
             </button>
@@ -423,5 +422,6 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
 
         </div>
       </div>
+    </>
   );
 }

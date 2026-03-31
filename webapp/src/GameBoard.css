@@ -16,43 +16,50 @@ body, html {
   background-color: #1a1a1a;
   height: 100vh;
   width: 100vw;
-  max-width: none !important;
-  margin: 0 !important;
+  max-width: none;
+  margin: 0;
   display: flex;
   flex-direction: column;
   padding: 2vw;
   box-sizing: border-box;
   color: #ccc;
   overflow: hidden;
-  text-align: left !important;
+  text-align: left;
 }
 
 .game-top-bar {
-  flex: 0 0 auto;
+  width: 100%;
+  height: 8vh;
+  background-color: transparent;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid #333;
-  padding-bottom: 1.5vh;
-  margin-bottom: 2vh;
+  padding: 0 2%;
+  box-sizing: border-box;
+  border-bottom: 0.1rem solid #333;
 }
 
 .game-title {
-  margin: 0;
-  font-size: clamp(20px, 2.5vw, 36px);
-  color: #f0f0f0;
-  letter-spacing: 2px;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #483dff;
 }
 
 .game-profile-btn {
-  font-size: clamp(20px, 2.5vw, 32px);
-  cursor: pointer;
-  color: #ccc;
-  transition: color 0.2s;
+  background: transparent;
+  border: 1px solid #555;
+  color: #aaa;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
 }
 
 .game-profile-btn:hover {
   color: #fff;
+  border-color: #fff;
 }
 
 .game-main-layout {
@@ -72,7 +79,7 @@ body, html {
 .game-panel {
   box-sizing: border-box;
   border: 2px solid #333;
-  padding: 1.5vw 1vw;
+  padding: 1vw 1vw;
   background-color: #242424;
   border-radius: 10px;
   text-align: center;
@@ -122,6 +129,7 @@ body, html {
   flex-direction: column;
   overflow: hidden;
   text-align: left;
+  max-height: 50vh;
 }
 
 .chat-content {
@@ -350,8 +358,9 @@ body, html {
 }
 
 .p1-card, .p2-card, .btn-undo, .btn-end {
-  width: 100% !important;
-  margin: 0 !important;
+  width: 100%;
+  margin: 0;
+  padding: 1vw 1vw;
 }
 
 .winner-popup-overlay {
@@ -369,73 +378,79 @@ body, html {
 
 @media (max-width: 768px) {
   .game-container {
-    height: auto !important;
-    min-height: 100vh !important;
-    overflow-y: auto !important;
-    padding: 10px !important;
-    display: flex !important;
-    flex-direction: column !important;
+    height: auto;
+    min-height: 100vh;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
   }
 
   .game-main-layout {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: wrap !important;
-    justify-content: space-between !important;
-    gap: 10px !important;
-    min-height: 0 !important;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 0;
   }
 
   .game-sidebar {
-    display: contents !important;
+    display: contents;
   }
 
-  .game-panel:first-of-type {
-    order: 1 !important;
-    flex: 0 0 100% !important;
+  .game-main-layout .game-panel:not(.p1-card):not(.p2-card):not(.chat-panel) {
+    order: 1;
+    flex: 0 0 100%;
+    width: 100%;
+    margin-bottom: 2px;
   }
 
-  .p1-card {
-    order: 2 !important;
-    flex: 1 1 calc(50% - 10px) !important;
-    margin: 0 !important;
-    min-width: 0 !important;
-  }
 
-  .p2-card {
-    order: 2 !important;
-    flex: 1 1 calc(50% - 10px) !important;
-    margin: 0 !important;
-    min-width: 0 !important;
+  .game-main-layout .p1-card,
+  .game-main-layout .p2-card {
+    order: 2;
+    flex: 0 0 calc(50% - 5px);
+    width: calc(50% - 5px);
+    max-width: calc(50% - 5px);
+    margin: 0;
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 1vw 1vw;
   }
 
   .board-column {
-    order: 3 !important;
-    flex: 0 0 100% !important;
-    margin: 10px 0 !important;
+    order: 3;
+    flex: 0 0 100%;
+    margin: 10px 0;
   }
 
-  .btn-undo {
-    order: 4 !important;
-    flex: 1 1 calc(50% - 10px) !important;
-    margin: 0 !important;
+  .game-main-layout .game-action-btn {
+    order: 4;
+    flex: 0 0 calc(50% - 5px);
+    width: calc(50% - 5px);
+    margin: 0;
   }
 
-  .btn-end {
-    order: 4 !important;
-    flex: 1 1 calc(50% - 10px) !important;
-    margin: 0 !important;
+  .game-action-btn{
+    padding: 1vw 1vw;
+  }
+
+  .game-main-layout .btn-end:only-of-type {
+      flex: 0 0 100%;
+      width: 100%;
   }
 
   .chat-panel {
-    order: 5 !important;
-    flex: 0 0 100% !important;
-    height: 150px !important;
-    margin-top: 10px !important;
+    order: 5;
+    flex: 0 0 100%;
+    height: 150px;
+    max-height: 15vh;
+    margin-top: 10px;
   }
 
   .board-relative {
-    padding: 10px !important;
-    width: 100% !important;
+    padding: 5px;
+    width: 100%;
   }
 }
