@@ -30,6 +30,7 @@ pub use error::ErrorResponse;
 pub use version::*;
 
 use crate::{GameYError, GamerBot, YBotRegistry, state::AppState};
+use crate::bot::easy_level_bot::easy_level_bot;
 use tower_http::cors::CorsLayer;
 
 /// Creates the Axum router with the given state.
@@ -52,7 +53,7 @@ pub fn create_router(state: AppState) -> axum::Router {
 ///
 /// The default state includes the `GamerBot` which selects moves using a minimax algorithm.
 pub fn create_default_state() -> AppState {
-    let bots = YBotRegistry::new().with_bot(Arc::new(GamerBot));
+    let bots = YBotRegistry::new().with_bot(Arc::new(GamerBot)).with_bot(Arc::new(easy_level_bot));
     AppState::new(bots)
 }
 

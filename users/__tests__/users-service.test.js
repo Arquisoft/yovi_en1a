@@ -20,7 +20,6 @@ beforeAll(async () => {
     mongoServer = await MongoMemoryServer.create();
     mongoUri = mongoServer.getUri();
     await connectToMongo(mongoUri);
-
     const { MongoClient } = await import('mongodb');
     const client = new MongoClient(mongoUri);
     await client.connect();
@@ -55,7 +54,6 @@ describe('POST /createuser', () => {
             .post('/createuser')
             .send({ username: 'Pablo', email: 'pablo@example.com', password: 'secret123' })
             .set('Accept', 'application/json');
-
         expect(res.status).toBe(200);
         expect(res.body.message).toMatch(/Hello Pablo! Welcome to the course!/i);
         expect(res.body).toHaveProperty('userId');

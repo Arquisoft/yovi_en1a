@@ -255,6 +255,7 @@ body {
   font-size: 0.6rem;
 }
 
+<<<<<<< HEAD
 @media (max-width: 768px) {
   .lobby-layout-container {
     display: flex;
@@ -318,4 +319,9 @@ body {
   .friend-item {
     padding: 0.5rem 0;
   }
+=======
+.size-slider {
+  accent-color: #483dff;
+  cursor: pointer;
+>>>>>>> 98773e69ade1736bcfee1274f26a3661baf7db5d
 }
