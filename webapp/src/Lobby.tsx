@@ -60,8 +60,8 @@ const Lobby: React.FC<LobbyProps> = ({ username = "Guest User", onPlay, onLogout
                   <h4 className="panel-title">BOARD SIZE: {boardSize}</h4>
                   <input
                     type="range"
-                    min="3"
-                    max="12"
+                    min="5"
+                    max="15"
                     value={boardSize}
                     onChange={(e) => setBoardSize(Number(e.target.value))}
                     className="size-slider"
