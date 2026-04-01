@@ -30,19 +30,22 @@ interface GameBoardProps {
 const API_URL = import.meta.env.VITE_GAMEY_API_URL ?? 'http://localhost:3001';
 
 function calculateDynamicHexSize(boardSize: number, screenWidth: number, screenHeight: number): string {
-  // Account for fixed UI sidebars (2 x 220px) plus padding/gaps (~60px)
-  const sidebarsWidth = 500;
-  // Ensure we have a fallback minimum available width on very small screens
-  const availableWidth = Math.max(screenWidth - sidebarsWidth, screenWidth * 0.3);
-  const availableHeight = screenHeight * 0.65;
+  const isMobile = screenWidth <= 768;
   
-  // Use a larger division factor to ensure the board fits nicely with cell margins
-  const maxHexWidthByWidth = availableWidth / (boardSize * 1.1);
+  // On desktop, subtract sidebars (500px). On mobile, use almost full width (minus 40px padding).
+  const sidebarsWidth = isMobile ? 40 : 500; 
+  const availableWidth = Math.max(screenWidth - sidebarsWidth, screenWidth * 0.85);
+  
+  // On mobile, the board has more vertical freedom since the layout stacks.
+  const availableHeight = isMobile ? screenHeight * 0.5 : screenHeight * 0.65;
+  
+  const maxHexWidthByWidth = availableWidth / (boardSize * 1.05);
   const maxHexWidthByHeight = availableHeight / (boardSize * 0.85);
   
   const maxHexWidth = Math.min(maxHexWidthByWidth, maxHexWidthByHeight);
-  // Reduce lower bound from 20 to 10 so it's not forced to be too large on smaller screens
-  const hexWidth = Math.min(Math.max(maxHexWidth, 10), 80);
+  
+  // Increase the lower bound from 10 to 15-20 so it stays readable on mobile
+  const hexWidth = Math.min(Math.max(maxHexWidth, 15), 80);
   return `${hexWidth}px`;
 }
 
@@ -416,7 +419,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
                           </button>
                         </div>
                       </div>
-                    </div>
+                  </div>
                 )}
               </div>
             </div>
