@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import './GameBoard.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -22,11 +22,29 @@ interface GameSession {
 interface GameBoardProps {
   username?: string;
   onProfile?: () => void;
+  onLobby?: () => void;
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const API_URL = import.meta.env.VITE_GAMEY_API_URL ?? 'http://localhost:3001';
+
+function calculateDynamicHexSize(boardSize: number, screenWidth: number, screenHeight: number): string {
+  // Account for fixed UI sidebars (2 x 220px) plus padding/gaps (~60px)
+  const sidebarsWidth = 500;
+  // Ensure we have a fallback minimum available width on very small screens
+  const availableWidth = Math.max(screenWidth - sidebarsWidth, screenWidth * 0.3);
+  const availableHeight = screenHeight * 0.65;
+  
+  // Use a larger division factor to ensure the board fits nicely with cell margins
+  const maxHexWidthByWidth = availableWidth / (boardSize * 1.1);
+  const maxHexWidthByHeight = availableHeight / (boardSize * 0.85);
+  
+  const maxHexWidth = Math.min(maxHexWidthByWidth, maxHexWidthByHeight);
+  // Reduce lower bound from 20 to 10 so it's not forced to be too large on smaller screens
+  const hexWidth = Math.min(Math.max(maxHexWidth, 10), 80);
+  return `${hexWidth}px`;
+}
 
 // ─── Coordinate helpers ───────────────────────────────────────────────────────
 
@@ -98,7 +116,7 @@ export function applyMovesToBoard(moves: GameSession['moves'], totalCells: numbe
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function GameBoard({ username = "Guest User", onProfile }: GameBoardProps) {
+export default function GameBoard({ username = "Guest User", onProfile, onLobby }: GameBoardProps) {
   // ── Determine initial mode and difficulty from URL parameters
   const getInitialParams = () => {
     if (globalThis.window === undefined) return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11 };
@@ -132,6 +150,15 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
   const [p1Score, setP1Score] = useState(0);
   const [p2Score, setP2Score] = useState(0);
   const [hasScored, setHasScored] = useState(false);
+
+  // ── Screen size for dynamic board sizing
+  const [screenSize, setScreenSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const handleResize = () => setScreenSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
@@ -281,11 +308,11 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
   };
 
   const renderBoard = () => {
-    const hexWidth = 'clamp(30px, 8.5vmin, 130px)';
+    const currentBoardSize = session?.boardSize || boardSize;
+    const hexWidth = calculateDynamicHexSize(currentBoardSize, screenSize.width, screenSize.height);
     const isInteractive = gameStatus === 'ongoing' && !isBotThinking;
     const rows = [];
     let currentIndex = 0;
-    const currentBoardSize = session?.boardSize || boardSize;
     for (let row = 0; row < currentBoardSize; row++) {
       rows.push(renderBoardRow(row, currentIndex, hexWidth, isInteractive));
       currentIndex += row + 1;
@@ -345,11 +372,6 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
                   START GAME
                 </button>
             )}
-            {gameStatus === 'finished' && (
-                <button className="game-action-btn btn-end" onClick={handleRematch}>
-                  REMATCH
-                </button>
-            )}
 
             {errorMsg && (
                 <div style={{ color: '#ff4444', fontSize: 12, padding: '4px 8px', wordBreak: 'break-word' }}>
@@ -387,6 +409,14 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
                       <div className="winner-popup-content">
                         <h2>{winner === 'P1' ? `${username} WINS!` : 'P2 WINS!'}</h2>
                         <p>Great match!</p>
+                        <div className="winner-popup-buttons">
+                          <button className="winner-btn btn-rematch" onClick={handleRematch}>
+                            REMATCH
+                          </button>
+                          <button className="winner-btn btn-lobby" onClick={onLobby}>
+                            GO TO LOBBY
+                          </button>
+                        </div>
                       </div>
                     </div>
                 )}

@@ -43,6 +43,7 @@ function App() {
         <GameBoard
             username={storedUsername || "Guest User"}
             onProfile={handleGoToProfile}
+            onLobby={() => globalThis.location.href = globalThis.location.pathname + '?view=lobby'}
         />
     );
   }

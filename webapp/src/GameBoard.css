@@ -340,3 +340,42 @@ body, html {
   font-weight: bold;
   opacity: 0.9;
 }
+
+.winner-popup-buttons {
+  display: flex;
+  gap: 1vw;
+  justify-content: center;
+  margin-top: 1.5vw;
+}
+
+.winner-btn {
+  padding: 0.8vw 1.5vw;
+  border: 2px solid;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: clamp(12px, 1vw, 16px);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.winner-btn.btn-rematch {
+  background: transparent;
+  border-color: #B388FF;
+  color: #B388FF;
+}
+
+.winner-btn.btn-rematch:hover {
+  background: #B388FF;
+  color: #1a1a1a;
+}
+
+.winner-btn.btn-lobby {
+  background: transparent;
+  border-color: #aaa;
+  color: #aaa;
+}
+
+.winner-btn.btn-lobby:hover {
+  background: #aaa;
+  color: #1a1a1a;
+}
