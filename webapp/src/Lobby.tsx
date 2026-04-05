@@ -106,29 +106,27 @@ const Lobby: React.FC<LobbyProps> = ({ username = "Guest User", onPlay, onLogout
           </div>
         </main>
          {/* Modal structure for Game Y rules */}
-        {showHowToPlay && (
-            <div 
-                className="how-to-play-overlay" 
-                onClick={toggleHowToPlay}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === 'Escape') toggleHowToPlay();
-                }}
-                role="button"
-                tabIndex={0}
-            >
-                <div 
+       {showHowToPlay && (
+            <div className="how-to-play-overlay">
+                <button 
+                    onClick={toggleHowToPlay}
+                    aria-label="Close modal background"
+                    style={{ 
+                        position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+                        background: 'transparent', border: 'none', cursor: 'default' 
+                    }}
+                />
+                <dialog 
+                    open
                     className="how-to-play-content" 
-                    onClick={(e) => e.stopPropagation()}
-                    onKeyDown={(e) => e.stopPropagation()}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="How to play instructions"
+                    style={{ position: 'relative', zIndex: 1 }}
                 >
                     <h2 className="modal-title">HOW TO PLAY: GAME Y</h2>
                     
                     <div className="rules-list">
                       <h3><span className="step-num">1</span> Objective</h3>
                       <p>Connect all three sides of the triangular board with a continuous chain of your stones.</p>
+                      
                       <h3><span className="step-num">2</span> Modes & Difficulty</h3>
                       <p>Choose "Player vs. Player" for a local match, or "Player vs. Computer" to challenge the AI. You can adjust the AI's level from Beginner to Advanced.</p>
                       
@@ -148,7 +146,7 @@ const Lobby: React.FC<LobbyProps> = ({ username = "Guest User", onPlay, onLogout
                     <button className="close-modal-btn" onClick={toggleHowToPlay}>
                         Got it!
                     </button>
-                </div>
+                </dialog>
             </div>
         )}
       </div>
