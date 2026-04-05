@@ -99,3 +99,14 @@
   font-size: 0.9rem;
   margin-top: 10px;
 }
+
+@media (max-width: 768px) {
+  #root {
+    padding: 1rem;
+    max-width: 100vw;
+  }
+
+  h1 {
+    font-size: 2rem;
+  }
+}

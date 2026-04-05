@@ -284,7 +284,9 @@ async function getBotMove(moves, boardSize, nextPlayer,difficulty) {
   
   if (difficulty === 'beginner') {
     botToCall = 'easy_level_bot'; 
-  } else if (difficulty === 'advanced') {
+  }else if (difficulty === 'medium') {
+     botToCall = 'gamer_bot'; }
+  else if (difficulty === 'advanced') {
     botToCall = 'gamer_bot'; 
   }
 
@@ -362,8 +364,8 @@ gameyService.post('/play/create', (req, res) => {
   const { mode, boardSize = 11, difficulty } = req.body;
   if (!['hvh', 'hvb'].includes(mode))
     return res.status(400).json({ error: "mode must be 'hvh' or 'hvb'" });
-  if (!Number.isInteger(boardSize) || boardSize < 2 || boardSize > 11)
-    return res.status(400).json({ error: 'boardSize must be an integer between 2 and 11' });
+  if (!Number.isInteger(boardSize) || boardSize < 5 || boardSize > 15)
+    return res.status(400).json({ error: 'boardSize must be an integer between 5 and 15' });
 
   const userId = getUserIdFromRequest(req);
   const id = uuidv4();
