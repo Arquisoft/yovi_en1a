@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import './GameBoard.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -22,11 +22,32 @@ interface GameSession {
 interface GameBoardProps {
   username?: string;
   onProfile?: () => void;
+  onLobby?: () => void;
 }
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const API_URL = import.meta.env.VITE_GAMEY_API_URL ?? 'http://localhost:3001';
+
+function calculateDynamicHexSize(boardSize: number, screenWidth: number, screenHeight: number): string {
+  const isMobile = screenWidth <= 768;
+  
+  // On desktop, subtract sidebars (500px). On mobile, use almost full width (minus 40px padding).
+  const sidebarsWidth = isMobile ? 40 : 500; 
+  const availableWidth = Math.max(screenWidth - sidebarsWidth, screenWidth * 0.85);
+  
+  // On mobile, the board has more vertical freedom since the layout stacks.
+  const availableHeight = isMobile ? screenHeight * 0.5 : screenHeight * 0.65;
+  
+  const maxHexWidthByWidth = availableWidth / (boardSize * 1.05);
+  const maxHexWidthByHeight = availableHeight / (boardSize * 0.85);
+  
+  const maxHexWidth = Math.min(maxHexWidthByWidth, maxHexWidthByHeight);
+  
+  // Increase the lower bound from 10 to 15-20 so it stays readable on mobile
+  const hexWidth = Math.min(Math.max(maxHexWidth, 15), 80);
+  return `${hexWidth}px`;
+}
 
 // ─── Coordinate helpers ───────────────────────────────────────────────────────
 
@@ -98,7 +119,7 @@ export function applyMovesToBoard(moves: GameSession['moves'], totalCells: numbe
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function GameBoard({ username = "Guest User", onProfile }: GameBoardProps) {
+export default function GameBoard({ username = "Guest User", onProfile, onLobby }: GameBoardProps) {
   // ── Determine initial mode and difficulty from URL parameters
   const getInitialParams = () => {
     if (globalThis.window === undefined) return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11 };
@@ -132,6 +153,15 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
   const [p1Score, setP1Score] = useState(0);
   const [p2Score, setP2Score] = useState(0);
   const [hasScored, setHasScored] = useState(false);
+
+  // ── Screen size for dynamic board sizing
+  const [screenSize, setScreenSize] = useState({ width: window.innerWidth, height: window.innerHeight });
+
+  useEffect(() => {
+    const handleResize = () => setScreenSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
@@ -281,11 +311,11 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
   };
 
   const renderBoard = () => {
-    const hexWidth = 'clamp(30px, 8.5vmin, 130px)';
+    const currentBoardSize = session?.boardSize || boardSize;
+    const hexWidth = calculateDynamicHexSize(currentBoardSize, screenSize.width, screenSize.height);
     const isInteractive = gameStatus === 'ongoing' && !isBotThinking;
     const rows = [];
     let currentIndex = 0;
-    const currentBoardSize = session?.boardSize || boardSize;
     for (let row = 0; row < currentBoardSize; row++) {
       rows.push(renderBoardRow(row, currentIndex, hexWidth, isInteractive));
       currentIndex += row + 1;
@@ -299,62 +329,55 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
   const p2Label = selectedMode === 'hvb' ? 'P2 (Bot)' : 'P2: USERN.';
 
   return (
+    <>
+      {/* TOP BAR - Ahora fuera del contenedor principal */}
+      <nav className="game-top-bar" style={{ padding: '10px 20px' }}>
+        <h1 className="game-title">GAME Y</h1>
+        <button
+          className="game-profile-btn"
+          title="View Profile"
+          onClick={onProfile}
+          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+        >
+          Profile 👤
+        </button>
+      </nav>
+
       <div className="game-container">
-
-        {/* TOP BAR */}
-        <div className="game-top-bar">
-          <h1 className="game-title">GAME Y</h1>
-          {/* Profile button — navigates to UserProfile */}
-          <button
-              className="game-profile-btn"
-              title="View Profile"
-              onClick={onProfile}
-              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-          >
-            Profile 👤
-          </button>
-        </div>
-
         <div className="game-main-layout">
 
           {/* LEFT SIDEBAR */}
           <div className="game-sidebar">
-
             {gameStatus !== 'idle' && (
-                <div className={`game-panel ${activeTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
-                  <div className={`game-panel-header ${activeTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
-                    {turnPanelHeader}
-                  </div>
-                  <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
-                    {turnPanelSubtext}
-                  </div>
+              <div className={`game-panel ${activeTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
+                <div className={`game-panel-header ${activeTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
+                  {turnPanelHeader}
                 </div>
+                <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
+                  {turnPanelSubtext}
+                </div>
+              </div>
             )}
 
             {gameStatus === 'idle' && (
-                <div className="game-panel" style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
-                  <div className="game-panel-header" style={{ color: '#ccc' }}>SELECTED MODE</div>
-                  <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
-                    {selectedMode === 'hvh' ? 'Player vs Player' : `Player vs Computer (${selectedDifficulty})`}
-                  </div>
+              <div className="game-panel" style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
+                <div className="game-panel-header" style={{ color: '#ccc' }}>SELECTED MODE</div>
+                <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
+                  {selectedMode === 'hvh' ? 'Player vs Player' : `Player vs Computer (${selectedDifficulty})`}
                 </div>
+              </div>
             )}
 
             {gameStatus === 'idle' && (
-                <button className="game-action-btn btn-end" onClick={handleStartGame}>
-                  START GAME
-                </button>
-            )}
-            {gameStatus === 'finished' && (
-                <button className="game-action-btn btn-end" onClick={handleRematch}>
-                  REMATCH
-                </button>
+              <button className="game-action-btn btn-end" onClick={handleStartGame}>
+                START GAME
+              </button>
             )}
 
             {errorMsg && (
-                <div style={{ color: '#ff4444', fontSize: 12, padding: '4px 8px', wordBreak: 'break-word' }}>
-                  ⚠ {errorMsg}
-                </div>
+              <div style={{ color: '#ff4444', fontSize: 12, padding: '4px 8px', wordBreak: 'break-word' }}>
+                ⚠ {errorMsg}
+              </div>
             )}
 
             <div className="game-panel chat-panel">
@@ -368,16 +391,16 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
             <div className="board-wrapper">
               <div className="board-relative">
                 <svg
-                    className="board-svg-bg"
-                    preserveAspectRatio="none"
-                    viewBox="0 0 100 100"
+                  className="board-svg-bg"
+                  preserveAspectRatio="none"
+                  viewBox="0 0 100 100"
                 >
                   <polygon
-                      points="50,4 0,98 100,98"
-                      fill="#0a0a0a"
-                      stroke="#555555"
-                      strokeWidth="0.8"
-                      vectorEffect="nonScalingStroke"
+                    points="50,4 0,98 100,98"
+                    fill="#0a0a0a"
+                    stroke="#555555"
+                    strokeWidth="0.8"
+                    vectorEffect="nonScalingStroke"
                   />
                 </svg>
                 <div className="board-grid">{renderBoard()}</div>
@@ -387,8 +410,16 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
                       <div className="winner-popup-content">
                         <h2>{winner === 'P1' ? `${username} WINS!` : 'P2 WINS!'}</h2>
                         <p>Great match!</p>
+                        <div className="winner-popup-buttons">
+                          <button className="winner-btn btn-rematch" onClick={handleRematch}>
+                            REMATCH
+                          </button>
+                          <button className="winner-btn btn-lobby" onClick={onLobby}>
+                            GO TO LOBBY
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -402,9 +433,9 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
             </div>
 
             <button
-                className="game-action-btn btn-undo"
-                onClick={handleUndo}
-                disabled={!session || session.moves.length === 0 || gameStatus !== 'ongoing' || isBotThinking}
+              className="game-action-btn btn-undo"
+              onClick={handleUndo}
+              disabled={!session || session.moves.length === 0 || gameStatus !== 'ongoing' || isBotThinking}
             >
               UNDO
             </button>
@@ -423,5 +454,6 @@ export default function GameBoard({ username = "Guest User", onProfile }: GameBo
 
         </div>
       </div>
+    </>
   );
 }
