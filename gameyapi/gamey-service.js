@@ -504,7 +504,7 @@ gameyService.post('/play/:gameId/rematch', (req, res) => {
   const old = sessions.get(req.params.gameId);
   if (!old) return res.status(404).json({ error: 'Game not found' });
   const id = uuidv4();
-  sessions.set(id, newSession(id, old.mode, old.boardSize, old.difficulty));
+  sessions.set(id, newSession(id, old.mode, old.boardSize, old.userId, old.difficulty));
   sessions.delete(old.id);
   console.log(`[REMATCH] new=${id} old=${old.id}`);
   return res.status(201).json(sessionView(sessions.get(id)));
