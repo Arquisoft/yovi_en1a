@@ -12,13 +12,21 @@ const Lobby: React.FC<LobbyProps> = ({ username = "Guest User", onPlay, onLogout
   const [selectedMode, setSelectedMode] = useState('pvp');
   const [selectedDifficulty, setSelectedDifficulty] = useState('beginner');
   const [boardSize, setBoardSize] = useState(11);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
+  const toggleHowToPlay = () => setShowHowToPlay(!showHowToPlay);
   const friends = ["Alice_99", "Bob_Builder", "Charlie_Hex"];
 
   return (
       <div className="lobby-page-wrapper">
         <nav className="lobby-navbar">
           <div className="nav-logo">GAME Y</div>
-          <button className="nav-logout-btn" onClick={onLogout}>Logout</button>
+          
+          <div className="nav-actions">
+            <button className="help-icon-button" onClick={toggleHowToPlay} title="How to Play">
+                ?
+            </button>
+            <button className="nav-logout-btn" onClick={onLogout}>Logout</button>
+          </div>
         </nav>
 
         <main className="lobby-main-content">
@@ -97,6 +105,37 @@ const Lobby: React.FC<LobbyProps> = ({ username = "Guest User", onPlay, onLogout
             </aside>
           </div>
         </main>
+         {/* Modal structure for Game Y rules */}
+        {showHowToPlay && (
+            <div className="how-to-play-overlay" onClick={toggleHowToPlay}>
+                <div className="how-to-play-content" onClick={(e) => e.stopPropagation()}>
+                    <h2 className="modal-title">HOW TO PLAY: GAME Y</h2>
+                    
+                    <div className="rules-list">
+                      <h3><span className="step-num">1</span> Objective</h3>
+                      <p>Connect all three sides of the triangular board with a continuous chain of your stones.</p>
+                      <h3><span className="step-num">2</span> Modes & Difficulty</h3>
+                      <p>Choose "Player vs. Player" for a local match, or "Player vs. Computer" to challenge the AI. You can adjust the AI's level from Beginner to Advanced.</p>
+                      
+                      <h3><span className="step-num">3</span> Board & Corners</h3>
+                      <p>The game is played on a triangular grid. The corner cells act as part of both adjacent sides.</p>
+                      
+                      <h3><span className="step-num">4</span> Turns</h3>
+                      <p>Players take turns placing one stone of their color on any empty space on the board.</p>
+                      
+                      <h3><span className="step-num">5</span> Placement & Undo</h3>
+                      <p>Stones connect by sharing adjacent edges. You can use the Undo button to take back your last move if you make a mistake.</p>
+                      
+                      <h3><span className="step-num">6</span> Winning</h3>
+                      <p>The first player to form a path connecting all three sides wins. Mathematically, this game can never end in a draw!</p>
+                    </div>
+
+                    <button className="close-modal-btn" onClick={toggleHowToPlay}>
+                        Got it!
+                    </button>
+                </div>
+            </div>
+        )}
       </div>
   );
 };
