@@ -107,8 +107,20 @@ const Lobby: React.FC<LobbyProps> = ({ username = "Guest User", onPlay, onLogout
         </main>
          {/* Modal structure for Game Y rules */}
         {showHowToPlay && (
-            <div className="how-to-play-overlay" onClick={toggleHowToPlay}>
-                <div className="how-to-play-content" onClick={(e) => e.stopPropagation()}>
+            <div 
+                className="how-to-play-overlay" 
+                onClick={toggleHowToPlay}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === 'Escape') toggleHowToPlay();
+                }}
+                role="presentation"
+            >
+                <div 
+                    className="how-to-play-content" 
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                    role="presentation"
+                >
                     <h2 className="modal-title">HOW TO PLAY: GAME Y</h2>
                     
                     <div className="rules-list">
