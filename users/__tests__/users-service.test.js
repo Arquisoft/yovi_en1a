@@ -1,4 +1,13 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import { loadEnv } from 'vite';
+
+// Inject environment variables dynamically from .env.test before evaluation
+vi.mock('../users-service.js', async (importOriginal) => {
+    const envs = loadEnv('test', process.cwd(), '');
+    process.env.JWT_SECRET = envs.JWT_SECRET;
+    return await importOriginal();
+});
+
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { app, connectToMongo, closeMongoConnection, JWT_SECRET, startServer } from '../users-service.js';
