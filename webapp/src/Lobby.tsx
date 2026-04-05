@@ -113,13 +113,16 @@ const Lobby: React.FC<LobbyProps> = ({ username = "Guest User", onPlay, onLogout
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === 'Escape') toggleHowToPlay();
                 }}
-                role="presentation"
+                role="button"
+                tabIndex={0}
             >
                 <div 
                     className="how-to-play-content" 
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
-                    role="presentation"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="How to play instructions"
                 >
                     <h2 className="modal-title">HOW TO PLAY: GAME Y</h2>
                     
