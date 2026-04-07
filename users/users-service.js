@@ -32,7 +32,10 @@ let db;
 
 const MONGO_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set');
+}
 
 async function connectToMongo(uri) {
   client = new MongoClient(uri, {
@@ -94,15 +97,11 @@ app.use(async (req, res, next) => {
   }
 });
 
-module.exports = { app, connectToMongo, closeMongoConnection, JWT_SECRET };
+
 
 // -------------------- Routes --------------------
 
 app.post('/createuser', async (req, res) => {
-  if (!db) {
-    console.error('Database not available when attempting to create user');
-    return res.status(500).json({ error: 'Database not available' });
-  }
 
   const { username, email, password } = req.body;
 
@@ -164,10 +163,6 @@ app.post('/createuser', async (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-  if (!db) {
-    console.error('Database not available when attempting login');
-    return res.status(500).json({ error: 'Database not available' });
-  }
 
   const { usernameOrEmail, password } = req.body;
 
@@ -223,20 +218,25 @@ const PORT = process.env.PORT || 3000;
 // Firewall / reverse-proxy (nginx, ALB, etc.) should control external exposure.
 const HOST = process.env.HOST || '0.0.0.0';
 
-if (process.env.NODE_ENV !== 'test') {
-  (async () => {
-    try {
-      if (!MONGO_URI) {
-        throw new Error('MONGODB_URI environment variable is not set');
-      }
-      await connectToMongo(MONGO_URI);
+async function startServer(uri = MONGO_URI, port = PORT, host = HOST) {
+  if (!uri) {
+    throw new Error('MONGODB_URI environment variable is not set');
+  }
+  await connectToMongo(uri);
 
-      app.listen(PORT, HOST, () => {
-        console.log(`User service listening at http://${HOST}:${PORT}`);
-      });
-    } catch (err) {
-      console.error('Failed to start server:', err.message);
-      process.exit(1);
-    }
-  })();
+  return new Promise((resolve) => {
+    const server = app.listen(port, host, () => {
+      console.log(`User service listening at http://${host}:${port}`);
+      resolve(server);
+    });
+  });
 }
+
+if (process.env.NODE_ENV !== 'test') {
+  startServer().catch((err) => {
+    console.error('Failed to start server:', err.message);
+    process.exit(1);
+  });
+}
+
+module.exports = { app, connectToMongo, closeMongoConnection, JWT_SECRET, startServer };

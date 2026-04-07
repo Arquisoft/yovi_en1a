@@ -2,15 +2,78 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
+import { MongoClient } from 'mongodb';
+import jwt from 'jsonwebtoken';
 
 const gameyService = express();
 const PORT = process.env.PORT || 3001;
 const GAMEY_RUST_URL = process.env.GAMEY_RUST_URL || 'http://localhost:4000';
-
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const DB_NAME = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET && process.env.NODE_ENV !== 'test') {
+  throw new Error('JWT_SECRET environment variable is not set');
+}
+const BOT_ID = 'gamer_bot';
 const API_VERSION = 'v1';
 
 gameyService.use(cors());
 gameyService.use(bodyParser.json());
+
+// ─── MongoDB connection ─────────────────────────────────────────────────────────
+let db;
+let mongoClient;
+
+async function connectToMongo() {
+  mongoClient = new MongoClient(MONGO_URI);
+  await mongoClient.connect();
+  db = mongoClient.db(DB_NAME);
+  console.log(`[DB] Connected to MongoDB: ${DB_NAME}`);
+}
+
+async function closeMongoConnection() {
+  if (mongoClient) {
+    await mongoClient.close();
+    console.log('[DB] Connection closed');
+  }
+}
+
+// ─── JWT helper ─────────────────────────────────────────────────────────────────
+
+function getUserIdFromRequest(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  try {
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded.userId || null;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Save game result to MongoDB ────────────────────────────────────────────────
+
+async function saveGameResult(session) {
+  if (!db) return;
+  try {
+    await db.collection('games').insertOne({
+      gameId: session.id,
+      userId: session.userId || null,
+      mode: session.mode,
+      boardSize: session.boardSize,
+      winner: session.winner,
+      totalMoves: session.moves.length,
+      finishedAt: new Date(),
+      createdAt: session.createdAt,
+    });
+    console.log(`[DB] Game ${session.id} saved`);
+  } catch (err) {
+    console.error('[DB] Failed to save game:', err.message);
+  }
+}
+
+export { connectToMongo, closeMongoConnection };
 
 // ─── In-memory session store ───────────────────────────────────────────────────
 const sessions = new Map();
@@ -262,8 +325,19 @@ async function getBotMove(moves, boardSize, nextPlayer,difficulty) {
 
 // ─── Session helpers ──────────────────────────────────────────────────────────
 
-function newSession(id, mode, boardSize, difficulty) {
-  return { id, mode, boardSize, difficulty: difficulty, moves: [], status: 'ongoing', currentPlayer: 0, winner: null };
+function newSession(id, mode, boardSize, userId, difficulty) {
+  return { 
+    id, 
+    mode, 
+    boardSize, 
+    difficulty: difficulty || 'medium', 
+    moves: [], 
+    status: 'ongoing', 
+    currentPlayer: 0, 
+    winner: null, 
+    userId: userId || null, 
+    createdAt: new Date() 
+  };
 }
 
 function sessionView(s) {
@@ -293,9 +367,10 @@ gameyService.post('/play/create', (req, res) => {
   if (!Number.isInteger(boardSize) || boardSize < 5 || boardSize > 15)
     return res.status(400).json({ error: 'boardSize must be an integer between 5 and 15' });
 
+  const userId = getUserIdFromRequest(req);
   const id = uuidv4();
- sessions.set(id, newSession(id, mode, boardSize, difficulty));
-  console.log(`[CREATE] game=${id} mode=${mode} size=${boardSize}`);
+  sessions.set(id, newSession(id, mode, boardSize, userId, difficulty));
+  console.log(`[CREATE] game=${id} mode=${mode} size=${boardSize} user=${userId} diff=${difficulty}`);
   return res.status(201).json(sessionView(sessions.get(id)));
 });
 
@@ -368,7 +443,10 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
 
   console.log(`[MOVE] game=${s.id} player=${player} (${x},${y}) status=${s.status} winner=${s.winner}`);
 
-  console.log(`[DEBUG] Response status field: ${response.status}`);
+  // Save to MongoDB when game finishes
+  if (s.status === 'finished') {
+    saveGameResult(s);
+  }
 
   return res.json(response);
 });
@@ -426,7 +504,7 @@ gameyService.post('/play/:gameId/rematch', (req, res) => {
   const old = sessions.get(req.params.gameId);
   if (!old) return res.status(404).json({ error: 'Game not found' });
   const id = uuidv4();
-  sessions.set(id, newSession(id, old.mode, old.boardSize, old.difficulty));
+  sessions.set(id, newSession(id, old.mode, old.boardSize, old.userId, old.difficulty));
   sessions.delete(old.id);
   console.log(`[REMATCH] new=${id} old=${old.id}`);
   return res.status(201).json(sessionView(sessions.get(id)));
@@ -448,10 +526,17 @@ gameyService.get('/health', async (req, res) => {
 });
 
 if (process.argv[1] && process.argv[1].endsWith('gamey-service.js')) {
-  gameyService.listen(PORT, () => {
-    console.log(`Game API  →  http://localhost:${PORT}`);
-    console.log(`Rust engine expected at  ${GAMEY_RUST_URL}`);
-  });
+  (async () => {
+    try {
+      await connectToMongo();
+    } catch (err) {
+      console.warn('[DB] MongoDB not available, game results will not be saved:', err.message);
+    }
+    gameyService.listen(PORT, () => {
+      console.log(`Game API  →  http://localhost:${PORT}`);
+      console.log(`Rust engine expected at  ${GAMEY_RUST_URL}`);
+    });
+  })();
 }
 
 export default gameyService;
