@@ -69,4 +69,20 @@ describe('App & Lobby Coverage Booster', () => {
     render(<App />);
     expect(screen.getByText(/Register/i)).toBeInTheDocument();
   });
+  
+  it('Lobby: Toggles the How to Play modal', () => {
+    render(<Lobby onPlay={vi.fn()} onLogout={vi.fn()} username="Tester" />);
+    
+    expect(screen.queryByText(/HOW TO PLAY: GAME Y/i)).not.toBeInTheDocument();
+
+    const helpBtn = screen.getByTitle('How to Play'); 
+    fireEvent.click(helpBtn);
+
+    expect(screen.getByText(/HOW TO PLAY: GAME Y/i)).toBeInTheDocument();
+
+    const closeBtn = screen.getByText(/Got it!/i);
+    fireEvent.click(closeBtn);
+
+    expect(screen.queryByText(/HOW TO PLAY: GAME Y/i)).not.toBeInTheDocument();
+  });
 });
