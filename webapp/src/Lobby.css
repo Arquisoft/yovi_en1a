@@ -325,3 +325,142 @@ body {
   }
 
 }
+/* Navigation actions layout */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem; 
+}
+
+/* Help button styles with inverse hover effect */
+.help-icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #483dff; 
+  color: #fff; 
+  font-size: 20px;
+  font-weight: bold;
+  border: 2px solid #483dff; 
+  cursor: pointer;
+  box-shadow: 0 0 15px rgba(72, 61, 255, 0.4); 
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.help-icon-button:hover {
+  background-color: transparent; 
+  color: #483dff; 
+  box-shadow: 0 0 10px rgba(72, 61, 255, 0.15); 
+}
+
+/* Modal background and positioning */
+.how-to-play-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85); 
+  backdrop-filter: blur(5px); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease; 
+}
+
+.how-to-play-content {
+  background-color: #1a1a1a; 
+  padding: 2.5rem;
+  border: 1px solid #333; 
+  border-radius: 4px; 
+  max-width: 600px;
+  width: 90%;
+  text-align: left;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.9); 
+  max-height: 80vh; 
+  overflow-y: auto; 
+}
+
+.how-to-play-content .modal-title {
+  color: #483dff; 
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 0;
+  margin-bottom: 2rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border-bottom: 2px solid #333;
+  padding-bottom: 0.8rem;
+}
+
+/* Rules content formatting */
+.rules-list {
+  color: #ccc;
+  line-height: 1.7;
+}
+
+.rules-list h3 {
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+  color: #fff;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.step-num {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 28px;
+  height: 28px;
+  background-color: transparent;
+  color: #483dff;
+  border: 1px solid #483dff;
+  border-radius: 50%;
+  margin-right: 12px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  box-shadow: 0 0 5px rgba(72, 61, 255, 0.2);
+}
+
+.rules-list p {
+  margin: 0 0 1.5rem 40px; 
+  font-size: 1rem;
+}
+
+/* Modal action button */
+.close-modal-btn {
+  margin-top: 2rem;
+  padding: 1rem;
+  width: 100%;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background-color: #483dff; 
+  color: white; 
+  border: 1px solid #483dff; 
+  box-shadow: 0 0 15px rgba(72, 61, 255, 0.5); 
+}
+
+.close-modal-btn:hover {
+  background-color: transparent; 
+  color: #483dff; 
+  box-shadow: 0 0 10px rgba(72, 61, 255, 0.15); 
+}
+
+/* Base animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
