@@ -56,7 +56,7 @@ The YOVI_0 architecture follows a microservices-inspired model. All communicatio
 
 |**Internal Services**
 |HTTP / JSON
-|Communication between the Webapp and the **Node.js User Service** (Port 3000) and the **Rust GameY Engine** (Port 4000).
+|Communication between the Webapp, the **Node.js User Service** (Port 3000), the **Node.js GameY API Gateway** (Port 3001), and the underlying **Rust GameY Engine** (Port 4000).
 
 |**Public Bot API**
 |REST / JSON
@@ -65,6 +65,6 @@ The YOVI_0 architecture follows a microservices-inspired model. All communicatio
 
 **Mapping Input/Output to Channels:**
 
-* **Game Logic Flow:** Move submissions are sent via JSON POST to the Rust service. The service parses the YEN layout, validates the move, and returns the updated state.
+* **Game Logic Flow:** Move submissions from the Webapp or external bots are sent via JSON POST to the GameY API Gateway (Node.js). The gateway acts as a proxy, forwarding the YEN payload to the Rust Engine, which validates the move and returns the updated state back through the gateway.
 * **Authentication Flow:** Credentials are sent via HTTP POST to the User Service, which processes the persistence simulation and returns a status code.
 * **Observability:** Logs from Node.js and Rust are mapped to standard Docker output (`stdout`), accessible via the technical management console.

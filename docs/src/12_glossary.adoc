@@ -35,7 +35,7 @@
 | The Rust‑based subsystem that contains the game logic, move validation, win detection, and AI move generation.
 
 | GameY API
-| The Node.js‑based subsystem responsible for user registration, authentication, and persistence of statistics.
+| The Node.js‑based API Gateway that routes moves and YEN payloads between the Webapp (or external bots) and the Rust Logic Engine.
 
 | Grafana
 | An observability platform used to visualize metrics collected by Prometheus.

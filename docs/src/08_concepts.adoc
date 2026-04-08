@@ -56,6 +56,7 @@ actor User
 participant "Webapp\n(TypeScript/React)" as WebApp
 participant "User Service\n(Node.js)" as Node
 participant "Logic Engine\n(Rust)" as Rust
+participant "GameY API\n(Node.js)" as API
 
 User -> WebApp : Clicks "Play Turn"
 activate WebApp
@@ -63,12 +64,16 @@ activate WebApp
 WebApp -> Node : POST /api/stats (Update player stats)
 Node --> WebApp : 200 OK
 
-WebApp -> Rust : POST /api/play (Send current board state in YEN format)
+WebApp -> API : POST /api/play (Send current board state in YEN format)
+activate API
+API -> Rust : POST /play (forward to Engine)
 activate Rust
 Rust -> Rust : Validate Win/Loss
 Rust -> Rust : Calculate AI Move
-Rust --> WebApp : 200 OK + JSON (New Board State in YEN format)
+Rust --> API : 200 OK + JSON (New Board State in YEN format)
 deactivate Rust
+API --> WebApp : 200 OK + JSON
+deactivate API
 
 WebApp -> User : Renders updated board state
 deactivate WebApp
@@ -105,7 +110,7 @@ Service configuration (ports, upstream URLs, database connection strings) is man
 | `mongodb://mongodb:27017/yovi`
 
 | `GAMEY_RUST_URL`
-| Game API
+| GameY API
 | `http://gamey:4000`
 
 | `VITE_API_URL`
@@ -129,7 +134,7 @@ The current setup uses plain environment variables in `docker-compose.yml`, whic
 Because the Webapp (Port 80) communicates with backend APIs on different ports (3000, 3001, 4000), CORS must be configured explicitly.
 
 * **User Service (Node.js):** Implements a strict **origin whitelist** using the `cors` middleware. Allowed origins are configured via the `ALLOWED_ORIGINS` environment variable (comma-separated). By default, only `localhost` origins are permitted. Requests from unlisted origins are rejected with an error.
-* **Game API (`gameyapi`):** Currently uses a permissive CORS policy (`cors()` with no origin restriction) to facilitate external bot integration. This will be tightened before production deployment.
+* **GameY API (`gameyapi`):** Currently uses a permissive CORS policy (`cors()` with no origin restriction) to facilitate external bot integration. This will be tightened before production deployment.
 
 ==== Rate Limiting
 [NOTE]
@@ -169,7 +174,7 @@ The system uses a layered error propagation model based on standard HTTP semanti
 autonumber
 actor "Player" as User
 participant "Webapp\n(React)" as UI
-participant "Game API\n(Node.js)" as Node
+participant "GameY API\n(Node.js)" as Node
 participant "Logic Engine\n(Rust)" as Rust
 
 User -> UI : Submits move
@@ -194,7 +199,7 @@ UI -> User : "Invalid move!"
 The concrete error handling layers are:
 
 * **Rust Logic Engine:** Returns precise HTTP error codes (`400 Bad Request` for invalid YEN/rule violations, `500 Internal Server Error` for unexpected failures). The JSON body contains a machine-readable `error` field.
-* **Node.js Middleware (Game API / User Service):** Catches errors from upstream Rust calls, logs them via `console.error`, and maps them to sanitized, client-facing JSON responses. Internal error details (stack traces, Rust error messages) are not forwarded to the browser.
+* **Node.js Middleware (GameY API / User Service):** Catches errors from upstream Rust calls, logs them via `console.error`, and maps them to sanitized, client-facing JSON responses. Internal error details (stack traces, Rust error messages) are not forwarded to the browser.
 * **React Frontend:** Reads HTTP status codes from API responses. Non-2xx responses trigger UI-level feedback (e.g., warning toasts, reverting optimistic state updates). The Webapp never crashes on expected error payloads.
 
 ==== Observability and Monitoring

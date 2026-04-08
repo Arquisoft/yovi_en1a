@@ -3,25 +3,52 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-technical-risks]]
 == Risks and Technical Debts
 
+The following table lists the identified technical risks and technical debts within the YOVI_0 architecture. A Risk describes a potential future problem (e.g., security vulnerabilities or system overload), while a Technical Debt represents incomplete implementations or shortcuts taken during development that need to be refactored before a production release. The items are ordered by their priority and potential impact on the system.
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Contents
-A list of identified technical risks or technical debts, ordered by priority
+[cols="1,1,3,4", options="header"]
+|===
+| Priority | Type | Name & Description | Mitigation Strategy / Next Steps
 
-.Motivation
-“Risk management is project management for grown-ups” (Tim Lister, Atlantic Systems Guild.) 
+| High
+| Risk
+| **Missing Rate Limiting on Public API** +
+The system exposes a public REST API for external bots. Currently, there is no rate limiting implemented. This makes the system highly susceptible to abuse, spam, or accidental Denial of Service (DoS) attacks from malfunctioning third-party bots.
+| Implement rate-limiting middleware (e.g., `express-rate-limit`) on the Node.js services or throttle requests via an Nginx reverse proxy before production deployment.
 
-This should be your motto for systematic detection and evaluation of risks and technical debts in the architecture, which will be needed by management stakeholders (e.g. project managers, product owners) as part of the overall risk analysis and measurement planning.
+| High
+| Risk
+| **Permissive CORS Policy** +
+The GameY API (`gameyapi`) currently uses a permissive CORS policy (`cors()` with no origin restriction) to easily facilitate external bot integration during development. This allows any domain to send requests to the logic engine.
+| Tighten the CORS configuration by implementing a strict origin whitelist for the GameY API, similar to the `ALLOWED_ORIGINS` setup used in the User Service.
 
-.Form
-List of risks and/or technical debts, probably including suggested measures to minimize, mitigate or avoid risks or reduce technical debts.
+| Medium
+| Debt
+| **Runtime Secrets Management** +
+While sensitive configuration data is securely stored in GitHub Repository Secrets for the CI/CD pipeline, they are ultimately injected as plain environment variables into the production VM via docker-compose.yml. While this effectively prevents source-code leaks, it leaves the runtime environment slightly vulnerable if the host machine is compromised.
+| Migrate the runtime environment to use native Docker Secrets or a vault-based solution for the production hardening phase, ensuring secrets are never exposed in plain text on the host filesystem.
 
+| Medium
+| Debt
+| **Incomplete Session Management (JWT)** +
+While the architecture envisions a JWT-based authentication flow, and the `jsonwebtoken` dependency is present in the `users` service, the React Webapp does not yet strictly enforce or attach an `Authorization: Bearer <token>` header on every protected API request.
+| Complete the implementation of JSON Web Tokens (JWT) in the Node.js User Service and finalize the token handling in the Webapp's API calls.
 
-.Further Information
+| Medium
+| Debt
+| **Lack of Real-time Push (WebSockets)** +
+The "Human vs. Human" multiplayer scenario currently relies on REST API calls. Asynchronous push communication (WebSockets) is planned but not yet implemented. Relying on client-side polling for multiplayer turns is inefficient and degrades the User Experience.
+| Integrate WebSockets (e.g., via Socket.IO) into the User Service to actively push game state updates directly to connected React clients.
 
-See https://docs.arc42.org/section-11/[Risks and Technical Debt] in the arc42 documentation.
+| Medium
+| Debt
+| **Pending Match History Persistence** +
+The data mapping strategy for storing match results as separate documents in a `matches` collection (referencing user `_id`s) is currently marked as "planned". Match statistics cannot be reliably retrieved yet.
+| Implement the MongoDB data mapping for the `matches` collection to ensure persistent data storage upon match conclusion.
 
-****
-endif::arc42help[]
+| Low
+| Debt
+| **Decentralized Logging** +
+All services currently emit logs exclusively to stdout/stderr. While Docker captures these, there is no centralized log aggregation. This makes debugging difficult in a multi-container environment.
+| Deploy a centralized log aggregation stack (e.g., shipping Docker logs to Loki, integrated with the existing Grafana setup) in a future iteration.
+
+|===
