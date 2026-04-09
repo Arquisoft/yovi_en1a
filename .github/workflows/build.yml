@@ -41,3 +41,91 @@ jobs:
       uses: SonarSource/sonarqube-scan-action@master
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  e2e:
+    name: Run E2E tests
+    runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+
+    needs: [tests] # Wait for unit tests & coverage to pass first
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install users dependencies
+        run: |
+          cd users
+          npm ci
+
+      - name: Install gameyapi dependencies
+        run: |
+          cd gameyapi
+          npm ci
+
+      - name: Install webapp dependencies
+        run: |
+          cd webapp
+          npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd webapp
+          npm run test:e2e:install-browsers
+
+      - name: Compile and run Gamey (Rust Engine)
+        run: |
+          cd gamey
+          cargo run &
+        
+      - name: Run GameyAPI (Node Backend)
+        env:
+          MONGODB_URI: mongodb://localhost:27017/yovi
+          GAMEY_RUST_URL: http://localhost:4000
+        run: |
+          cd gameyapi
+          npm start &
+
+      - name: Run Users API
+        env:
+          MONGODB_URI: mongodb://localhost:27017/yovi
+        run: |
+          cd users
+          npm start &
+
+      - name: Start Webapp
+        run: |
+          cd webapp
+          npm run dev &
+      
+      - name: Wait for services
+        run: sleep 10
+
+      - name: Run E2E Chromium
+        run: |
+          cd webapp
+          BROWSER=chromium npm run test:e2e:run
+
+      - name: Run E2E Firefox
+        run: |
+          cd webapp
+          BROWSER=firefox npm run test:e2e:run
+
+      - name: Run E2E WebKit
+        run: |
+          cd webapp
+          BROWSER=webkit npm run test:e2e:run
