@@ -135,17 +135,17 @@ jobs:
       - name: Run E2E Chromium
         run: |
           cd webapp
-          BROWSER=chromium npm run test:e2e:run
+          BASE_URL=http://localhost:5173 BROWSER=chromium npm run test:e2e:run
 
       - name: Run E2E Firefox
         run: |
           cd webapp
-          BROWSER=firefox npm run test:e2e:run
+          BASE_URL=http://localhost:5173 BROWSER=firefox npm run test:e2e:run
 
       - name: Run E2E WebKit
         run: |
           cd webapp
-          BROWSER=webkit npm run test:e2e:run
+          BASE_URL=http://localhost:5173 BROWSER=webkit npm run test:e2e:run
 
   docker-push-users:
     name: Publish users image
