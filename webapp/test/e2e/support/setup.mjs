@@ -1,5 +1,5 @@
 import { setWorldConstructor, Before, After, setDefaultTimeout } from '@cucumber/cucumber'
-import { chromium } from 'playwright'
+import { chromium, firefox, webkit } from 'playwright'
 
 setDefaultTimeout(60_000)
 
@@ -11,12 +11,23 @@ class CustomWorld {
 setWorldConstructor(CustomWorld)
 
 Before(async function () {
-  // Allow turning off headless mode and enabling slow motion/devtools via env vars
-  const headless = true
-  const slowMo = 0
+  // Use SHOW_UI=1 to visibly watch the playback. Otherwise, it runs blazingly fast in the background.
+  const showUI = process.env.SHOW_UI === '1'
+  const headless = !showUI
+  const slowMo = showUI ? 800 : 0
   const devtools = false
 
-  this.browser = await chromium.launch({ headless, slowMo, devtools })
+  const browserName = process.env.BROWSER || 'chromium'
+  console.log(`\nLaunching browser: ${browserName}`)
+  
+  const browsers = { chromium, firefox, webkit }
+  const launchOptions = { headless, slowMo, devtools }
+  
+  if (!browsers[browserName]) {
+    throw new Error(`Unsupported browser: ${browserName}. Choose chromium, firefox, or webkit.`)
+  }
+
+  this.browser = await browsers[browserName].launch(launchOptions)
   this.page = await this.browser.newPage()
 })
 
