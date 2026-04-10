@@ -93,7 +93,7 @@ When('I play a {string} game on size {int}', { timeout: 300000 }, async function
   // 3. Keep playing randomly until the match finishes
   let finished = false
   let moveCount = 0
-  const maxMoves = (size * (size + 1)) / 2 // Total cells on the triangular board
+  const maxMoves = size * size // Total cells on the hex board
 
   while (!finished) {
     // Check if the winner modal appeared
