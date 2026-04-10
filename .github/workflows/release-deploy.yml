@@ -108,10 +108,15 @@ jobs:
           cd webapp
           npm run test:e2e:install-browsers
 
-      - name: Compile and run Gamey (Rust Engine)
+      - name: Compile Gamey (Rust Engine)
         run: |
           cd gamey
-          cargo run &
+          cargo build --release
+
+      - name: Start Gamey (Rust Engine)
+        run: |
+          cd gamey
+          ./target/release/gamey --mode server --port 4000 &
         
       - name: Run GameyAPI (Node Backend)
         env:

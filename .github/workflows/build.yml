@@ -92,10 +92,26 @@ jobs:
           cd webapp
           npm run test:e2e:install-browsers
 
-      - name: Compile and run Gamey (Rust Engine)
+      - name: Compile Gamey (Rust Engine)
         run: |
           cd gamey
-          cargo run &
+          cargo build --release
+
+      - name: Start Gamey (Rust Engine)
+        run: |
+          cd gamey
+          echo "Binary exists: $(ls -la ./target/release/gamey 2>&1)"
+          ./target/release/gamey --mode server --port 4000 > /tmp/gamey.log 2>&1 &
+          GAMEY_PID=$!
+          echo "Gamey PID: $GAMEY_PID"
+          sleep 2
+          if ! kill -0 $GAMEY_PID 2>/dev/null; then
+            echo "ERROR: Gamey process crashed immediately!"
+            echo "=== Gamey Log ==="
+            cat /tmp/gamey.log
+            exit 1
+          fi
+          echo "Gamey process is running"
         
       - name: Run GameyAPI (Node Backend)
         env:
@@ -122,7 +138,7 @@ jobs:
         run: |
           echo "Waiting for Rust engine (port 4000)..."
           RUST_READY=false
-          for i in $(seq 1 300); do
+          for i in $(seq 1 30); do
             if curl -sf http://localhost:4000/status > /dev/null 2>&1; then
               RUST_READY=true
               break
@@ -130,7 +146,11 @@ jobs:
             sleep 1
           done
           if [ "$RUST_READY" != "true" ]; then
-            echo "ERROR: Rust engine did not start within 300 seconds!"
+            echo "ERROR: Rust engine did not respond within 30 seconds!"
+            echo "=== Gamey Log ==="
+            cat /tmp/gamey.log 2>/dev/null || echo "(no log file)"
+            echo "=== Process Check ==="
+            ps aux | grep gamey || true
             exit 1
           fi
           echo "✓ Rust engine ready"
