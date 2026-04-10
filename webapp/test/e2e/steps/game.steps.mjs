@@ -47,20 +47,20 @@ Then('I should see {string}', async function (text) {
   const slowMo = showUI ? 1200 : 0
   
   // Wait up to 10 seconds for EITHER the target text to appear, OR an error banner from the backend
+  const targetLocator = page.getByText(text, { exact: false }).first()
+  const errorLocator = page.locator('.error-message').first()
+
   try {
-    const handle = await page.waitForSelector(`.error-message, text="${text}"`, { state: 'visible', timeout: 10000 })
-    const isError = await handle.evaluate(el => el.classList.contains('error-message'))
+    // Elegant Playwright native OR logic (waits for whichever appears first)
+    await targetLocator.or(errorLocator).waitFor({ state: 'visible', timeout: 10000 })
     
-    if (isError) {
-      const errText = await handle.textContent()
-      // If we see an error message, immediately abort and print the exact Node.js Server Error!
+    if (await errorLocator.isVisible()) {
+      const errText = await errorLocator.textContent()
       throw new Error(`CRITICAL: Expected to see '${text}', but the app threw an error banner instead: "${errText}"`)
     }
   } catch (err) {
-    if (err.message.includes('Timeout')) {
-      throw new Error(`Timeout after 10000ms waiting for text "${text}" to appear. (No backend error banners were found either).`)
-    }
-    throw err
+    if (err.message.includes('CRITICAL')) throw err
+    throw new Error(`Timeout after 10000ms waiting for text "${text}" to appear. (No backend error banners were found either). Details: ${err.message}`)
   }
 })
 
