@@ -129,9 +129,29 @@ jobs:
           cd webapp
           npm run dev &
       
-      # Wait a couple of seconds for all servers to bind to ports
-      - name: Wait for services
-        run: sleep 10
+      - name: Wait for all services to be ready
+        run: |
+          echo "Waiting for Rust engine (port 4000)..."
+          for i in $(seq 1 300); do
+            curl -sf http://localhost:4000/status > /dev/null 2>&1 && break
+            sleep 1
+          done
+          echo "Waiting for GameyAPI (port 3001)..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3001/health > /dev/null 2>&1 && break
+            sleep 1
+          done
+          echo "Waiting for Users API (port 3000)..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/ > /dev/null 2>&1 && break
+            sleep 1
+          done
+          echo "Waiting for Webapp (port 5173)..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:5173/ > /dev/null 2>&1 && break
+            sleep 1
+          done
+          echo "All services ready!"
 
       - name: Run E2E Chromium
         run: |
