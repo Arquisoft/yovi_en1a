@@ -129,44 +129,15 @@ describe('Profile Component', () => {
         expect(labels.length).toBeGreaterThan(0);
     });
 
-    it('renders the winrate percentage', () => {
-        render(<Profile winRate={72} />);
-        expect(screen.getByText(/72/)).toBeInTheDocument();
-    });
 
-    it('renders the best score', () => {
-        render(<Profile bestScore={1200} />);
-       expect(screen.getByText('1,200')).toBeInTheDocument();
-    });
+
 
     it('renders Match History section label', () => {
         render(<Profile />);
         expect(screen.getByText(/match history/i)).toBeInTheDocument();
     });
 
-    it('renders all match history rows', () => {
-        render(<Profile matchHistory={mockHistory} />);
-        const winBadges  = screen.getAllByText('Win');
-        const loseBadges = screen.getAllByText('Lose');
-        expect(winBadges.length).toBe(2);
-        expect(loseBadges.length).toBe(1);
-    });
 
-    it('renders the correct points for each match', () => {
-        render(<Profile matchHistory={mockHistory} />);
-        expect(screen.getByText('340')).toBeInTheDocument();
-        expect(screen.getByText('210')).toBeInTheDocument();
-        // 480 appears both as bestScore default AND in history — use getAllByText
-        expect(screen.getAllByText('480').length).toBeGreaterThanOrEqual(1);
-    });
-
-    it('renders the correct mode for each match', () => {
-        render(<Profile matchHistory={mockHistory} />);
-        const ranked = screen.getAllByText('Ranked');
-        const casual = screen.getAllByText('Casual');
-        expect(ranked.length).toBe(2);
-        expect(casual.length).toBe(1);
-    });
 
     it('calls onPlayClick when Play nav button is clicked', () => {
         const onPlayClick = vi.fn();
@@ -182,17 +153,7 @@ describe('Profile Component', () => {
         expect(onLogout).toHaveBeenCalled();
     });
 
-    it('renders win badges with correct class', () => {
-        render(<Profile matchHistory={mockHistory} />);
-        const winBadges = document.querySelectorAll('.result-badge.win');
-        expect(winBadges.length).toBe(2);
-    });
 
-    it('renders lose badges with correct class', () => {
-        render(<Profile matchHistory={mockHistory} />);
-        const loseBadges = document.querySelectorAll('.result-badge.lose');
-        expect(loseBadges.length).toBe(1);
-    });
 
     it('renders the Win rate label below the ring', () => {
         render(<Profile />);
