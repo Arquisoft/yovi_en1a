@@ -98,7 +98,7 @@ jobs:
           GAMEY_RUST_URL: http://localhost:4000
         run: |
           cd gameyapi
-          npm start &
+          node gamey-service.js &
 
       - name: Run Users API
         env:
