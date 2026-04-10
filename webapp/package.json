@@ -16,7 +16,7 @@
     "test:e2e:run-all": "node -e \"const {execSync} = require('child_process'); ['chromium', 'firefox', 'webkit'].forEach(b => execSync('npm run test:e2e:run', {env: {...process.env, BROWSER: b}, stdio: 'inherit'}))\"",
     "test:e2e:ui-all": "node -e \"const {execSync} = require('child_process'); process.env.SHOW_UI='1'; ['chromium', 'firefox', 'webkit'].forEach(b => execSync('npm run test:e2e:run', {env: {...process.env, BROWSER: b}, stdio: 'inherit'}))\"",
     "test:e2e": "start-server-and-test start:e2e http://localhost:5173 test:e2e:run-all",
-    "test:e2e:install-browsers": "npx playwright install",
+    "test:e2e:install-browsers": "npx playwright install --with-deps",
     "start:all": "concurrently \"npm run dev\" \"npm --prefix ../users start\"",
     "start:e2e": "concurrently \"npm run dev\" \"npm --prefix ../users start\" \"npm --prefix ../gameyapi start\" \"cargo run --manifest-path ../gamey/Cargo.toml\""
   },
