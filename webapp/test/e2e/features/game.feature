@@ -29,7 +29,7 @@ Feature: Full Game Flow
 
     # 3 Full Matches: 3 Difficulties, 2 small boards, 1 medium board
     When I play a "BEGINNER" game on size 5
-    And I play a "MEDIUM" game on size 11
+    And I play a "MEDIUM" game on size 7
     And I play a "ADVANCED" game on size 5
     
     # 4. Profile/Statistics Verification

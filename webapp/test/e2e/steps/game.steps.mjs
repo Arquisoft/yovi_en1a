@@ -92,13 +92,15 @@ When('I play a {string} game on size {int}', { timeout: 300000 }, async function
 
   // 3. Keep playing randomly until the match finishes
   let finished = false
+  let moveCount = 0
+  const maxMoves = (size * (size + 1)) / 2 // Total cells on the triangular board
+
   while (!finished) {
     // Check if the winner modal appeared
     const winnerPopupExists = await page.$('.winner-popup-overlay')
     if (winnerPopupExists) {
       const isVisible = await winnerPopupExists.isVisible().catch(() => false)
       if (isVisible) {
-        // Explicitly verify the winner text
         const popupText = await winnerPopupExists.textContent()
         const assert = await import('assert')
         assert.ok(popupText.includes('WINS!'), `Expected popup to declare a winner (contain 'WINS!'), but got: ${popupText}`)
@@ -108,28 +110,47 @@ When('I play a {string} game on size {int}', { timeout: 300000 }, async function
       }
     }
 
-    // Otherwise, try to find an empty hex cell and make a turn
-    const emptyCells = await page.$$('button.hex-empty:not([disabled])')
-    if (emptyCells.length > 0) {
-      // Pick a random valid cell so the game is dynamic
-      const targetCell = emptyCells[Math.floor(Math.random() * emptyCells.length)]
-      try {
-        await targetCell.click({ timeout: 2000 })
-      } catch (e) {
-        // If it fails (e.g. state changed exactly when clicking), just ignore and loop
-      }
+    // Safety: if we've made more moves than cells on the board, something is wrong
+    if (moveCount > maxMoves) {
+      throw new Error(`Game did not finish after ${moveCount} moves on a size-${size} board. Possible stuck state.`)
     }
 
-    // Check if the React app caught a backend API crash or disconnect
-    // (the GameBoard will display an alert div in the sidebar with red text)
+    // Find empty cells and make a move
+    const emptyCells = await page.$$('button.hex-empty:not([disabled])')
+    if (emptyCells.length > 0) {
+      const targetCell = emptyCells[Math.floor(Math.random() * emptyCells.length)]
+      const cellCountBefore = emptyCells.length
+
+      try {
+        await targetCell.click({ timeout: 2000 })
+        moveCount++
+      } catch (e) {
+        await page.waitForTimeout(500)
+        continue
+      }
+
+      // CRITICAL: Wait for the move to be processed (cell count should decrease)
+      // This prevents clicking faster than the API can respond
+      try {
+        await page.waitForFunction(
+          (prevCount) => document.querySelectorAll('button.hex-empty:not([disabled])').length < prevCount,
+          cellCountBefore,
+          { timeout: 15000 }
+        )
+      } catch (e) {
+        // Move might not have registered, or game just finished — check winner on next loop
+      }
+    } else {
+      // No empty cells — game should be over, wait briefly for winner popup
+      await page.waitForTimeout(1000)
+    }
+
+    // Check if the React app caught a backend API crash
     const errorAlert = await page.$$('div[style*="color: rgb(255, 68, 68)"]')
     if (errorAlert.length > 0) {
       const text = await errorAlert[0].textContent()
       throw new Error(`The App reported a fatal backend error during the game: ${text}`)
     }
-
-    // Wait momentarily for the rust bot to respond
-    await page.waitForTimeout(300)
   }
 
   // 4. Return to the Lobby natively
