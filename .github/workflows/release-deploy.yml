@@ -83,6 +83,11 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Cache Rust compilation
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: gamey
+
       - name: Install users dependencies
         run: |
           cd users
