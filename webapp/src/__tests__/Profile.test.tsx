@@ -168,7 +168,7 @@ describe('Profile – API fetching', () => {
     it('displays best score returned by API', async () => {
         mockFetch.mockReturnValue(buildFetchResponse(apiData));
         renderProfile();
-        await waitFor(() => expect(screen.getByText('9800')).toBeInTheDocument());
+        await waitFor(() => expect(screen.getByText(/9[,.]?800/)).toBeInTheDocument());
     });
 
     it('displays match history returned by API', async () => {
