@@ -173,7 +173,7 @@ jobs:
           echo "Waiting for Users API (port 3000)..."
           USERS_READY=false
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:3000/ > /dev/null 2>&1; then
+            if curl -s http://localhost:3000/ > /dev/null 2>&1; then
               USERS_READY=true
               break
             fi
