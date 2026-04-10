@@ -64,6 +64,15 @@ jobs:
         with:
           node-version: 22
 
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            users/node_modules
+            gameyapi/node_modules
+            webapp/node_modules
+          key: node-modules-${{ hashFiles('users/package-lock.json', 'gameyapi/package-lock.json', 'webapp/package-lock.json') }}
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -201,17 +210,18 @@ jobs:
           echo "✓ Webapp ready"
           echo "All services ready!"
 
-      - name: Run E2E Chromium
+      - name: Run E2E tests (all browsers in parallel)
         run: |
           cd webapp
-          BASE_URL=http://localhost:5173 BROWSER=chromium npm run test:e2e:run
+          BASE_URL=http://localhost:5173 BROWSER=chromium npm run test:e2e:run &
+          PID_CHROME=$!
+          BASE_URL=http://localhost:5173 BROWSER=firefox npm run test:e2e:run &
+          PID_FIREFOX=$!
+          BASE_URL=http://localhost:5173 BROWSER=webkit npm run test:e2e:run &
+          PID_WEBKIT=$!
 
-      - name: Run E2E Firefox
-        run: |
-          cd webapp
-          BASE_URL=http://localhost:5173 BROWSER=firefox npm run test:e2e:run
-
-      - name: Run E2E WebKit
-        run: |
-          cd webapp
-          BASE_URL=http://localhost:5173 BROWSER=webkit npm run test:e2e:run
+          FAILED=0
+          wait $PID_CHROME || FAILED=1
+          wait $PID_FIREFOX || FAILED=1
+          wait $PID_WEBKIT || FAILED=1
+          exit $FAILED
