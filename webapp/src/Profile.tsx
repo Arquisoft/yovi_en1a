@@ -79,8 +79,7 @@ function useProfileStats() {
 
     useEffect(() => {
         const token = localStorage.getItem('token');
-        if (!token) return;                          // not logged in, skip
-        setLoading(true);
+        if (!token) return;
         fetch(`${API_URL}/profile`, {
             headers: { Authorization: `Bearer ${token}` },
         })
@@ -178,6 +177,9 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
 
         </div>
     );
+
 };
+
+
 
 export default Profile;

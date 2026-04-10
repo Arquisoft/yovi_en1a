@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from '../App';
 import Lobby from '../Lobby';
-import '@testing-library/jest-dom'; // MISSING IMPORT FIXED
+import '@testing-library/jest-dom';
 
 describe('App & Lobby Coverage Booster', () => {
   beforeEach(() => {
