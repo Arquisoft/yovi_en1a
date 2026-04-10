@@ -93,24 +93,22 @@ When('I play a {string} game on size {int}', { timeout: 300000 }, async function
   // 3. Keep playing randomly until the match finishes
   let finished = false
   let moveCount = 0
-  const maxMoves = size * size // Total cells on the hex board
+  const maxMoves = size * size
 
   while (!finished) {
     // Check if the winner modal appeared
-    const winnerPopupExists = await page.$('.winner-popup-overlay')
-    if (winnerPopupExists) {
-      const isVisible = await winnerPopupExists.isVisible().catch(() => false)
+    const winnerPopup = await page.$('.winner-popup-overlay')
+    if (winnerPopup) {
+      const isVisible = await winnerPopup.isVisible().catch(() => false)
       if (isVisible) {
-        const popupText = await winnerPopupExists.textContent()
+        const popupText = await winnerPopup.textContent()
         const assert = await import('assert')
         assert.ok(popupText.includes('WINS!'), `Expected popup to declare a winner (contain 'WINS!'), but got: ${popupText}`)
-
         finished = true
         break
       }
     }
 
-    // Safety: if we've made more moves than cells on the board, something is wrong
     if (moveCount > maxMoves) {
       throw new Error(`Game did not finish after ${moveCount} moves on a size-${size} board. Possible stuck state.`)
     }
@@ -118,8 +116,8 @@ When('I play a {string} game on size {int}', { timeout: 300000 }, async function
     // Find empty cells and make a move
     const emptyCells = await page.$$('button.hex-empty:not([disabled])')
     if (emptyCells.length > 0) {
-      const targetCell = emptyCells[Math.floor(Math.random() * emptyCells.length)]
       const cellCountBefore = emptyCells.length
+      const targetCell = emptyCells[Math.floor(Math.random() * emptyCells.length)]
 
       try {
         await targetCell.click({ timeout: 2000 })
@@ -129,23 +127,26 @@ When('I play a {string} game on size {int}', { timeout: 300000 }, async function
         continue
       }
 
-      // CRITICAL: Wait for the move to be processed (cell count should decrease)
-      // This prevents clicking faster than the API can respond
+      // Wait for BOTH the player's move AND the bot's response to complete
+      // (cell count should decrease by 2), OR the winner popup should appear
       try {
         await page.waitForFunction(
-          (prevCount) => document.querySelectorAll('button.hex-empty:not([disabled])').length < prevCount,
+          (prevCount) => {
+            const currentCount = document.querySelectorAll('button.hex-empty:not([disabled])').length
+            const popup = document.querySelector('.winner-popup-overlay')
+            return currentCount <= prevCount - 2 || (popup && popup.offsetHeight > 0)
+          },
           cellCountBefore,
-          { timeout: 15000 }
+          { timeout: 30000 }
         )
       } catch (e) {
-        // Move might not have registered, or game just finished — check winner on next loop
+        // Timeout — either game finished or something went wrong, check on next loop
       }
     } else {
-      // No empty cells — game should be over, wait briefly for winner popup
       await page.waitForTimeout(1000)
     }
 
-    // Check if the React app caught a backend API crash
+    // Check for fatal backend error
     const errorAlert = await page.$$('div[style*="color: rgb(255, 68, 68)"]')
     if (errorAlert.length > 0) {
       const text = await errorAlert[0].textContent()

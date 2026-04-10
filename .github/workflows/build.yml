@@ -121,25 +121,64 @@ jobs:
       - name: Wait for all services to be ready
         run: |
           echo "Waiting for Rust engine (port 4000)..."
+          RUST_READY=false
           for i in $(seq 1 300); do
-            curl -sf http://localhost:4000/status > /dev/null 2>&1 && break
+            if curl -sf http://localhost:4000/status > /dev/null 2>&1; then
+              RUST_READY=true
+              break
+            fi
             sleep 1
           done
+          if [ "$RUST_READY" != "true" ]; then
+            echo "ERROR: Rust engine did not start within 300 seconds!"
+            exit 1
+          fi
+          echo "✓ Rust engine ready"
+
           echo "Waiting for GameyAPI (port 3001)..."
+          GAMEY_READY=false
           for i in $(seq 1 30); do
-            curl -sf http://localhost:3001/health > /dev/null 2>&1 && break
+            if curl -sf http://localhost:3001/health > /dev/null 2>&1; then
+              GAMEY_READY=true
+              break
+            fi
             sleep 1
           done
+          if [ "$GAMEY_READY" != "true" ]; then
+            echo "ERROR: GameyAPI did not start within 30 seconds!"
+            exit 1
+          fi
+          echo "✓ GameyAPI ready"
+
           echo "Waiting for Users API (port 3000)..."
+          USERS_READY=false
           for i in $(seq 1 30); do
-            curl -sf http://localhost:3000/ > /dev/null 2>&1 && break
+            if curl -sf http://localhost:3000/ > /dev/null 2>&1; then
+              USERS_READY=true
+              break
+            fi
             sleep 1
           done
+          if [ "$USERS_READY" != "true" ]; then
+            echo "ERROR: Users API did not start within 30 seconds!"
+            exit 1
+          fi
+          echo "✓ Users API ready"
+
           echo "Waiting for Webapp (port 5173)..."
+          WEBAPP_READY=false
           for i in $(seq 1 30); do
-            curl -sf http://localhost:5173/ > /dev/null 2>&1 && break
+            if curl -sf http://localhost:5173/ > /dev/null 2>&1; then
+              WEBAPP_READY=true
+              break
+            fi
             sleep 1
           done
+          if [ "$WEBAPP_READY" != "true" ]; then
+            echo "ERROR: Webapp did not start within 30 seconds!"
+            exit 1
+          fi
+          echo "✓ Webapp ready"
           echo "All services ready!"
 
       - name: Run E2E Chromium

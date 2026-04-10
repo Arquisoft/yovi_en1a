@@ -10,7 +10,14 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/play': 'http://localhost:3001',
+      '/play': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+      '/health': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
     },
   },
   define: {
