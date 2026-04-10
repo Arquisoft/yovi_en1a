@@ -15,7 +15,8 @@ Given('I am on the login page', async function () {
     await dialog.accept()
   })
 
-  await page.goto('http://localhost')
+  const baseUrl = process.env.BASE_URL || 'http://localhost'
+  await page.goto(baseUrl)
 })
 
 When('I fill in {string} with {string}', async function (label, value) {
