@@ -68,7 +68,7 @@ const AvatarIcon: React.FC = () => (
 
 // ── API ────────────────────────────────────────────────────────────────
 
-const API_URL = import.meta.env.VITE_GAMEY_API_URL ?? 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_GAMEY_API_URL || 'http://localhost:3001';
 function useProfileStats() {
     const [stats, setStats] = useState<{
         winRate: number;
