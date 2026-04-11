@@ -48,7 +48,7 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - GAMEY_RUST_URL=http://20.251.170.191:4000
+      - GAMEY_RUST_URL=http://gamey:4000 
       - MONGODB_URI=mongodb://mongodb:27017/yovi
       - JWT_SECRET=${JWT_SECRET}
     depends_on:
