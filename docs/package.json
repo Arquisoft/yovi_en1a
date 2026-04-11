@@ -2,7 +2,8 @@
   "name": "docs",
   "version": "1.0.0",
  "scripts": {
-  "build": "shx rm -rf build && C:\\Ruby34-x64\\bin\\asciidoctor.bat -D build -a imagesdir=./images -r asciidoctor-diagram index.adoc && shx cp -R images build"
+  "build": "shx rm -rf build && C:\\Ruby34-x64\\bin\\asciidoctor.bat -D build -a imagesdir=./images -r asciidoctor-diagram index.adoc && shx cp -R images build",
+  "deploy": "gh-pages -d build"
 },
   "dependencies": {
     "gh-pages": "^6.3.0",
