@@ -5,7 +5,6 @@ COPY package.json package-lock.json ./
 RUN npm ci --silent
 COPY . .
 
-
 ARG VITE_API_URL
 ARG VITE_GAMEY_URL
 ARG VITE_GAMEY_API_URL
