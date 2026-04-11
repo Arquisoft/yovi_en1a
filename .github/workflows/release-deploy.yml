@@ -202,9 +202,10 @@ jobs:
     name: Publish webapp image
     runs-on: ubuntu-latest
     needs: e2e
-    permissions:
-      contents: read
-      packages: write
+    env:
+      VITE_API_URL: http://${{ secrets.DEPLOY_HOST }}:3000
+      VITE_GAMEY_URL: http://${{ secrets.DEPLOY_HOST }}:4000
+      VITE_GAMEY_API_URL: http://${{ secrets.DEPLOY_HOST }}:3001
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -217,12 +218,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: ghcr.io
           workdir: webapp
-          # THIS IS THE CRITICAL CHANGE:
+          # Ensure these are EXACTLY as written in your Dockerfile ARG lines
           buildargs: VITE_API_URL,VITE_GAMEY_URL,VITE_GAMEY_API_URL
-        env:
-          VITE_API_URL: http://${{ secrets.DEPLOY_HOST }}:3000
-          VITE_GAMEY_URL: http://${{ secrets.DEPLOY_HOST }}:4000
-          VITE_GAMEY_API_URL: http://${{ secrets.DEPLOY_HOST }}:3001
 
   docker-push-gamey:
     name: Publish gamey image
