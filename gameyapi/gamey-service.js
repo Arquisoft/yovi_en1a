@@ -355,6 +355,70 @@ function isBoardFull(moves, boardSize) {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
+// ─── Competition API ──────────────────────────────────────────────────────────
+// GET /play?position=<YEN>&bot_id=<optional>
+// Must be registered BEFORE GET /play/:gameId to avoid route conflicts.
+
+function yenLayoutToMoves(layout, boardSize) {
+  const rows = layout.split('/');
+  const moves = [];
+  for (let row = 0; row < rows.length; row++) {
+    for (let col = 0; col < rows[row].length; col++) {
+      const ch = rows[row][col];
+      if (ch === 'B') moves.push({ player: 0, x: col, y: row });
+      else if (ch === 'R') moves.push({ player: 1, x: col, y: row });
+    }
+  }
+  return moves;
+}
+
+function rowColToBarycentric(row, col, boardSize) {
+  return {
+    x: col,
+    y: row - col,
+    z: (boardSize - 1) - row,
+  };
+}
+
+gameyService.get('/play', async (req, res) => {
+  const { position, bot_id } = req.query;
+
+  if (!position)
+    return res.status(400).json({ error: "'position' query parameter is required" });
+
+  let yen;
+  try {
+    yen = JSON.parse(position);
+  } catch {
+    return res.status(400).json({ error: 'Invalid JSON in position parameter' });
+  }
+
+  const { size: boardSize, turn: nextPlayer, layout } = yen;
+  if (!boardSize || layout === undefined || nextPlayer === undefined)
+    return res.status(400).json({ error: 'YEN must include size, turn, and layout' });
+
+  let difficulty = 'medium';
+  if (bot_id) {
+    const id = bot_id.toLowerCase();
+    if (['easy', 'beginner', 'easy_level_bot'].includes(id)) difficulty = 'beginner';
+    else if (['advanced', 'hard'].includes(id))              difficulty = 'advanced';
+  }
+
+  const moves = yenLayoutToMoves(layout, boardSize);
+
+  try {
+    const coords = await getBotMove(moves, boardSize, nextPlayer, difficulty);
+    if (!coords)
+      return res.status(422).json({ error: 'No legal moves available' });
+
+    const bary = rowColToBarycentric(coords.y, coords.x, boardSize);
+    return res.json({ coords: bary });
+  } catch (err) {
+    console.error('[GET /play]', err.message);
+    return res.status(502).json({ error: 'Game engine unavailable', detail: err.message });
+  }
+});
+
 gameyService.post('/play/create', (req, res) => {
   const { mode, boardSize = 11, difficulty } = req.body;
   if (!['hvh', 'hvb'].includes(mode))

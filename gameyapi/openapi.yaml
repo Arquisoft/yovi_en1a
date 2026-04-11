@@ -21,6 +21,74 @@ tags:
     description: Service and engine status
 
 paths:
+  /play:
+    get:
+      summary: Request a bot move for a given board position
+      parameters:
+        - name: position
+          in: query
+          required: true
+          description: Current board position in YEN format
+          schema:
+            type: string
+            example: '{"size":3,"turn":0,"players":["B","R"],"layout":"./B./..."}'
+        - name: bot_id
+          in: query
+          required: false
+          description: >
+            Selects which bot to use. Accepted values: "easy" | "beginner" |
+            "easy_level_bot" for the easy bot; "advanced" | "hard" for the
+            hard bot; anything else (or omitted) defaults to gamer_bot (medium).
+          schema:
+            type: string
+            example: beginner
+      responses:
+        '200':
+          description: Bot chose a move or special action
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - description: A board move in barycentric coordinates
+                    type: object
+                    required: [ coords ]
+                    properties:
+                      coords:
+                        type: object
+                        required: [ x, y, z ]
+                        properties:
+                          x: { type: integer }
+                          y: { type: integer }
+                          z: { type: integer }
+                    example:
+                      coords: { x: 1, y: 1, z: 0 }
+                  - description: A special action (swap, resign, etc.)
+                    type: object
+                    required: [ action ]
+                    properties:
+                      action:
+                        type: string
+                        enum: [ swap, resign ]
+                    example:
+                      action: swap
+        '400':
+          description: Missing or malformed position parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: No legal moves available (board is full)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Rust game engine is unreachable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /play/create:
     post:
       tags: [Game]
