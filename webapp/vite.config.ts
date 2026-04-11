@@ -19,8 +19,5 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
-  },
-  define: {
-    'import.meta.env.VITE_GAMEY_API_URL': JSON.stringify(''),
-  },
+  }
 })
