@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "node users-service.js",
+    "start": "node gamey-service.js",
     "test": "vitest",
     "test:coverage": "vitest run --coverage"
   },
