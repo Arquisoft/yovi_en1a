@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   test: {
     globals: true,
     environment: 'jsdom',
