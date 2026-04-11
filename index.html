@@ -519,7 +519,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#section-technical-risks">11. Risks and Technical Debts</a></li>
-<li><a href="#section-glossary">12. Glossary</a></li>
+<li><a href="#_glossary">12. Glossary</a></li>
 </ul>
 </div>
 </div>
@@ -1050,11 +1050,11 @@ These stakeholders determine the extent and the level of detail of your work and
 <div class="sect2">
 <h3 id="_business_context">3.1. Business Context</h3>
 <div class="paragraph">
-<p>The business context defines how YOVI_0 interacts with external entities. The system acts as a standardized provider for both human players and third-party bots, ensuring interoperability through the <strong>YEN notation</strong>.</p>
+<p>The business context defines how YOVI interacts with external entities. The system acts as a standardized provider for both human players and third-party bots, ensuring interoperability through the <strong>YEN notation</strong>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/context-diagram.svg" alt="context diagram" width="417" height="350">
+<img src="./images/context-diagram.svg" alt="context diagram" width="412" height="387">
 </div>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -1129,7 +1129,7 @@ These stakeholders determine the extent and the level of detail of your work and
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Internal Services</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">HTTP / JSON</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Communication between the Webapp and the <strong>Node.js User Service</strong> (Port 3000) and the <strong>Rust GameY Engine</strong> (Port 4000).</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Communication between the Webapp, the <strong>Node.js User Service</strong> (Port 3000), the <strong>Node.js GameY API Gateway</strong> (Port 3001), and the underlying <strong>Rust GameY Engine</strong> (Port 4000).</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Public Bot API</strong></p></td>
@@ -1144,7 +1144,7 @@ These stakeholders determine the extent and the level of detail of your work and
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Game Logic Flow:</strong> Move submissions are sent via JSON POST to the Rust service. The service parses the YEN layout, validates the move, and returns the updated state.</p>
+<p><strong>Game Logic Flow:</strong> Move submissions from the Webapp or external bots are sent via JSON POST to the GameY API Gateway (Node.js). The gateway acts as a proxy, forwarding the YEN payload to the Rust Engine, which validates the move and returns the updated state back through the gateway.</p>
 </li>
 <li>
 <p><strong>Authentication Flow:</strong> Credentials are sent via HTTP POST to the User Service, which processes the persistence simulation and returns a status code.</p>
@@ -1200,6 +1200,9 @@ These stakeholders determine the extent and the level of detail of your work and
 <p><strong>Webapp (React):</strong> Serves as the presentation layer and the primary entry point for human users.</p>
 </li>
 <li>
+<p><strong>API Gateway (Node.js):</strong> The <code>gameyapi</code> service acting as the public REST interface, routing YEN payloads to the underlying Rust engine (Port 3001).</p>
+</li>
+<li>
 <p><strong>Logic Engine (Rust):</strong> A stateless, isolated service dedicated purely to high-performance game rule validation and AI calculations (Port 4000).</p>
 </li>
 <li>
@@ -1239,11 +1242,11 @@ These stakeholders determine the extent and the level of detail of your work and
 <p>Level 1 represents the highest level of abstraction, showing the main subsystems of the YOVI_0 system and their interactions. Each subsystem is responsible for a specific aspect of the system&#8217;s functionality, and they communicate with each other to fulfill the requirements of the project.</p>
 </div>
 <div class="paragraph">
-<p>The following diagram shows the top-level decomposition of the YOVI_0 system into its three primary subsystems: the Frontend (Webapp), the User Management (User Service), and the Logic Engine (GameY).</p>
+<p>The following diagram shows the top-level decomposition of the YOVI_0 system into its four primary subsystems: the Frontend (Webapp), the User Management (User Service), the API Gateway (GameY API), and the Logic Engine (GameY).</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/level1-whitebox.png" alt="level1 whitebox" width="597" height="354">
+<img src="./images/level1-whitebox.png" alt="level1 whitebox" width="698" height="415">
 </div>
 </div>
 <div class="sect3">
@@ -1269,6 +1272,10 @@ These stakeholders determine the extent and the level of detail of your work and
 <td class="tableblock halign-left valign-top"><p class="tableblock">Handles administrative logic: user registration, session management, and persists match statistics to the DBMS.</p></td>
 </tr>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>GameY API Gateway</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Node.js proxy serving as the public REST API. It handles route management and passes JSON payloads to the underlying Rust engine.</p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>GameY Engine</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The high-performance "brain." Written in Rust for memory safety and speed; it validates game rules and provides AI moves via YEN notation.</p></td>
 </tr>
@@ -1283,11 +1290,11 @@ These stakeholders determine the extent and the level of detail of your work and
 <div class="sect2">
 <h3 id="_level_2_webapp_frontend_subsystem">5.2. Level 2: Webapp (Frontend Subsystem)</h3>
 <div class="paragraph">
-<p>The Webapp is a Single Page Application (SPA) built with React and Vite. It acts as the primary user interface and the orchestrator of requests between the User Service and the GameY Engine.</p>
+<p>The Webapp is a Single Page Application (SPA) built with React and Vite. It acts as the primary user interface and the orchestrator of requests between the User Service and the GameY API Gateway.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/webapp-level2.png" alt="webapp level2" width="650" height="439">
+<img src="./images/webapp-level2.png" alt="webapp level2" width="762" height="525">
 </div>
 </div>
 <div class="sect3">
@@ -1335,10 +1342,10 @@ These stakeholders determine the extent and the level of detail of your work and
 <div class="ulist">
 <ul>
 <li>
-<p>It defaults to <a href="http://localhost:3000" class="bare">http://localhost:3000</a> (Users) and <a href="http://localhost:4000" class="bare">http://localhost:4000</a> (GameY) for local development.</p>
+<p>It defaults to <a href="http://localhost:3000" class="bare">http://localhost:3000</a> (Users) and <a href="http://localhost:3001" class="bare">http://localhost:3001</a> (GameY API) for local development.</p>
 </li>
 <li>
-<p>It allows overrides via VITE_API_URL and VITE_GAMEY_URL for production/containerized environments.</p>
+<p>It allows overrides via VITE_API_URL and VITE_GAMEY_API_URL for production/containerized environments.</p>
 </li>
 </ul>
 </div>
@@ -1351,13 +1358,13 @@ These stakeholders determine the extent and the level of detail of your work and
 <p><strong>User Registration</strong>: Initiates a fetch POST request with a JSON payload containing the username.</p>
 </li>
 <li>
-<p><strong>Chained Validation</strong>: Upon a successful (200 OK) response from the User Service, it triggers the checkGamey() function. This ensures that the player is only notified that "Game is ready" if the Rust engine is reachable.</p>
+<p><strong>Chained Validation</strong>: Upon a successful (200 OK) response from the User Service, it triggers the checkGamey() function. This ensures that the player is only notified that "Game is ready" if the API Gateway is reachable.</p>
 </li>
 </ul>
 </div>
 </li>
 <li>
-<p><strong>Resilience</strong>: The UI is designed to be fail-safe. If the GameY engine is down, the user is still successfully registered, but the system displays a "Game is not ready" warning to manage user expectations.</p>
+<p><strong>Resilience</strong>: The UI is designed to be fail-safe. If the GameY API is down, the user is still successfully registered, but the system displays a "Game is not ready" warning to manage user expectations.</p>
 </li>
 </ol>
 </div>
@@ -1370,7 +1377,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/gamey-level2.png" alt="gamey level2" width="811" height="379">
+<img src="./images/gamey-level2.png" alt="gamey level2" width="899" height="461">
 </div>
 </div>
 <div class="sect3">
@@ -1453,7 +1460,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <h3 id="_level_2_user_service">5.4. Level 2: User Service</h3>
 <div class="imageblock">
 <div class="content">
-<img src="./images/user-service-level3.png" alt="user service level3" width="650" height="918">
+<img src="./images/user-service-level3.png" alt="user service level3" width="719" height="1018">
 </div>
 </div>
 <div class="sect3">
@@ -1508,11 +1515,11 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <p><strong>Description:</strong> This scenario illustrates the core game loop when a human player interacts with the frontend to play against the system&#8217;s AI. It highlights the transformation of UI interactions into the standardized YEN notation and the delegation of logic to the high-performance Rust engine.</p>
 </div>
 <div class="paragraph">
-<p><strong>Notable Aspects:</strong> The Webapp acts as a pure presentation layer. It does not calculate game rules. All coordinate conversions (Barycentric/Index) and move validations are strictly handled by the <code>GameY Engine</code>.</p>
+<p><strong>Notable Aspects:</strong> The Webapp acts as a pure presentation layer. Move validations are routed through the <code>GameY API (Node.js)</code>, which proxies the request to the <code>GameY Engine (Rust)</code>. All coordinate conversions and rule logic are strictly handled by the Rust engine.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/human-vs-ai-move.png" alt="human vs ai move" width="687" height="587">
+<img src="./images/human-vs-ai-move.png" alt="human vs ai move" width="924" height="680">
 </div>
 </div>
 </div>
@@ -1526,7 +1533,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/human-vs-human.png" alt="human vs human" width="783" height="488">
+<img src="./images/human-vs-human.png" alt="human vs human" width="949" height="565">
 </div>
 </div>
 </div>
@@ -1540,7 +1547,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/match-conclusion.png" alt="match conclusion" width="917" height="519">
+<img src="./images/match-conclusion.png" alt="match conclusion" width="1194" height="580">
 </div>
 </div>
 </div>
@@ -1554,7 +1561,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/auth-flow.png" alt="auth flow" width="690" height="544">
+<img src="./images/auth-flow.png" alt="auth flow" width="688" height="544">
 </div>
 </div>
 </div>
@@ -1568,7 +1575,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/invalid-move.png" alt="invalid move" width="731" height="484">
+<img src="./images/invalid-move.png" alt="invalid move" width="999" height="577">
 </div>
 </div>
 <div style="page-break-after: always;"></div>
@@ -1583,11 +1590,11 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <div class="sect3">
 <h4 id="_motivation">7.1.1. Motivation</h4>
 <div class="paragraph">
-<p>The system runs on a single Azure Virtual Machine (Ubuntu 24.04 LTS). Azure was chosen for its reliability and easy VM setup. A single VM keeps costs low while still resembling a real production environment. All components are containerized with Docker so that the setup works the same way in development and in production, and deployments via GitHub Actions stay simple.</p>
+<p>The system runs on a single Azure Virtual Machine (Ubuntu 24.04 LTS). Azure was chosen for its reliability and straightforward VM provisioning. A single VM keeps costs low while still resembling a real production environment. All components are containerised with Docker and orchestrated via Docker Compose, ensuring identical behaviour in development and production. Deployments are automated through GitHub Actions, pulling pre-built images from the GitHub Container Registry (<code>ghcr.io/arquisoft/yovi_en1a</code>).</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/level1-whitebox.svg" alt="level1 whitebox" width="906" height="499">
+<img src="./images/level1-whitebox.svg" alt="level1 whitebox" width="1358" height="429">
 </div>
 </div>
 </div>
@@ -1597,14 +1604,25 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <div class="sect3">
 <h4 id="_motivation_2">7.2.1. Motivation</h4>
 <div class="paragraph">
-<p>Docker Compose manages all containers in a single configuration file. All services run on a shared internal network (<code>monitor-net</code>) so they can talk to each other without exposing unnecessary ports to the outside. The Webapp is compiled with the backend URLs baked in at build time (<code>VITE_API_URL</code>, <code>VITE_GAMEY_URL</code>), so no extra runtime configuration is needed.</p>
+<p>Docker Compose manages all containers in a single configuration file. All services run on a shared internal bridge network (<code>monitor-net</code>) so they can communicate without exposing unnecessary ports. Container images are pulled from the GitHub Container Registry.</p>
 </div>
 <div class="paragraph">
-<p>The diagram below shows how containers are connected inside <code>monitor-net</code>. Grafana maps its internal port 3000 to host port 9091 to avoid clashing with the Users service.</p>
+<p>The webapp receives backend URLs at build time via Vite environment variables (<code>VITE_API_URL</code>, <code>VITE_GAMEY_URL</code>, <code>VITE_GAMEY_API_URL</code>). The <code>gamey-service</code> Node.js gateway acts as an intermediary between the webapp and the Rust <code>gamey</code> engine, handling protocol and API translation. MongoDB includes a health check so dependent services only start once the database is ready.</p>
 </div>
+</div>
+<div class="sect3">
+<h4 id="_level_2a_application_services">7.2.2. Level 2a: Application Services</h4>
 <div class="imageblock">
 <div class="content">
-<img src="./images/level2-docker.svg" alt="level2 docker" width="443" height="470">
+<img src="./images/level2-app.svg" alt="level2 app" width="524" height="627">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_level_2b_observability_stack">7.2.3. Level 2b: Observability Stack</h4>
+<div class="imageblock">
+<div class="content">
+<img src="./images/level2-obs.svg" alt="level2 obs" width="376" height="560">
 </div>
 </div>
 </div>
@@ -1627,33 +1645,38 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">webapp</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (Nginx)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Serves the React/Vite frontend. Accessible via Port 80.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (React/Vite)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Serves the compiled frontend. Accessible on Port 80. Backend URLs are baked in at build time via Vite env vars.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">users</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (Node.js)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Handles identity, history, and stats. Accessible via Port 3000.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles identity, match history, and stats. Accessible on Port 3000. Requires MongoDB to be healthy before starting.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gamey-service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (Node.js API Gateway)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Intermediary gateway between the webapp and the Rust game engine. Accessible on Port 3001. Forwards requests to <code>gamey</code> via <code>GAMEY_RUST_URL</code>.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gamey</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (Rust)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Logic for Game Y moves and win validation. Accessible via Port 4000.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Core game logic, move validation, and win detection. Accessible on Port 4000.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">mongodb</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (MongoDB)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent document store for user profiles and match history. Accessible internally on Port 27017.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent document store for user profiles and match history. Includes a health check (<code>mongosh ping</code>) used by dependent services.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">prometheus</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Scrapes metrics from the services via the internal network.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (prom/prometheus)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scrapes metrics from <code>users</code> via the internal network. Configuration is bind-mounted from the repository.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">grafana</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Visualizes metrics. Mapped to Port 9091 to avoid conflict with the Users service.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Container (grafana/grafana)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Visualises metrics from Prometheus. Internal port 3000 is mapped to host port 9091 to avoid conflict with the <code>users</code> service.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1663,7 +1686,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <div class="sect3">
 <h4 id="_motivation_3">7.4.1. Motivation</h4>
 <div class="paragraph">
-<p>The application requires its data to survive when containers restart. Prometheus and Grafana use bind mounts so their configuration files live directly in the repository and are version-controlled like any other code. MongoDB uses a named Docker volume so that user and game data persists across <code>docker-compose down</code> and <code>up</code> cycles without any manual intervention.</p>
+<p>Data must survive container restarts and redeployments. Prometheus and Grafana use bind mounts so their configuration lives directly in the repository and is version-controlled. MongoDB uses a named Docker volume so that user and game data persists independently of the container lifecycle.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -1675,12 +1698,12 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <tr>
 <th class="tableblock halign-left valign-top">Element</th>
 <th class="tableblock halign-left valign-top">Storage Strategy</th>
-<th class="tableblock halign-left valign-top">Path</th>
+<th class="tableblock halign-left valign-top">Path / Volume</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Metrics Config</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus Config</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Docker Bind Mount</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>./users/monitoring/prometheus</code> → <code>/etc/prometheus</code></p></td>
 </tr>
@@ -1691,8 +1714,8 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">User &amp; Game Data</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Named Volume (<code>mongodb_data</code>)</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Managed by Docker. Data survives restarts and redeployments independently of the container image.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker Named Volume (<code>mongo_data</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Managed by Docker. Mounted at <code>/data/db</code>. Persists across <code>docker-compose down/up</code> independently of the container image.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1701,28 +1724,40 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <div class="sect2">
 <h3 id="_network_and_connectivity">7.5. Network and Connectivity</h3>
 <div class="paragraph">
-<p>All containers communicate over the <code>monitor-net</code> bridge network. Only the following ports are exposed to the host:</p>
+<p>All containers communicate over the <code>monitor-net</code> bridge network (Docker default bridge driver). The following ports are exposed to the host:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Port 80</strong>: Web application entry point.</p>
+<p><strong>Port 80</strong>: Webapp entry point (React/Vite frontend).</p>
 </li>
 <li>
-<p><strong>Port 3000</strong>: Users REST API (used by Webapp and Bots).</p>
+<p><strong>Port 3000</strong>: Users REST API (consumed by webapp and external bots).</p>
 </li>
 <li>
-<p><strong>Port 4000</strong>: Game Engine API (YEN notation).</p>
+<p><strong>Port 3001</strong>: Gamey-service API Gateway (consumed by webapp).</p>
 </li>
 <li>
-<p><strong>Port 27017</strong>: MongoDB — internal only, not exposed to the host.</p>
+<p><strong>Port 4000</strong>: Rust Game Engine (consumed by gamey-service and directly by webapp for real-time moves).</p>
 </li>
 <li>
-<p><strong>Port 9090 / 9091</strong>: Prometheus and Grafana for system observability.</p>
+<p><strong>Port 27017</strong>: MongoDB - exposed to the host in port 27017.</p>
+</li>
+<li>
+<p><strong>Port 9090</strong>: Prometheus - metrics scraping and admin queries.</p>
+</li>
+<li>
+<p><strong>Port 9091</strong>: Grafana dashboards (remapped from internal port 3000).</p>
 </li>
 </ul>
 </div>
+<div class="sect3">
+<h4 id="_startup_dependencies">7.5.1. Startup Dependencies</h4>
+<div class="paragraph">
+<p>MongoDB must pass its health check (<code>mongosh --eval "db.adminCommand('ping')"</code>, every 5 s, up to 5 retries) before the <code>users</code> service starts. The <code>webapp</code> waits for both <code>users</code> and <code>gamey-service</code> to be available. The <code>gamey-service</code> waits for <code>gamey</code> to be available.</p>
+</div>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 </div>
@@ -1815,7 +1850,7 @@ Instead of relying on inefficient client-side polling, the Node.js User Service 
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/api-communication-flow.png" alt="api communication flow" width="699" height="452">
+<img src="./images/api-communication-flow.png" alt="api communication flow" width="941" height="513">
 </div>
 </div>
 </div>
@@ -1896,7 +1931,7 @@ Instead of relying on inefficient client-side polling, the Node.js User Service 
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>GAMEY_RUST_URL</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Game API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GameY API</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code><a href="http://gamey:4000" class="bare">http://gamey:4000</a></code></p></td>
 </tr>
 <tr>
@@ -1947,7 +1982,7 @@ Instead of relying on inefficient client-side polling, the Node.js User Service 
 <p><strong>User Service (Node.js):</strong> Implements a strict <strong>origin whitelist</strong> using the <code>cors</code> middleware. Allowed origins are configured via the <code>ALLOWED_ORIGINS</code> environment variable (comma-separated). By default, only <code>localhost</code> origins are permitted. Requests from unlisted origins are rejected with an error.</p>
 </li>
 <li>
-<p><strong>Game API (<code>gameyapi</code>):</strong> Currently uses a permissive CORS policy (<code>cors()</code> with no origin restriction) to facilitate external bot integration. This will be tightened before production deployment.</p>
+<p><strong>GameY API (<code>gameyapi</code>):</strong> Currently uses a permissive CORS policy (<code>cors()</code> with no origin restriction) to facilitate external bot integration. This will be tightened before production deployment.</p>
 </li>
 </ul>
 </div>
@@ -2023,7 +2058,7 @@ Instead of relying on inefficient client-side polling, the Node.js User Service 
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/error-propagation.png" alt="error propagation" width="754" height="561">
+<img src="./images/error-propagation.png" alt="error propagation" width="748" height="561">
 </div>
 </div>
 <div class="paragraph">
@@ -2035,7 +2070,7 @@ Instead of relying on inefficient client-side polling, the Node.js User Service 
 <p><strong>Rust Logic Engine:</strong> Returns precise HTTP error codes (<code>400 Bad Request</code> for invalid YEN/rule violations, <code>500 Internal Server Error</code> for unexpected failures). The JSON body contains a machine-readable <code>error</code> field.</p>
 </li>
 <li>
-<p><strong>Node.js Middleware (Game API / User Service):</strong> Catches errors from upstream Rust calls, logs them via <code>console.error</code>, and maps them to sanitized, client-facing JSON responses. Internal error details (stack traces, Rust error messages) are not forwarded to the browser.</p>
+<p><strong>Node.js Middleware (GameY API / User Service):</strong> Catches errors from upstream Rust calls, logs them via <code>console.error</code>, and maps them to sanitized, client-facing JSON responses. Internal error details (stack traces, Rust error messages) are not forwarded to the browser.</p>
 </li>
 <li>
 <p><strong>React Frontend:</strong> Reads HTTP status codes from API responses. Non-2xx responses trigger UI-level feedback (e.g., warning toasts, reverting optimistic state updates). The Webapp never crashes on expected error payloads.</p>
@@ -2148,176 +2183,499 @@ There you will find links and examples about ADR.</p>
 <div class="sect1">
 <h2 id="section-quality-scenarios">10. Quality Requirements</h2>
 <div class="sectionbody">
-<div class="sidebarblock arc42help">
-<div class="content">
-<div class="paragraph">
-<div class="title">Content</div>
-<p>This section contains all quality requirements as quality tree with scenarios. The most important ones have already been described in section 1.2. (quality goals)</p>
-</div>
-<div class="paragraph">
-<p>Here you can also capture quality requirements with lesser priority,
-which will not create high risks when they are not fully achieved.</p>
-</div>
-<div class="paragraph">
-<div class="title">Motivation</div>
-<p>Since quality requirements will have a lot of influence on architectural
-decisions you should know for every stakeholder what is really important to them,
-concrete and measurable.</p>
-</div>
-<div class="paragraph">
-<div class="title">Further Information</div>
-<p>See <a href="https://docs.arc42.org/section-10/">Quality Requirements</a> in the arc42 documentation.</p>
-</div>
-</div>
-</div>
 <div class="sect2">
 <h3 id="_quality_tree">10.1. Quality Tree</h3>
-<div class="sidebarblock arc42help">
-<div class="content">
 <div class="paragraph">
-<div class="title">Content</div>
-<p>The quality tree (as defined in ATAM – Architecture Tradeoff Analysis Method) with quality/evaluation scenarios as leafs.</p>
+<p>The following quality tree summarizes the most important quality goals and links them to the concrete scenarios described in the next section.
+Higher-priority goals are listed first.</p>
 </div>
-<div class="paragraph">
-<div class="title">Motivation</div>
-<p>The tree structure with priorities provides an overview for a sometimes large number of quality requirements.</p>
-</div>
-<div class="paragraph">
-<div class="title">Form</div>
-<p>The quality tree is a high-level overview of the quality goals and requirements:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>tree-like refinement of the term "quality". Use "quality" or "usefulness" as a root</p>
-</li>
-<li>
-<p>a mind map with quality categories as main branches</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>In any case the tree should include links to the scenarios of the following section.</p>
-</div>
-</div>
-</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Quality Category</th>
+<th class="tableblock halign-left valign-top">Sub-quality</th>
+<th class="tableblock halign-left valign-top">Related Scenario(s)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Performance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response time, throughput</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">QS-01, QS-02</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Usability</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Learnability, feedback clarity</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">QS-03, QS-04</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Reliability</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Availability, fault tolerance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">QS-05, QS-06</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Security</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Authentication, data protection</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">QS-07, QS-08</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Maintainability</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Modifiability, testability</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">QS-09, QS-10</p></td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="sect2">
 <h3 id="_quality_scenarios">10.2. Quality Scenarios</h3>
-<div class="sidebarblock arc42help">
-<div class="content">
+<div class="sect3">
+<h4 id="_qs_01_board_updates_are_reflected_in_real_time_for_all_players">10.2.1. QS-01: Board updates are reflected in real time for all players</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Player placing a tile during a multiplayer game session</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stimulus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A player places a tile on the board</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System under normal load, one or two players depending on the game mode</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game server and frontend rendering layer</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The placed tile appears on all other players' boards</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response Measure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The board update is visible to all participants within 500 milliseconds in at least 95% of placements</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_qs_02_system_handles_peak_concurrent_load">10.2.2. QS-02: System handles peak concurrent load</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Multiple players starting game sessions simultaneously</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stimulus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">100 concurrent users are playing active games at the same time</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Peak usage period</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Backend services and database layer</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">All game sessions continue without interruption; no board state is lost or corrupted</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response Measure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Error rate stays below 1%; average response time stays below 2 seconds</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_qs_03_new_user_can_start_a_game_without_prior_instructions">10.2.3. QS-03: New user can start a game without prior instructions</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">First-time user with no prior knowledge of the system</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stimulus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User opens the application and attempts to start a game</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Standard browser, no tutorial shown beforehand</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Frontend UI and onboarding flow</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The user finds the game lobby, joins or starts a game, and successfully places their first tile</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response Measure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">At least 80% of test users place their first tile within 3 minutes without external help</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_qs_04_player_receives_clear_feedback_when_a_tile_placement_is_invalid">10.2.4. QS-04: Player receives clear feedback when a tile placement is invalid</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Player during an active game session</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stimulus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Player attempts to place a tile in a position not allowed by the rules</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Normal gameplay, with optional features</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Frontend validation and feedback layer</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The invalid placement is visually indicated</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response Measure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No raw error message or silent failure occurs; feedback is shown within 200 milliseconds of the attempt</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_qs_05_turn_is_skipped_automatically_when_the_time_limit_expires">10.2.5. QS-05: Turn is skipped automatically when the time limit expires</h4>
 <div class="paragraph">
-<div class="title">Contents</div>
-<p>Concretization of (sometimes vague or implicit) quality requirements using (quality) scenarios.</p>
+<p>This is part of an optional improvement we will next implement:</p>
 </div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game timer running on the server</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stimulus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A player does not place a tile before their turn time limit expires</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Active multiplayer or single-player game session</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Turn management logic in the game server</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The player&#8217;s turn is skipped and the next player&#8217;s turn begins without manual intervention</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response Measure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The turn transition happens within 1 second of the timer expiring in 100% of cases; the board state remains consistent for all players</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_qs_06_application_is_available_during_expected_usage_hours">10.2.6. QS-06: Application is available during expected usage hours</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">End users accessing the system at any time</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stimulus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User attempts to access the application</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Non-maintenance period, standard operating conditions</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deployment infrastructure and services</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The application loads and is fully functional</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response Measure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">System availability is at least 99% measured monthly, excluding scheduled maintenance windows</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_qs_07_unauthorized_users_cannot_access_protected_resources">10.2.7. QS-07: Unauthorized users cannot access protected resources</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unauthenticated or malicious external actor</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stimulus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Attempt to access player data or game state via the API without a valid session token</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Any environment, including production</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API authentication and authorization layer</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The request is rejected with an appropriate HTTP error (401 or 403)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response Measure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Zero successful unauthorized accesses to protected endpoints in security audits</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_qs_08_passwords_and_sensitive_data_are_stored_securely">10.2.8. QS-08: Passwords and sensitive data are stored securely</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Developer or database administrator</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stimulus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Inspection of the data stored in the database</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Any environment where user accounts exist</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User management service and persistence layer</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No plaintext passwords or sensitive tokens are found in storage.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response Measure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">All passwords are hashed with a modern algorithm using bcrypt, no plaintext credentials exist in any table or log</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_qs_09_a_developer_can_add_a_new_tile_type_with_limited_effort">10.2.9. QS-09: A developer can add a new tile type with limited effort</h4>
 <div class="paragraph">
-<p>These scenarios describe what should happen when a stimulus arrives at the system.</p>
+<p>For optional requirements and possible extensions, the application must be scalable.</p>
 </div>
-<div class="paragraph">
-<p>For architects, two kinds of scenarios are important:</p>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Developer extending the system</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stimulus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new tile shape or type needs to be added to the game</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Development environment, working codebase</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game logic module and tile configuration layer</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The new tile type appears correctly on the board and follows placement rules</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response Measure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The change requires modifications in no more than 3 files and can be completed in under 2 hours by a developer familiar with the codebase</p></td>
+</tr>
+</tbody>
+</table>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p>Usage scenarios (also called application scenarios or use case scenarios) describe the system’s runtime reaction to a certain stimulus. This also includes scenarios that describe the system’s efficiency or performance. Example: The system reacts to a user’s request within one second.</p>
-</li>
-<li>
-<p>Change scenarios describe a modification of the system or of its immediate environment. Example: Additional functionality is implemented or requirements for a quality attribute change.</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<div class="title">Motivation</div>
-<p>Scenarios make quality requirements concrete and allow to
-more easily measure or decide whether they are fulfilled.</p>
-</div>
-<div class="paragraph">
-<p>Especially when you want to assess your architecture using methods like
-ATAM you need to describe your quality goals (from section 1.2)
-more precisely down to a level of scenarios that can be discussed and evaluated.</p>
-</div>
-<div class="paragraph">
-<div class="title">Form</div>
-<p>Tabular or free form text.</p>
-</div>
-</div>
-</div>
+<div class="sect3">
+<h4 id="_qs_10_the_test_suite_covers_critical_game_logic">10.2.10. QS-10: The test suite covers critical game logic</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Development team running CI pipeline</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stimulus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A pull request is submitted with changes to the board or tile placement logic</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Environment</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Automated CI environment with GitHub Actions.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artifact</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unit and integration test suite</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The pipeline runs all relevant tests and reports pass or fail clearly</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Response Measure</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Code coverage for core game logic modules is at least 80%; the CI pipeline completes in under 10 minutes</p></td>
+</tr>
+</tbody>
+</table>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="section-technical-risks">11. Risks and Technical Debts</h2>
 <div class="sectionbody">
-<div class="sidebarblock arc42help">
-<div class="content">
 <div class="paragraph">
-<div class="title">Contents</div>
-<p>A list of identified technical risks or technical debts, ordered by priority</p>
+<p>The following table lists the identified technical risks and technical debts within the YOVI_0 architecture. A Risk describes a potential future problem (e.g., security vulnerabilities or system overload), while a Technical Debt represents incomplete implementations or shortcuts taken during development that need to be refactored before a production release. The items are ordered by their priority and potential impact on the system.</p>
 </div>
-<div class="paragraph">
-<div class="title">Motivation</div>
-<p>“Risk management is project management for grown-ups” (Tim Lister, Atlantic Systems Guild.)</p>
-</div>
-<div class="paragraph">
-<p>This should be your motto for systematic detection and evaluation of risks and technical debts in the architecture, which will be needed by management stakeholders (e.g. project managers, product owners) as part of the overall risk analysis and measurement planning.</p>
-</div>
-<div class="paragraph">
-<div class="title">Form</div>
-<p>List of risks and/or technical debts, probably including suggested measures to minimize, mitigate or avoid risks or reduce technical debts.</p>
-</div>
-<div class="paragraph">
-<div class="title">Further Information</div>
-<p>See <a href="https://docs.arc42.org/section-11/">Risks and Technical Debt</a> in the arc42 documentation.</p>
-</div>
-</div>
-</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 11.1111%;">
+<col style="width: 11.1111%;">
+<col style="width: 33.3333%;">
+<col style="width: 44.4445%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Priority</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Name &amp; Description</th>
+<th class="tableblock halign-left valign-top">Mitigation Strategy / Next Steps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">High</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Risk</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Missing Rate Limiting on Public API</strong><br>
+The system exposes a public REST API for external bots. Currently, there is no rate limiting implemented. This makes the system highly susceptible to abuse, spam, or accidental Denial of Service (DoS) attacks from malfunctioning third-party bots.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Implement rate-limiting middleware (e.g., <code>express-rate-limit</code>) on the Node.js services or throttle requests via an Nginx reverse proxy before production deployment.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">High</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Risk</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Permissive CORS Policy</strong><br>
+The GameY API (<code>gameyapi</code>) currently uses a permissive CORS policy (<code>cors()</code> with no origin restriction) to easily facilitate external bot integration during development. This allows any domain to send requests to the logic engine.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Tighten the CORS configuration by implementing a strict origin whitelist for the GameY API, similar to the <code>ALLOWED_ORIGINS</code> setup used in the User Service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Medium</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Runtime Secrets Management</strong><br>
+While sensitive configuration data is securely stored in GitHub Repository Secrets for the CI/CD pipeline, they are ultimately injected as plain environment variables into the production VM via docker-compose.yml. While this effectively prevents source-code leaks, it leaves the runtime environment slightly vulnerable if the host machine is compromised.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Migrate the runtime environment to use native Docker Secrets or a vault-based solution for the production hardening phase, ensuring secrets are never exposed in plain text on the host filesystem.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Medium</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Incomplete Session Management (JWT)</strong><br>
+While the architecture envisions a JWT-based authentication flow, and the <code>jsonwebtoken</code> dependency is present in the <code>users</code> service, the React Webapp does not yet strictly enforce or attach an <code>Authorization: Bearer &lt;token&gt;</code> header on every protected API request.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Complete the implementation of JSON Web Tokens (JWT) in the Node.js User Service and finalize the token handling in the Webapp&#8217;s API calls.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Medium</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Lack of Real-time Push (WebSockets)</strong><br>
+The "Human vs. Human" multiplayer scenario currently relies on REST API calls. Asynchronous push communication (WebSockets) is planned but not yet implemented. Relying on client-side polling for multiplayer turns is inefficient and degrades the User Experience.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Integrate WebSockets (e.g., via Socket.IO) into the User Service to actively push game state updates directly to connected React clients.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Medium</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pending Match History Persistence</strong><br>
+The data mapping strategy for storing match results as separate documents in a <code>matches</code> collection (referencing user `_id`s) is currently marked as "planned". Match statistics cannot be reliably retrieved yet.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Implement the MongoDB data mapping for the <code>matches</code> collection to ensure persistent data storage upon match conclusion.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Low</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Debt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Decentralized Logging</strong><br>
+All services currently emit logs exclusively to stdout/stderr. While Docker captures these, there is no centralized log aggregation. This makes debugging difficult in a multi-container environment.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Deploy a centralized log aggregation stack (e.g., shipping Docker logs to Loki, integrated with the existing Grafana setup) in a future iteration.</p></td>
+</tr>
+</tbody>
+</table>
 <div style="page-break-after: always;"></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-glossary">12. Glossary</h2>
+<h2 id="_glossary">12. Glossary</h2>
 <div class="sectionbody">
-<div class="sidebarblock arc42help">
-<div class="content">
-<div class="paragraph">
-<div class="title">Contents</div>
-<p>The most important domain and technical terms that your stakeholders use when discussing the system.</p>
-</div>
-<div class="paragraph">
-<p>You can also see the glossary as source for translations if you work in multi-language teams.</p>
-</div>
-<div class="paragraph">
-<div class="title">Motivation</div>
-<p>You should clearly define your terms, so that all stakeholders</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>have an identical understanding of these terms</p>
-</li>
-<li>
-<p>do not use synonyms and homonyms</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<div class="title">Form</div>
-<p>A table with columns &lt;Term&gt; and &lt;Definition&gt;.</p>
-</div>
-<div class="paragraph">
-<p>Potentially more columns in case you need translations.</p>
-</div>
-<div class="paragraph">
-<div class="title">Further Information</div>
-<p>See <a href="https://docs.arc42.org/section-12/">Glossary</a> in the arc42 documentation.</p>
-</div>
-</div>
-</div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 33.3333%;">
-<col style="width: 66.6667%;">
+<col style="width: 25%;">
+<col style="width: 75%;">
 </colgroup>
 <thead>
 <tr>
@@ -2327,12 +2685,124 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Term-1&gt;</em></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;definition-1&gt;</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ADR</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Architectural Decision Record - a document capturing an important architectural decision, its context, consequences, and rationale.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;Term-2&gt;</em></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><em>&lt;definition-2&gt;</em></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">AI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Artificial Intelligence - the computer-controlled opponent in the game.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">arc42</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A template for documenting software and system architectures, used as the foundation for this documentation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Barycentric Coordinates</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A coordinate system for hexagonal grids using three coordinates (x, y, z) that sum to zero. Used in the game to represent cell positions.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Classic Version</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The variant of Game Y implemented in this project, following the standard rules of the game.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CORS</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cross-Origin Resource Sharing - a security mechanism that allows a web page to access resources from a different origin.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A containerization platform used to package and run the application services consistently across environments.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">FR</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Functional Requirement - a requirement that specifies a function the system must perform.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game Y</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The core game implemented in the project - a connection-based board game played on a triangular grid of hexagonal cells.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GameY Engine</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Rust‑based subsystem that contains the game logic, move validation, win detection, and AI move generation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GameY API</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Node.js‑based API Gateway that routes moves and YEN payloads between the Webapp (or external bots) and the Rust Logic Engine.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grafana</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">An observability platform used to visualize metrics collected by Prometheus.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Index-based Coordinates</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A linear coordinate system (0…n) for simpler indexing of board cells, used as an alternative to barycentric coordinates.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JSON</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JavaScript Object Notation - the data interchange format used for all communication between subsystems.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JWT</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JSON Web Token - a compact, URL-safe token format used for authentication and session management (planned).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Micrati</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A stakeholder group that expects a functional prototype meeting all success criteria.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MongoDB</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A document‑oriented NoSQL database used to store user profiles and match histories.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node.js</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The JavaScript runtime used for the User Service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PlantUML</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A tool for creating UML diagrams from plain text, used to generate all architectural diagrams in this documentation.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Player‑vs‑Machine (AI)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The game mode where a human player competes against the AI opponent.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A monitoring system that scrapes and stores metrics from the services.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">React</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The JavaScript library used to build the frontend web application (Webapp).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">REST</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Representational State Transfer - the architectural style used for the HTTP APIs between subsystems and external bots.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rust</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The programming language used for the GameY Engine, chosen for memory safety and performance.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TypeScript</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The programming language used for the frontend (Webapp).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User Service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The Node.js‑based subsystem responsible for user registration, authentication, and persistence of statistics.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Webapp</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The React frontend application that provides the user interface and orchestrates requests to the backend services.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">WebSockets</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A protocol enabling real‑time, bidirectional communication between client and server, planned for multiplayer scenarios.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">YEN Notation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Y Exchange Notation - a compact, JSON‑based format for representing the complete game state (board size, player turn, piece positions).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">YOVI</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The name of the project and the game.</p></td>
 </tr>
 </tbody>
 </table>
@@ -2342,7 +2812,7 @@ more precisely down to a level of scenarios that can be discussed and evaluated.
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-03-13 21:16:36 +0100
+Last updated 2026-02-28 12:21:40 +0100
 </div>
 </div>
 </body>
