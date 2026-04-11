@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   test: {
     globals: true,
     environment: 'jsdom',
@@ -20,7 +20,9 @@ export default defineConfig({
       },
     },
   },
-  define: {
+  // In dev mode (local + CI): use empty string so requests go through Vite's proxy
+  // In production (Docker build): don't override, let env var or fallback work
+  define: mode === 'development' ? {
     'import.meta.env.VITE_GAMEY_API_URL': JSON.stringify(''),
-  },
-})
+  } : {},
+}))
