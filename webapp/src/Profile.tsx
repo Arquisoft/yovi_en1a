@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './Profile.css';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -14,6 +14,7 @@ interface MatchEntry {
 
 interface ProfileProps {
     username?: string;
+    userId?: string | null;
     winRate?: number;     // 0–100
     bestScore?: number;
     matchHistory?: MatchEntry[];
@@ -65,16 +66,40 @@ const AvatarIcon: React.FC = () => (
     </svg>
 );
 
+// ── API ────────────────────────────────────────────────────────────────
+
+const API_URL = import.meta.env.VITE_GAMEY_API_URL ?? 'http://localhost:3001';
+function useProfileStats() {
+    const [stats, setStats] = useState<{
+        winRate: number;
+        bestScore: number;
+        matchHistory: MatchEntry[];
+    } | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        fetch(`${API_URL}/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+            .then(r => r.json())
+            .then(data => setStats(data))
+            .catch(console.error)
+            .finally(() => setLoading(false));
+    }, []);
+
+    return { stats, loading };
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
-const Profile: React.FC<ProfileProps> = ({
-                                             username     = 'Username',
-                                             winRate      = 65,
-                                             bestScore    = 480,
-                                             matchHistory = DEFAULT_HISTORY,
-                                             onPlayClick,
-                                             onLogout,
-                                         }) => {
+const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, onLogout }) => {
+    const { stats } = useProfileStats();
+
+    const winRate      = stats?.winRate      ?? 65;   // fallback while loading
+    const bestScore    = stats?.bestScore    ?? 0;
+    const matchHistory = stats?.matchHistory ?? DEFAULT_HISTORY;
     return (
         <div className="profile-page-container">
 
@@ -152,6 +177,9 @@ const Profile: React.FC<ProfileProps> = ({
 
         </div>
     );
+
 };
+
+
 
 export default Profile;

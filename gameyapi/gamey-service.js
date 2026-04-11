@@ -14,7 +14,6 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET && process.env.NODE_ENV !== 'test') {
   throw new Error('JWT_SECRET environment variable is not set');
 }
-const BOT_ID = 'gamer_bot';
 const API_VERSION = 'v1';
 
 gameyService.use(cors());
@@ -152,10 +151,8 @@ function touchesSideC(row, col)  { return col === row; }       // right edge
  * Returns true if the player has a group touching all three sides.
  */
 function checkWin(moves, boardSize, player) {
-  const symbol = player === 0 ? 'B' : 'R';
 
-  // Build a Set of occupied cells for fast lookup: key = row*1000+col
-  const playerCells = new Map(); // key → { row, col }
+  const playerCells = new Map();
   for (const m of moves) {
     if (m.player === player) {
       const key = m.y * 1000 + m.x; // y=row, x=col in session move format
@@ -385,7 +382,7 @@ gameyService.get('/play/:gameId', (req, res) => {
 
 gameyService.post('/play/:gameId/move', async (req, res) => {
   const s = sessions.get(req.params.gameId);
-  if (!s) return res.status(404).json({ error: 'Game not found' });
+  if (!s) return res.status(400).json({ error: 'Game not found' });
   if (s.status === 'finished') return res.status(400).json({ error: 'Game already finished' });
 
   const { player, x, y } = req.body;
@@ -449,6 +446,36 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
   }
 
   return res.json(response);
+});
+
+gameyService.get('/profile', async (req, res) => {
+  if (!db) return res.status(503).json({ error: 'Database unavailable' });
+
+  const userId = getUserIdFromRequest(req);
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  try {
+    const games = await db.collection('games')
+        .find({ userId: userId.toString() })
+        .sort({ finishedAt: -1 })
+        .toArray();
+
+    const total   = games.length;
+    const wins    = games.filter(g => g.winner === 0).length;
+    const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
+    const bestScore = total > 0 ? Math.max(...games.map(g => g.totalMoves * 10)) : 0;
+
+    const matchHistory = games.slice(0, 10).map((g, i) => ({
+      id:     g.gameId ?? i,
+      result: g.winner === 0 ? 'win' : 'lose',
+      pts:    g.totalMoves * 10,
+      mode:   g.mode === 'hvb' ? 'Ranked' : 'Casual',
+    }));
+
+    return res.json({ winRate, bestScore, matchHistory, totalGames: total });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to load profile' });
+  }
 });
 
 gameyService.post('/play/:gameId/bot-move', async (req, res) => {

@@ -3,9 +3,10 @@ info:
   title: Game Y API
   version: 1.0.0
   description: >
-    REST API for managing Game Y sessions — a triangular board game played on an
-    11-row hexagonal grid. Supports Human vs Human (hvh) and Human vs Bot (hvb)
-    modes. In hvb mode the bot responds automatically after each human move.
+    REST API for managing Game Y sessions—a triangular board game played on a
+    hexagonal grid. The service manages game state, performs win detection using
+    Union-Find logic, persists results to MongoDB, and interfaces with a Rust-based 
+    AI engine for bot moves.
 
 servers:
   - url: http://localhost:3001
@@ -14,19 +15,19 @@ servers:
 tags:
   - name: Game
     description: Game session lifecycle and move management
+  - name: User
+    description: Player profiles and match history
   - name: Health
-    description: Service status
+    description: Service and engine status
 
 paths:
-
   /play/create:
     post:
       tags: [Game]
       summary: Create a new game session
       description: >
-        Creates a new game session with the specified mode and board size.
-        Returns the initial session state. In hvb mode Player 0 is the human
-        (Blue) and Player 1 is the bot (Red).
+        Initializes a new game. If a JWT is provided in the Authorization header, 
+        the game will be linked to that user ID for profile tracking.
       requestBody:
         required: true
         content:
@@ -38,87 +39,61 @@ paths:
                 mode:
                   type: string
                   enum: [hvh, hvb]
-                  description: >
-                    Game mode. `hvh` = Human vs Human, `hvb` = Human vs Bot.
-                  example: hvb
+                  description: "hvh: Human vs Human, hvb: Human vs Bot."
                 boardSize:
                   type: integer
-                  minimum: 2
-                  maximum: 11
+                  minimum: 5
+                  maximum: 15
                   default: 11
-                  description: >
-                    Number of rows on the triangular board. Total cells =
-                    boardSize * (boardSize + 1) / 2. Defaults to 11 (66 cells).
-                  example: 11
+                difficulty:
+                  type: string
+                  enum: [beginner, medium, advanced]
+                  default: medium
       responses:
         '201':
-          description: Game session created successfully
+          description: Session created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameSession'
-        '400':
-          description: Invalid mode or boardSize
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                invalidMode:
-                  value: { error: "mode must be 'hvh' or 'hvb'" }
-                invalidBoardSize:
-                  value: { error: "boardSize must be an integer between 2 and 11" }
 
   /play/{gameId}:
     get:
       tags: [Game]
-      summary: Get current game state
-      description: Returns the full current state of an existing game session.
+      summary: Get game state
       parameters:
-        - $ref: '#/components/parameters/gameId'
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
-          description: Current game session state
+          description: Current session data
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameSession'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
     delete:
       tags: [Game]
-      summary: Delete a game session
-      description: >
-        Permanently removes a game session from the server. Used internally
-        by the undo flow to recreate a session with fewer moves.
-      parameters:
-        - $ref: '#/components/parameters/gameId'
+      summary: Delete a session
       responses:
         '200':
-          description: Game deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Game deleted
-        '404':
-          $ref: '#/components/responses/NotFound'
+          description: Game removed from memory
 
   /play/{gameId}/move:
     post:
       tags: [Game]
-      summary: Submit a human player's move
+      summary: Submit a move
       description: >
-        Places a token for the specified player at board coordinates (x, y).
-        In hvb mode, the bot automatically responds after a valid human move
-        and its coordinates are returned in `botMove`. It is an error to submit
-        a move for Player 1 in hvb mode — the bot moves automatically.
+        Submits a move for the current player. In 'hvb' mode, the bot move 
+        is automatically triggered and returned in the response.
       parameters:
-        - $ref: '#/components/parameters/gameId'
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -130,25 +105,13 @@ paths:
                 player:
                   type: integer
                   enum: [0, 1]
-                  description: >
-                    Player index. 0 = Blue (P1), 1 = Red (P2). Must match
-                    `currentPlayer` in the session. In hvb mode only 0 is valid.
-                  example: 0
                 x:
                   type: integer
-                  minimum: 0
-                  description: >
-                    Column index within the row. Must satisfy 0 ≤ x ≤ y.
-                  example: 2
                 y:
                   type: integer
-                  minimum: 0
-                  description: >
-                    Row index (0 = top, boardSize-1 = bottom).
-                  example: 3
       responses:
         '200':
-          description: Move accepted. Includes bot move if in hvb mode.
+          description: Move processed
           content:
             application/json:
               schema:
@@ -157,277 +120,83 @@ paths:
                   - type: object
                     properties:
                       botMove:
-                        description: >
-                          Coordinates of the bot's response move in hvb mode.
-                          `null` if mode is hvh or if the game ended before the
-                          bot could move.
-                        oneOf:
-                          - $ref: '#/components/schemas/Coords'
-                          - type: 'null'
-                      error:
-                        type: string
-                        description: >
-                          Present only when the bot move failed. The human move
-                          was still recorded. Retry via POST /play/{gameId}/bot-move.
-                        example: "Bot move failed — retry with POST /play/:id/bot-move"
-        '400':
-          description: Invalid move
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                wrongTurn:
-                  value: { error: "It is player 0's turn" }
-                occupied:
-                  value: { error: "Cell (2,3) is already occupied" }
-                botTurn:
-                  value: { error: "Player 1 is the bot — it moves automatically" }
-                finished:
-                  value: { error: "Game already finished" }
-                missingFields:
-                  value: { error: "player, x and y are required" }
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /play/{gameId}/bot-move:
-    post:
-      tags: [Game]
-      summary: Manually trigger the bot's move
-      description: >
-        Forces the bot to make a move. Only available in hvb mode when it is
-        the bot's turn (currentPlayer = 1). Use this as a retry if the automatic
-        bot move failed after a human move.
-      parameters:
-        - $ref: '#/components/parameters/gameId'
-      responses:
-        '200':
-          description: Bot move applied successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/GameSession'
-                  - type: object
-                    properties:
-                      lastMove:
                         $ref: '#/components/schemas/Coords'
-        '400':
-          description: Bot move not applicable
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                notHvb:
-                  value: { error: "Only available in hvb mode" }
-                humanTurn:
-                  value: { error: "It is the human's turn" }
-                finished:
-                  value: { error: "Game already finished" }
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '502':
-          description: Rust game engine unreachable or returned an error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: Game engine unavailable
-                  detail:
-                    type: string
-                    example: "connect ECONNREFUSED 127.0.0.1:4000"
 
   /play/{gameId}/undo:
     post:
       tags: [Game]
-      summary: Undo the last move(s)
-      description: >
-        Reverts the last move(s) from the game session. In hvb mode, undoes both
-        the human's and bot's last moves (2 moves) if the bot has already responded.
-        If only the human has moved (currentPlayer = 1), undoes just 1 move.
-        In hvh mode, always undoes exactly 1 move.
-      parameters:
-        - $ref: '#/components/parameters/gameId'
+      summary: Undo last move(s)
+      description: Reverts 1 move in hvh, or 2 moves (bot + human) in hvb.
       responses:
         '200':
-          description: Undo successful — returns updated game state
+          description: State reverted
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameSession'
-        '400':
-          description: No moves to undo
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              examples:
-                noMoves:
-                  value: { error: "No moves to undo" }
-        '404':
-          $ref: '#/components/responses/NotFound'
 
-  /play/{gameId}/rematch:
-    post:
-      tags: [Game]
-      summary: Start a rematch
-      description: >
-        Deletes the current session and creates a fresh one with the same mode
-        and board size. The old gameId is no longer valid after this call.
-      parameters:
-        - $ref: '#/components/parameters/gameId'
+  /profile:
+    get:
+      tags: [User]
+      summary: Get player statistics
+      description: Returns win rate, best score, and history from MongoDB.
+      security:
+        - bearerAuth: []
       responses:
-        '201':
-          description: New game session created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GameSession'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        '200':
+          description: Statistics retrieved
+        '401':
+          description: Unauthorized / Missing JWT
 
   /health:
     get:
       tags: [Health]
-      summary: Health check
-      description: >
-        Returns the status of the Node.js API and whether the Rust game engine
-        is reachable. Also reports the number of active in-memory sessions.
+      summary: Check service status
       responses:
         '200':
-          description: Health status
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  api:
-                    type: string
-                    enum: [ok]
-                    example: ok
-                  rustEngine:
-                    type: string
-                    enum: [ok, unreachable]
-                    example: ok
-                  activeSessions:
-                    type: integer
-                    description: Number of game sessions currently in memory
-                    example: 3
-
-# ─── Reusable components ──────────────────────────────────────────────────────
+          description: Status of API, Rust Engine, and active session count
 
 components:
-
-  parameters:
-    gameId:
-      name: gameId
-      in: path
-      required: true
-      description: UUID of the game session returned by POST /play/create
-      schema:
-        type: string
-        format: uuid
-        example: "a3f1c2d4-58e7-4b1a-9c3f-2d1e6b7a8f90"
-
-  responses:
-    NotFound:
-      description: Game session not found
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            error: Game not found
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   schemas:
-
-    Coords:
-      type: object
-      description: Board cell identified by row/column coordinates
-      required: [x, y]
-      properties:
-        x:
-          type: integer
-          minimum: 0
-          description: Column index within the row (0 ≤ x ≤ y)
-          example: 2
-        y:
-          type: integer
-          minimum: 0
-          description: Row index from the top (0 = apex)
-          example: 3
-
-    Move:
-      allOf:
-        - $ref: '#/components/schemas/Coords'
-        - type: object
-          required: [player]
-          properties:
-            player:
-              type: integer
-              enum: [0, 1]
-              description: Player who made this move (0 = Blue, 1 = Red)
-              example: 0
-
     GameSession:
       type: object
-      description: Full state of an active or finished game session
       properties:
         gameId:
           type: string
-          format: uuid
-          description: Unique session identifier
-          example: "a3f1c2d4-58e7-4b1a-9c3f-2d1e6b7a8f90"
         mode:
           type: string
-          enum: [hvh, hvb]
-          description: Game mode
-          example: hvb
-        boardSize:
-          type: integer
-          minimum: 2
-          maximum: 11
-          description: Number of rows on the board
-          example: 11
-        moves:
-          type: array
-          description: Ordered list of all moves made so far
-          items:
-            $ref: '#/components/schemas/Move'
         status:
           type: string
           enum: [ongoing, finished]
-          description: Current game status
-          example: ongoing
         currentPlayer:
           type: integer
-          enum: [0, 1]
-          description: Index of the player whose turn it is
-          example: 0
         winner:
-          description: Index of the winning player, or null if game is ongoing
-          oneOf:
-            - type: integer
-              enum: [0, 1]
-            - type: 'null'
-          example: null
+          type: integer
+          nullable: true
+        winningPath:
+          type: array
+          items:
+            $ref: '#/components/schemas/Coords'
         layout:
           type: string
-          description: >
-            Board state in YEN layout notation. Rows are separated by `/`.
-            Row 0 has 1 cell, row N has N+1 cells. Each cell is `.` (empty),
-            `B` (Blue / Player 0), or `R` (Red / Player 1).
-            Total characters excluding separators = boardSize*(boardSize+1)/2.
-          example: "B/RB/..R/...B/......."
+          description: "YEN format layout string"
+
+    Coords:
+      type: object
+      properties:
+        x:
+          type: integer
+        y:
+          type: integer
 
     Error:
       type: object
       properties:
         error:
           type: string
-          description: Human-readable error message
-          example: Game not found
