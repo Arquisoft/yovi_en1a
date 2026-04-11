@@ -64,32 +64,119 @@ jobs:
     env:
       JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
 
-
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
 
     needs: [test-node, test-rust]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust compilation
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: gamey
+
       - name: Install users dependencies
         run: |
           cd users
           npm ci
+
+      - name: Install gameyapi dependencies
+        run: |
+          cd gameyapi
+          npm ci
+
       - name: Install webapp dependencies
         run: |
           cd webapp
           npm ci
+
       - name: Install Playwright browsers
         run: |
           cd webapp
           npm run test:e2e:install-browsers
-      - name: Run E2E tests (start servers and run cucumber)
+
+      - name: Compile Gamey (Rust Engine)
+        run: |
+          cd gamey
+          cargo build --release
+
+      - name: Start Gamey (Rust Engine)
+        run: |
+          cd gamey
+          ./target/release/gamey --mode server --port 4000 &
+        
+      - name: Run GameyAPI (Node Backend)
+        env:
+          MONGODB_URI: mongodb://localhost:27017/yovi
+          GAMEY_RUST_URL: http://localhost:4000
+        run: |
+          cd gameyapi
+          node gamey-service.js &
+
+      - name: Run Users API
+        env:
+          MONGODB_URI: mongodb://localhost:27017/yovi
+          ALLOWED_ORIGINS: http://localhost,http://localhost:5173,http://localhost:3000,http://127.0.0.1
+        run: |
+          cd users
+          npm start &
+
+      - name: Start Webapp
         run: |
           cd webapp
-          npm run test:e2e
+          npm run dev &
+      
+      - name: Wait for all services to be ready
+        run: |
+          echo "Waiting for Rust engine (port 4000)..."
+          for i in $(seq 1 300); do
+            curl -sf http://localhost:4000/status > /dev/null 2>&1 && break
+            sleep 1
+          done
+          echo "Waiting for GameyAPI (port 3001)..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3001/health > /dev/null 2>&1 && break
+            sleep 1
+          done
+          echo "Waiting for Users API (port 3000)..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:3000/ > /dev/null 2>&1 && break
+            sleep 1
+          done
+          echo "Waiting for Webapp (port 5173)..."
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:5173/ > /dev/null 2>&1 && break
+            sleep 1
+          done
+          echo "All services ready!"
+
+      - name: Run E2E Chromium
+        run: |
+          cd webapp
+          BASE_URL=http://localhost:5173 BROWSER=chromium npm run test:e2e:run
+
+      - name: Run E2E Firefox
+        run: |
+          cd webapp
+          BASE_URL=http://localhost:5173 BROWSER=firefox npm run test:e2e:run
+
+      - name: Run E2E WebKit
+        run: |
+          cd webapp
+          BASE_URL=http://localhost:5173 BROWSER=webkit npm run test:e2e:run
 
   docker-push-users:
     name: Publish users image

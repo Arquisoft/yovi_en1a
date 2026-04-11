@@ -12,9 +12,13 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest --watch",
     "test:e2e:run": "cucumber-js --import test/e2e/support/setup.mjs --import test/e2e/steps/**/*.mjs test/e2e/features --format progress",
-    "test:e2e": "start-server-and-test start:all http://localhost:5173 test:e2e:run",
-    "test:e2e:install-browsers": "npx playwright install",
-    "start:all": "concurrently \"npm run dev\" \"npm --prefix ../users start\""
+    "test:e2e:ui": "node -e \"process.env.SHOW_UI='1'; require('child_process').execSync('npm run test:e2e:run', {stdio: 'inherit'})\"",
+    "test:e2e:run-all": "node -e \"const {execSync} = require('child_process'); ['chromium', 'firefox', 'webkit'].forEach(b => execSync('npm run test:e2e:run', {env: {...process.env, BROWSER: b}, stdio: 'inherit'}))\"",
+    "test:e2e:ui-all": "node -e \"const {execSync} = require('child_process'); process.env.SHOW_UI='1'; ['chromium', 'firefox', 'webkit'].forEach(b => execSync('npm run test:e2e:run', {env: {...process.env, BROWSER: b}, stdio: 'inherit'}))\"",
+    "test:e2e": "start-server-and-test start:e2e http://localhost:5173 test:e2e:run-all",
+    "test:e2e:install-browsers": "npx playwright install --with-deps",
+    "start:all": "concurrently \"npm run dev\" \"npm --prefix ../users start\"",
+    "start:e2e": "concurrently \"npm run dev\" \"npm --prefix ../users start\" \"npm --prefix ../gameyapi start\" \"cargo run --manifest-path ../gamey/Cargo.toml\""
   },
   "dependencies": {
     "react": "^18.3.1",
