@@ -10,6 +10,7 @@ const PORT = process.env.PORT || 3001;
 const GAMEY_RUST_URL = process.env.GAMEY_RUST_URL || 'http://localhost:4000';
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
+const HOST = process.env.HOST || '0.0.0.0';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const API_VERSION = 'v1';
@@ -621,8 +622,8 @@ if (process.argv[1] && process.argv[1].endsWith('gamey-service.js')) {
     } catch (err) {
       console.warn('[DB] MongoDB not available, game results will not be saved:', err.message);
     }
-    gameyService.listen(PORT, () => {
-      console.log(`Game API  →  http://localhost:${PORT}`);
+    gameyService.listen(PORT, HOST, () => {
+      console.log(`Game API → http://${HOST}:${PORT}`);
       console.log(`Rust engine expected at  ${GAMEY_RUST_URL}`);
     });
   })();
