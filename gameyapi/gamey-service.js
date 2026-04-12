@@ -16,7 +16,15 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
 const API_VERSION = 'v1';
 
-gameyService.use(cors());
+gameyService.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+}));
+
+gameyService.options('*', cors());
 gameyService.use(bodyParser.json());
 
 // ─── MongoDB connection ─────────────────────────────────────────────────────────
