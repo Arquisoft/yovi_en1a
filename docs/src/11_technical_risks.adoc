@@ -29,21 +29,9 @@ While sensitive configuration data is securely stored in GitHub Repository Secre
 
 | Medium
 | Debt
-| **Incomplete Session Management (JWT)** +
-While the architecture envisions a JWT-based authentication flow, and the `jsonwebtoken` dependency is present in the `users` service, the React Webapp does not yet strictly enforce or attach an `Authorization: Bearer <token>` header on every protected API request.
-| Complete the implementation of JSON Web Tokens (JWT) in the Node.js User Service and finalize the token handling in the Webapp's API calls.
-
-| Medium
-| Debt
 | **Lack of Real-time Push (WebSockets)** +
 The "Human vs. Human" multiplayer scenario currently relies on REST API calls. Asynchronous push communication (WebSockets) is planned but not yet implemented. Relying on client-side polling for multiplayer turns is inefficient and degrades the User Experience.
 | Integrate WebSockets (e.g., via Socket.IO) into the User Service to actively push game state updates directly to connected React clients.
-
-| Medium
-| Debt
-| **Pending Match History Persistence** +
-The data mapping strategy for storing match results as separate documents in a `matches` collection (referencing user `_id`s) is currently marked as "planned". Match statistics cannot be reliably retrieved yet.
-| Implement the MongoDB data mapping for the `matches` collection to ensure persistent data storage upon match conclusion.
 
 | Low
 | Debt
