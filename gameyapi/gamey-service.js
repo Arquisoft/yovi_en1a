@@ -12,7 +12,8 @@ const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
 const HOST = process.env.HOST || '0.0.0.0';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) throw new Error('JWT_SECRET environment variable is not set');
 const API_VERSION = 'v1';
 
 gameyService.use(cors());
@@ -57,7 +58,7 @@ async function saveGameResult(session) {
   try {
     await db.collection('games').insertOne({
       gameId: session.id,
-      userId: session.userId ? session.userId.toString() : null,
+      userId: session.userId || null,
       mode: session.mode,
       boardSize: session.boardSize,
       winner: session.winner,
@@ -210,7 +211,7 @@ function checkWin(moves, boardSize, player) {
     }
     return { win: true, path };
   }
-  
+
   return { win: false, path: [] };
 }
 
@@ -277,13 +278,13 @@ async function getBotMove(moves, boardSize, nextPlayer,difficulty) {
   console.log('[YEN sent to Rust]', JSON.stringify(yen));
 
   let botToCall = 'gamer_bot';
-  
+
   if (difficulty === 'beginner') {
-    botToCall = 'easy_level_bot'; 
+    botToCall = 'easy_level_bot';
   }else if (difficulty === 'medium') {
-     botToCall = 'gamer_bot'; }
+    botToCall = 'gamer_bot'; }
   else if (difficulty === 'advanced') {
-    botToCall = 'gamer_bot'; 
+    botToCall = 'gamer_bot';
   }
 
   console.log(`[BOT] Difficulty: ${difficulty} -> Target Bot: ${botToCall}`);
@@ -322,17 +323,17 @@ async function getBotMove(moves, boardSize, nextPlayer,difficulty) {
 // ─── Session helpers ──────────────────────────────────────────────────────────
 
 function newSession(id, mode, boardSize, userId, difficulty) {
-  return { 
-    id, 
-    mode, 
-    boardSize, 
-    difficulty: difficulty || 'medium', 
-    moves: [], 
-    status: 'ongoing', 
-    currentPlayer: 0, 
-    winner: null, 
-    userId: userId || null, 
-    createdAt: new Date() 
+  return {
+    id,
+    mode,
+    boardSize,
+    difficulty: difficulty || 'medium',
+    moves: [],
+    status: 'ongoing',
+    currentPlayer: 0,
+    winner: null,
+    userId: userId || null,
+    createdAt: new Date()
   };
 }
 
