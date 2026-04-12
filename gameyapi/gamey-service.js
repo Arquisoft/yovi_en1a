@@ -57,7 +57,7 @@ async function saveGameResult(session) {
   try {
     await db.collection('games').insertOne({
       gameId: session.id,
-      userId: session.userId || null,
+      userId: session.userId ? session.userId.toString() : null,
       mode: session.mode,
       boardSize: session.boardSize,
       winner: session.winner,
