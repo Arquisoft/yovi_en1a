@@ -27,7 +27,7 @@ interface GameBoardProps {
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const API_URL = import.meta.env.VITE_GAMEY_URL || "http://localhost:3001";
+const API_URL = import.meta.env.VITE_GAMEY_API_URL || 'http://localhost:3001';
 
 function calculateDynamicHexSize(boardSize: number, screenWidth: number, screenHeight: number): string {
   const isMobile = screenWidth <= 768;
