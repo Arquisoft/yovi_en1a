@@ -11,6 +11,8 @@ const path = require('path');
 const app = express();
 
 const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+
 // -------------------- CORS Configuration --------------------
 // In production set ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
 // Never include http://0.0.0.0 — that is a server bind address, not a browser origin.
