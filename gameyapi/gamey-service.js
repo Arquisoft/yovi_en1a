@@ -4,8 +4,19 @@ import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
 import { MongoClient } from 'mongodb';
 import jwt from 'jsonwebtoken';
+import swaggerUi from 'swagger-ui-express';
+import yaml from 'js-yaml';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const gameyService = express();
+
+const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8'));
+gameyService.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 const PORT = process.env.PORT || 3001;
 const GAMEY_RUST_URL = process.env.GAMEY_RUST_URL || 'http://localhost:4000';
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
