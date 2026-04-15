@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Profile.css';
+import { AVAILABLE_AVATARS, DEFAULT_AVATAR } from './config/avatars';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -23,8 +24,6 @@ interface ProfileProps {
 }
 
 // ── Constants & Configuration ──────────────────────────────────────────────────
-
-const AVAILABLE_AVATARS = ['default.png', 'avatar1.png', 'avatar2.png', 'avatar3.png'];
 
 /**
  * SCALABLE MODE CONFIGURATION
@@ -98,11 +97,10 @@ function useProfileStats() {
 
 const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, onLogout }) => {
     const { stats } = useProfileStats();
-    
     const [localSelectedAvatar, setLocalSelectedAvatar] = useState<string | null>(null);
     const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-    const currentAvatar = localSelectedAvatar || stats?.avatarUrl || 'default.png';
+    const currentAvatar = localSelectedAvatar || stats?.avatarUrl || DEFAULT_AVATAR;
 
     const handleAvatarChange = async (filename: string) => {
         const token = localStorage.getItem('token');
