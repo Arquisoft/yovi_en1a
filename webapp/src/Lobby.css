@@ -276,14 +276,12 @@ body {
   cursor: pointer;
 }
 
-/* Navigation actions layout */
 .nav-actions {
   display: flex;
   align-items: center;
   gap: 1rem; 
 }
 
-/* Help button styles with inverse hover effect */
 .help-icon-button {
   width: 40px;
   height: 40px;
@@ -309,7 +307,6 @@ body {
   box-shadow: 0 0 10px rgba(72, 61, 255, 0.15); 
 }
 
-/* Modal background and positioning */
 .how-to-play-overlay {
   position: fixed;
   top: 0;
@@ -350,7 +347,6 @@ body {
   padding-bottom: 0.8rem;
 }
 
-/* Rules content formatting */
 .rules-list {
   color: #ccc;
   line-height: 1.7;
@@ -386,7 +382,6 @@ body {
   font-size: 1rem;
 }
 
-/* Modal action button */
 .close-modal-btn {
   margin-top: 2rem;
   padding: 1rem;
@@ -410,7 +405,6 @@ body {
   box-shadow: 0 0 10px rgba(72, 61, 255, 0.15); 
 }
 
-/* Base animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
@@ -428,15 +422,14 @@ body {
     display: contents;
   }
 
-  /* 1. Profile - Reduced padding and bottom margin */
+  /* FIXED: Merged duplicate .user-profile-button selectors into one block */
   .user-profile-button {
     order: 1;
-    padding: 5px 0;
-    margin-bottom: 0px; 
+    padding: 10px 0;
+    margin-bottom: 0; 
     border-bottom: 1px solid #333;
   }
 
-  /* 2. Game Setup - Tightened internal gaps */
   .game-setup-column {
     order: 2;
     display: flex;
@@ -445,15 +438,15 @@ body {
   }
 
   .panel-title {
-    margin-top: 15px; /* Space between sections */
-    margin-bottom: 8px; /* Space above buttons */
+    margin-top: 15px;
+    margin-bottom: 8px;
     padding-bottom: 2px;
     font-size: 0.75rem;
   }
 
   .setup-options-row {
     flex-direction: column;
-    gap: 4px; /* Space between individual buttons */
+    gap: 4px;
   }
 
   .mode-option-btn {
@@ -462,7 +455,6 @@ body {
     font-size: 0.9rem;
   }
 
-  /* 3. Play Button - Reduced top margin */
   .primary-play-btn {
     order: 3;
     margin: 15px 0;
@@ -473,15 +465,7 @@ body {
     width: 36px;
     height: 36px;
   }
-  
-  .user-profile-button {
-    order: 1;
-    padding: 10px 0;
-    margin-bottom: 0px; 
-    border-bottom: 1px solid #333;
-  }
 
-  /* 4. Friends List */
   .friends-panel {
     order: 4;
     margin-top: 10px;
@@ -491,6 +475,4 @@ body {
   .friend-item {
     padding: 0.5rem 0;
   }
-
 }
-
