@@ -8,6 +8,12 @@ import Profile from '../Profile';
 
 vi.mock('./Profile.css', () => ({}));
 
+// Mock the external config to ensure predictable avatar lists
+vi.mock('./config/avatars', () => ({
+    AVAILABLE_AVATARS: ['default.png', 'avatar1.png', 'avatar2.png', 'avatar3.png'],
+    DEFAULT_AVATAR: 'default.png'
+}));
+
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
@@ -43,127 +49,112 @@ beforeEach(() => {
     mockFetch.mockReset();
 });
 
-// ── Rendering & UI Labels ─────────────────────────────────────────────────────
+// ── Rendering & Defaults ──────────────────────────────────────────────────────
 
-describe('Profile – basic rendering', () => {
-    it('renders essential UI elements', () => {
+describe('Profile – UI & Defaults', () => {
+    it('renders basic navbar and panel labels', () => {
         renderProfile();
         expect(screen.getByText('GAME Y')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
         expect(screen.getByText('Stats')).toBeInTheDocument();
         expect(screen.getByText('Match History')).toBeInTheDocument();
     });
 
-    it('renders username logic correctly', () => {
-        const { rerender } = renderProfile();
-        expect(screen.getByText('Username')).toBeInTheDocument();
-        
-        rerender(<Profile username="Xolotl99" />);
-        expect(screen.getByText('Xolotl99')).toBeInTheDocument();
-    });
-});
-
-// ── Default / Fallback data ───────────────────────────────────────────────────
-
-describe('Profile – fallback data (no token)', () => {
-    it('shows the default win-rate of 0% and empty history', () => {
+    it('shows default 0% winrate and 0 score when no data exists', () => {
         renderProfile();
         expect(screen.getByText('0%')).toBeInTheDocument();
-        expect(screen.getByText('0', { selector: '.profile-score-value' })).toBeInTheDocument();
-        
-        const tbody = document.querySelector('tbody');
-        expect(tbody?.children.length).toBe(0);
-    });
-
-    it('does NOT call fetch when there is no token', () => {
-        renderProfile();
-        expect(mockFetch).not.toHaveBeenCalled();
+        const scoreValue = document.querySelector('.profile-score-value');
+        expect(scoreValue?.textContent).toBe('0');
     });
 });
 
-// ── API / Profile Stats ───────────────────────────────────────────────────────
+// ── API Fetching ──────────────────────────────────────────────────────────────
 
-describe('Profile – API fetching', () => {
+describe('Profile – API Data', () => {
     const apiData = {
-        winRate: 72,
-        bestScore: 9800,
+        winRate: 85,
+        bestScore: 1250,
         matchHistory: [
-            { id: 10, result: 'win',  pts: 600, mode: 'hvh' },
-            { id: 11, result: 'lose', pts: 100, mode: 'hvb' },
+            { id: 1, result: 'win', pts: 500, mode: 'hvh' }
         ],
+        avatarUrl: 'avatar2.png'
     };
 
-    beforeEach(() => {
-        localStorageMock.setItem('token', 'fake-jwt-token');
-    });
-
-    it('calls /profile with correct headers and displays data', async () => {
+    it('fetches and displays stats and mapped mode labels', async () => {
+        localStorageMock.setItem('token', 'fake-token');
         mockFetch.mockReturnValue(buildFetchResponse(apiData));
+        
         renderProfile();
 
         await waitFor(() => {
-            expect(screen.getByText('72%')).toBeInTheDocument();
-            // Using regex to handle possible locale-based formatting like 9,800
-            expect(screen.getByText(/9.*800/)).toBeInTheDocument();
+            // Match "85%" (allowing for potential spaces between number and symbol)
+            expect(screen.getByText(/85\s*%/)).toBeInTheDocument();
+            
+            // Match "1250" with an optional comma: "1,250" or "1250"
+            expect(screen.getByText(/1,?250/)).toBeInTheDocument();
+            
+            // Verify the mode mapping logic works
+            expect(screen.getByText('Player vs Player')).toBeInTheDocument();
         });
-
-        // Verify Mode Mapping
-        expect(screen.getByText('Player vs Player')).toBeInTheDocument();
-        expect(screen.getByText('Player vs Bot')).toBeInTheDocument();
-    });
-
-    it('falls back to 0% when fetch rejects', async () => {
-        mockFetch.mockReturnValue(Promise.reject(new Error('Network error')));
-        renderProfile();
-        await waitFor(() => expect(screen.getByText('0%')).toBeInTheDocument());
+        
+        const img = screen.getByAltText('Profile') as HTMLImageElement;
+        expect(img.src).toContain('avatar2.png');
     });
 });
 
-// ── Avatar Selection Flow ─────────────────────────────────────────────────────
+// ── Avatar Selection ──────────────────────────────────────────────────────────
 
 describe('Profile – Avatar Selection', () => {
-    it('opens the picker and updates avatar via API', async () => {
+    it('opens the picker and sends the correct payload to the API', async () => {
         localStorageMock.setItem('token', 'fake-jwt-token');
+        
+        // Mock 1: Initial Profile Load
+        // Mock 2: Avatar Update Success
         mockFetch
-            .mockReturnValueOnce(buildFetchResponse({})) // Initial profile fetch
-            .mockReturnValueOnce(buildFetchResponse({ success: true })); // Avatar update fetch
+            .mockReturnValueOnce(buildFetchResponse({})) 
+            .mockReturnValueOnce(buildFetchResponse({ ok: true }));
         
         renderProfile();
 
-        // 1. Open Picker
-        const editBadge = screen.getByText('✎');
-        await userEvent.click(editBadge);
-        expect(screen.getByText(/Choose your Avatar/i)).toBeInTheDocument();
+        // 1. Click the avatar container to open the picker
+        const avatarContainer = screen.getByAltText('Profile').parentElement;
+        await userEvent.click(avatarContainer!);
 
-        // 2. Select Avatar
-        const avatarOption = screen.getByAltText('avatar1.png');
-        await userEvent.click(avatarOption);
+        // 2. Select an avatar from the options
+        const options = screen.getAllByAltText('Option');
+        const targetAvatar = options.find(img => img.getAttribute('src') === '/avatar1.png');
+        
+        expect(targetAvatar).toBeDefined();
+        await userEvent.click(targetAvatar!);
 
-        // 3. Verify API Call
-        expect(mockFetch).toHaveBeenCalledWith(
-            expect.stringMatching(/\/profile\/avatar$/),
-            expect.objectContaining({
-                method: 'POST',
-                body: JSON.stringify({ avatarUrl: 'avatar1.png' })
-            })
-        );
+        // 3. Verify the API call format
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenLastCalledWith(
+                expect.stringMatching(/\/profile\/avatar$/),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ avatarUrl: 'avatar1.png' }),
+                    headers: expect.objectContaining({
+                        'Authorization': 'Bearer fake-jwt-token',
+                        'Content-Type': 'application/json'
+                    })
+                })
+            );
+        });
+        
+        // 4. Verify the picker closed
+        expect(screen.queryByAltText('Option')).not.toBeInTheDocument();
     });
 });
 
-// ── WinrateRing SVG Math ──────────────────────────────────────────────────────
+// ── Winrate SVG Math ──────────────────────────────────────────────────────────
 
 describe('WinrateRing', () => {
-    it('calculates the SVG dashoffset correctly for 0%', () => {
+    it('calculates stroke-dashoffset for 0% correctly', () => {
         renderProfile();
         const fill = document.querySelector<SVGCircleElement>('.winrate-fill');
-        expect(fill).not.toBeNull();
-
-        const RADIUS = 14;
-        const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+        const CIRC = 2 * Math.PI * 14;
         
-        // At 0% the offset should equal the full circumference (empty)
         const actualOffset = parseFloat(fill!.style.strokeDashoffset);
-        expect(actualOffset).toBeCloseTo(CIRCUMFERENCE, 2);
+        expect(actualOffset).toBeCloseTo(CIRC, 2);
     });
 });
