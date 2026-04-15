@@ -9,34 +9,45 @@ interface MatchEntry {
     id: number;
     result: MatchResult;
     pts: number;
-    mode: string;
+    mode: string; 
 }
 
 interface ProfileProps {
     username?: string;
     userId?: string | null;
-    winRate?: number;     // 0–100
+    winRate?: number;
     bestScore?: number;
     matchHistory?: MatchEntry[];
     onPlayClick?: () => void;
     onLogout?: () => void;
 }
 
-// ── Mock data ─────────────────────────────────────────────────────────────────
+// ── Constants & Configuration ──────────────────────────────────────────────────
 
-const DEFAULT_HISTORY: MatchEntry[] = [
-    { id: 1, result: 'win',  pts: 340, mode: 'Ranked' },
-    { id: 2, result: 'lose', pts: 210, mode: 'Casual' },
-    { id: 3, result: 'win',  pts: 480, mode: 'Ranked' },
-    { id: 4, result: 'win',  pts: 390, mode: 'Ranked' },
-    { id: 5, result: 'lose', pts: 150, mode: 'Casual' },
-];
+const AVAILABLE_AVATARS = ['default.png', 'avatar1.png', 'avatar2.png', 'avatar3.png'];
 
-// ── Winrate ring ──────────────────────────────────────────────────────────────
+/**
+ * SCALABLE MODE CONFIGURATION
+ * To add a new mode in the future, just add it to this object.
+ */
+const MODE_MAP: Record<string, string> = {
+    'hvh': 'Player vs Player',
+    'hvb': 'Player vs Bot',
+    // 'tourney': 'Tournament', <--- Example for future expansion
+    // 'blitz': 'Blitz'
+};
+
+const getModeLabel = (mode: string) => {
+    const key = mode?.toLowerCase();
+    return MODE_MAP[key] || mode; // Returns mapped label or raw string if not found
+};
+
+const API_URL = import.meta.env.VITE_GAMEY_API_URL || 'http://localhost:3001';
+
+// ── Winrate Ring Component ─────────────────────────────────────────────────────
 
 const WinrateRing: React.FC<{ pct: number }> = ({ pct }) => {
-    // r=14, stroke-width=4 → half-stroke=2, so circle edge sits at 14+2=16 < 18 (centre), safe within 36x36 viewBox
-    const CIRC = 2 * Math.PI * 14; // ≈ 87.96
+    const CIRC = 2 * Math.PI * 14; 
     const offset = CIRC - (pct / 100) * CIRC;
     return (
         <div className="profile-winrate-row">
@@ -56,26 +67,17 @@ const WinrateRing: React.FC<{ pct: number }> = ({ pct }) => {
     );
 };
 
-// ── Avatar SVG ────────────────────────────────────────────────────────────────
+// ── API Hook ───────────────────────────────────────────────────────────────────
 
-const AvatarIcon: React.FC = () => (
-    <svg width="48" height="48" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="22" cy="16" r="8" stroke="#666" strokeWidth="2" />
-        <path d="M4 40c0-9.941 8.059-18 18-18s18 8.059 18 18"
-              stroke="#666" strokeWidth="2" strokeLinecap="round" />
-    </svg>
-);
-
-// ── API ────────────────────────────────────────────────────────────────
-
-const API_URL = import.meta.env.VITE_GAMEY_API_URL || 'http://localhost:3001';
 function useProfileStats() {
     const [stats, setStats] = useState<{
         winRate: number;
         bestScore: number;
         matchHistory: MatchEntry[];
+        avatarUrl: string;
     } | null>(null);
-    const [loading, setLoading] = useState(false);
+
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -92,94 +94,123 @@ function useProfileStats() {
     return { stats, loading };
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Main Component ─────────────────────────────────────────────────────────────
 
 const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, onLogout }) => {
     const { stats } = useProfileStats();
+    
+    const [localSelectedAvatar, setLocalSelectedAvatar] = useState<string | null>(null);
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-    const winRate      = stats?.winRate      ?? 65;   // fallback while loading
+    const currentAvatar = localSelectedAvatar || stats?.avatarUrl || 'default.png';
+
+    const handleAvatarChange = async (filename: string) => {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${API_URL}/profile/avatar`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}` 
+                },
+                body: JSON.stringify({ avatarUrl: filename })
+            });
+            if (res.ok) {
+                setLocalSelectedAvatar(filename);
+                setIsPickerOpen(false);
+            }
+        } catch (err) {
+            console.error("Failed to update avatar", err);
+        }
+    };
+
+    const winRate      = stats?.winRate      ?? 0;
     const bestScore    = stats?.bestScore    ?? 0;
-    const matchHistory = stats?.matchHistory ?? DEFAULT_HISTORY;
+    const matchHistory = stats?.matchHistory ?? [];
+
     return (
         <div className="profile-page-container">
-
-            {/* ── Navbar — same as Lobby ── */}
             <nav className="profile-navbar">
                 <div className="profile-nav-logo">GAME Y</div>
                 <div className="profile-nav-right">
-                    <button className="profile-nav-play-btn" onClick={onPlayClick}>
-                        Play
-                    </button>
-                    <button className="profile-nav-logout-btn" onClick={onLogout}>
-                        Logout
-                    </button>
+                    <button className="profile-nav-play-btn" onClick={onPlayClick}>Play</button>
+                    <button className="profile-nav-logout-btn" onClick={onLogout}>Logout</button>
                 </div>
             </nav>
 
-            {/* ── Centered card — mirrors the prototype rectangle ── */}
             <div className="profile-body">
                 <div className="profile-card">
-
-                    {/* Avatar + username */}
                     <div className="profile-avatar-block">
-                        <div className="profile-avatar-icon">
-                            <AvatarIcon />
+                        <div className="profile-avatar-container" onClick={() => setIsPickerOpen(!isPickerOpen)}>
+                            <img 
+                                src={`/${currentAvatar}`} 
+                                alt="Profile" 
+                                className="profile-avatar-img" 
+                            />
+                            <div className="avatar-edit-badge">✎</div>
                         </div>
+
+                        {isPickerOpen && (
+                            <div className="avatar-picker-dropdown">
+                                {AVAILABLE_AVATARS.map(file => (
+                                    <img 
+                                        key={file}
+                                        src={`/${file}`}
+                                        className={`avatar-option ${currentAvatar === file ? 'active' : ''}`}
+                                        onClick={(e) => {
+                                            e.preventDefault();   
+                                            e.stopPropagation();  
+                                            handleAvatarChange(file);
+                                        }}
+                                        alt="Option"
+                                    />
+                                ))}
+                            </div>
+                        )}
                         <p className="profile-username-text">{username}</p>
                     </div>
 
-                    {/* Stats | Match History — side by side as in sketch */}
                     <div className="profile-data-row">
-
-                        {/* Stats */}
                         <div className="profile-stats-panel">
                             <p className="profile-panel-label">Stats</p>
-
                             <WinrateRing pct={winRate} />
-
                             <div className="profile-score-block">
                                 <p className="profile-score-label">Best Score</p>
                                 <p className="profile-score-value">{bestScore.toLocaleString()}</p>
                             </div>
                         </div>
 
-                        {/* Match History */}
                         <div className="profile-history-panel">
                             <p className="profile-panel-label">Match History</p>
-
                             <table className="profile-history-table">
                                 <thead>
-                                <tr>
-                                    <th>Win / Lose</th>
-                                    <th>Points</th>
-                                    <th>Mode</th>
-                                </tr>
+                                    <tr>
+                                        <th>Win / Lose</th>
+                                        <th>Points</th>
+                                        <th>Mode</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                {matchHistory.map((match) => (
-                                    <tr key={match.id}>
+                                {matchHistory.map((match, idx) => (
+                                    <tr key={match.id || idx}>
                                         <td>
-                        <span className={`result-badge ${match.result}`}>
-                          {match.result === 'win' ? 'Win' : 'Lose'}
-                        </span>
+                                            <span className={`result-badge ${match.result}`}>
+                                                {match.result === 'win' ? 'Win' : 'Lose'}
+                                            </span>
                                         </td>
                                         <td><span className="pts-value">{match.pts}</span></td>
-                                        <td>{match.mode}</td>
+                                        {/* Uses the scalable configuration map */}
+                                        <td>{getModeLabel(match.mode)}</td>
                                     </tr>
                                 ))}
                                 </tbody>
                             </table>
                         </div>
-
                     </div>
                 </div>
             </div>
-
         </div>
     );
-
 };
-
-
 
 export default Profile;
