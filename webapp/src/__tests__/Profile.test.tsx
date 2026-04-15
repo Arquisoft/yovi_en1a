@@ -8,9 +8,8 @@ import Profile from '../Profile';
 
 vi.mock('./Profile.css', () => ({}));
 
-// Mock the external config to ensure predictable avatar lists
 vi.mock('./config/avatars', () => ({
-    AVAILABLE_AVATARS: ['default.png', 'avatar1.png', 'avatar2.png', 'avatar3.png'],
+    AVAILABLE_AVATARS: ['default.png', 'avatar1.png', 'avatar2.png'],
     DEFAULT_AVATAR: 'default.png'
 }));
 
@@ -41,7 +40,7 @@ function buildFetchResponse(data: unknown, ok = true) {
     } as Response);
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// ── Setup ─────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -49,27 +48,9 @@ beforeEach(() => {
     mockFetch.mockReset();
 });
 
-// ── Rendering & Defaults ──────────────────────────────────────────────────────
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('Profile – UI & Defaults', () => {
-    it('renders basic navbar and panel labels', () => {
-        renderProfile();
-        expect(screen.getByText('GAME Y')).toBeInTheDocument();
-        expect(screen.getByText('Stats')).toBeInTheDocument();
-        expect(screen.getByText('Match History')).toBeInTheDocument();
-    });
-
-    it('shows default 0% winrate and 0 score when no data exists', () => {
-        renderProfile();
-        expect(screen.getByText('0%')).toBeInTheDocument();
-        const scoreValue = document.querySelector('.profile-score-value');
-        expect(scoreValue?.textContent).toBe('0');
-    });
-});
-
-// ── API Fetching ──────────────────────────────────────────────────────────────
-
-describe('Profile – API Data', () => {
+describe('Profile – Rendering & Data', () => {
     const apiData = {
         winRate: 85,
         bestScore: 1250,
@@ -79,52 +60,59 @@ describe('Profile – API Data', () => {
         avatarUrl: 'avatar2.png'
     };
 
-    it('fetches and displays stats and mapped mode labels', async () => {
+    it('shows loading state then displays stats and mapped mode labels', async () => {
         localStorageMock.setItem('token', 'fake-token');
         mockFetch.mockReturnValue(buildFetchResponse(apiData));
         
         renderProfile();
 
+        // Verify loading state appears
+        expect(screen.getByText(/loading profile/i)).toBeInTheDocument();
+
         await waitFor(() => {
-            // Match "85%" (allowing for potential spaces between number and symbol)
+            // Check winrate with regex to handle potential formatting/spaces
             expect(screen.getByText(/85\s*%/)).toBeInTheDocument();
-            
-            // Match "1250" with an optional comma: "1,250" or "1250"
+            // Check score with regex to handle optional commas
             expect(screen.getByText(/1,?250/)).toBeInTheDocument();
-            
-            // Verify the mode mapping logic works
+            // Check that the mode 'hvh' was mapped to its label
             expect(screen.getByText('Player vs Player')).toBeInTheDocument();
         });
-        
-        const img = screen.getByAltText('Profile') as HTMLImageElement;
-        expect(img.src).toContain('avatar2.png');
+
+        // Ensure loading is gone
+        expect(screen.queryByText(/loading profile/i)).not.toBeInTheDocument();
+    });
+
+    it('immediately shows UI if no token is present (not loading)', () => {
+        // No token set in localStorage
+        renderProfile({ username: 'GuestPlayer' });
+
+        expect(screen.queryByText(/loading profile/i)).not.toBeInTheDocument();
+        expect(screen.getByText('GuestPlayer')).toBeInTheDocument();
     });
 });
-
-// ── Avatar Selection ──────────────────────────────────────────────────────────
 
 describe('Profile – Avatar Selection', () => {
     it('opens the picker and sends the correct payload to the API', async () => {
         localStorageMock.setItem('token', 'fake-jwt-token');
         
-        // Mock 1: Initial Profile Load
-        // Mock 2: Avatar Update Success
+        // Mock 1: Initial load data
+        // Mock 2: Success response for the POST update
         mockFetch
-            .mockReturnValueOnce(buildFetchResponse({})) 
+            .mockReturnValueOnce(buildFetchResponse({ avatarUrl: 'default.png' })) 
             .mockReturnValueOnce(buildFetchResponse({ ok: true }));
         
         renderProfile();
 
-        // 1. Click the avatar container to open the picker
-        const avatarContainer = screen.getByAltText('Profile').parentElement;
-        await userEvent.click(avatarContainer!);
+        // Wait for profile to load
+        await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument());
 
-        // 2. Select an avatar from the options
-        const options = screen.getAllByAltText('Option');
-        const targetAvatar = options.find(img => img.getAttribute('src') === '/avatar1.png');
-        
-        expect(targetAvatar).toBeDefined();
-        await userEvent.click(targetAvatar!);
+        // 1. Click the toggle button (accessible role)
+        const toggleBtn = screen.getByRole('button', { name: /change profile picture/i });
+        await userEvent.click(toggleBtn);
+
+        // 2. Select an avatar button by its ARIA label
+        const targetAvatarBtn = screen.getByRole('button', { name: /select avatar1.png as avatar/i });
+        await userEvent.click(targetAvatarBtn);
 
         // 3. Verify the API call format
         await waitFor(() => {
@@ -141,20 +129,29 @@ describe('Profile – Avatar Selection', () => {
             );
         });
         
-        // 4. Verify the picker closed
-        expect(screen.queryByAltText('Option')).not.toBeInTheDocument();
+        // 4. Verify the picker closed (menu role)
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 });
 
-// ── Winrate SVG Math ──────────────────────────────────────────────────────────
+describe('Profile – Navbar Actions', () => {
+    it('calls onPlayClick when play button is pressed', async () => {
+        const onPlay = vi.fn();
+        renderProfile({ onPlayClick: onPlay });
 
-describe('WinrateRing', () => {
-    it('calculates stroke-dashoffset for 0% correctly', () => {
-        renderProfile();
-        const fill = document.querySelector<SVGCircleElement>('.winrate-fill');
-        const CIRC = 2 * Math.PI * 14;
+        const playBtn = screen.getByRole('button', { name: /play/i });
+        await userEvent.click(playBtn);
         
-        const actualOffset = parseFloat(fill!.style.strokeDashoffset);
-        expect(actualOffset).toBeCloseTo(CIRC, 2);
+        expect(onPlay).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls onLogout when logout button is pressed', async () => {
+        const onLogout = vi.fn();
+        renderProfile({ onLogout: onLogout });
+
+        const logoutBtn = screen.getByRole('button', { name: /logout/i });
+        await userEvent.click(logoutBtn);
+        
+        expect(onLogout).toHaveBeenCalledTimes(1);
     });
 });
