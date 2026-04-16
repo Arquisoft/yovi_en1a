@@ -3,8 +3,15 @@ const { MongoClient } = require('mongodb');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const yaml = require('js-yaml');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
+
+const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 // -------------------- CORS Configuration --------------------
 // In production set ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
