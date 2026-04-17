@@ -324,6 +324,12 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   console.log('[Rust response]', data);
 
   const { x, y, z } = data.coords;
+  
+  if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') {
+    console.warn('[BOT] Invalid coordinate types from Rust:', data.coords);
+    return randomFreeCell(moves, boardSize);
+  }
+
   const coords = barycentricToRowCol(x, y, z, boardSize);
 
   if (!coords) {
