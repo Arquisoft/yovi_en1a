@@ -439,7 +439,15 @@ gameyService.get('/play', async (req, res) => {
     if (!coords)
       return res.status(422).json({ error: 'No legal moves available' });
 
-    const bary = rowColToBarycentric(coords.y, coords.x, boardSize);
+    if (result.action) {
+      return res.json({ action: result.action });
+    }
+
+    if (result.x === undefined || result.y === undefined || result.x === null || result.y === null) {
+      return res.status(422).json({ error: 'Invalid coordinates returned' });
+    }
+
+    const bary = rowColToBarycentric(result.y, result.x, boardSize);
     return res.json({ coords: bary });
   } catch (err) {
     console.error('[GET /play]', err.message);
