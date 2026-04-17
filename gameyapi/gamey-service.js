@@ -435,8 +435,8 @@ gameyService.get('/play', async (req, res) => {
   const moves = yenLayoutToMoves(layout, boardSize);
 
   try {
-    const coords = await getBotMove(moves, boardSize, nextPlayer, difficulty);
-    if (!coords)
+    const result = await getBotMove(moves, boardSize, nextPlayer, difficulty);
+    if (!result)
       return res.status(422).json({ error: 'No legal moves available' });
 
     if (result.action) {
