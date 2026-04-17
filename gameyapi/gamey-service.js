@@ -283,7 +283,7 @@ function randomFreeCell(moves, boardSize) {
   return free[Math.floor(Math.random() * free.length)];
 }
 
-async function getBotMove(moves, boardSize, nextPlayer,difficulty) {
+async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   const yen = buildYEN(moves, boardSize, nextPlayer);
   console.log('[YEN sent to Rust]', JSON.stringify(yen));
 
@@ -311,7 +311,17 @@ async function getBotMove(moves, boardSize, nextPlayer,difficulty) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message ?? `Rust engine error ${res.status}`);
 
-  console.log('[Rust coords]', data.coords);
+  if (data.action) {
+    console.log('[BOT] Received action:', data.action);
+    return { action: data.action };
+  }
+
+  if (!data.coords) {
+    console.warn('[BOT] No coords in response, using random fallback');
+    return randomFreeCell(moves, boardSize);
+  }
+
+  console.log('[Rust response]', data);
 
   const { x, y, z } = data.coords;
   const coords = barycentricToRowCol(x, y, z, boardSize);
