@@ -3,7 +3,32 @@ import userEvent from '@testing-library/user-event'
 import RegisterForm from '../RegisterForm'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom'
-
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const dict: Record<string, string> = {
+        'btn_login': 'Login',
+        'btn_register': 'Register',
+        'msg_switch_register': "Don't have an account? Register here",
+        'msg_switch_login': "Already have an account? Login here",
+        'err_fill_fields': 'Please fill in all required fields',
+        'err_no_email': 'Please provide an email address',
+        'err_user_exists': 'User already exists',
+        'err_server': 'Server error occurred',
+        'err_network': 'Network error.'
+      };
+      
+    
+      if (key.includes('username') || key.includes('user')) return 'Username';
+      if (key.includes('password') || key.includes('pass')) return 'Password';
+      if (key.includes('email') || key.includes('mail')) return 'E-mail';
+      if (key.includes('login')) return 'Login';
+      
+      return dict[key] || key;
+    },
+    i18n: { changeLanguage: vi.fn(), language: 'en' }
+  })
+}));
 describe('RegisterForm', () => {
   afterEach(() => {
     vi.restoreAllMocks()

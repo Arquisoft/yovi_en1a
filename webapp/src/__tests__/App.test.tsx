@@ -3,6 +3,16 @@ import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import App from '../App';
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key, 
+    i18n: { 
+      changeLanguage: vi.fn(), 
+      language: 'en' 
+    },
+  }),
+}));
+
 // ─── Mock child components ────────────────────────────────────────────────────
 
 vi.mock('../RegisterForm', () => ({

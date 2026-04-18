@@ -73,42 +73,56 @@ describe('getCellClass', () => {
 });
 
 describe('getTurnPanelHeader', () => {
-  const testUser = 'Ahmet';
+  const testUser = 'Guest User';
+  const mockT = (k: any, options?: any) => {
+    if (k === 'btn_start_game') return 'START GAME';
+    if (k === 'msg_winner') return `${options?.name} WINS!`;
+    if (k === 'msg_bot_thinking') return 'BOT THINKING…';
+    if (k === 'msg_turn') return `${options?.name}'s TURN`;
+    if (k === 'msg_p2_turn') return "P2's TURN";
+    return k;
+  };
 
   it('returns START GAME when idle', () => {
-    expect(getTurnPanelHeader('idle', null, false, 'P1', testUser)).toBe('START GAME');
+   expect(getTurnPanelHeader(mockT, 'idle', null, false, 'P1', testUser)).toBe('START GAME');
   });
 
   it('returns winner string when finished', () => {
-    expect(getTurnPanelHeader('finished', 'P1', false, 'P1', testUser)).toBe(`${testUser} WINS!`);
-    expect(getTurnPanelHeader('finished', 'P2', false, 'P2', testUser)).toBe('P2 WINS!');
+    expect(getTurnPanelHeader(mockT,'finished', 'P1', false, 'P1', testUser)).toBe(`${testUser} WINS!`);
+    expect(getTurnPanelHeader(mockT, 'finished', 'P2', false, 'P2', testUser)).toBe('P2 WINS!');
   });
 
   it('returns BOT THINKING when bot is thinking', () => {
-    expect(getTurnPanelHeader('ongoing', null, true, 'P2', testUser)).toBe('BOT THINKING…');
+    expect(getTurnPanelHeader(mockT,'ongoing', null, true, 'P2', testUser)).toBe('BOT THINKING…');
   });
 
   it('returns current turn when ongoing and not thinking', () => {
-    expect(getTurnPanelHeader('ongoing', null, false, 'P1', testUser)).toBe(`${testUser}'s TURN`);
-    expect(getTurnPanelHeader('ongoing', null, false, 'P2', testUser)).toBe("P2's TURN");
+    expect(getTurnPanelHeader(mockT,'ongoing', null, false, 'P1', testUser)).toBe(`${testUser}'s TURN`);
+    expect(getTurnPanelHeader(mockT, 'ongoing', null, false, 'P2', testUser)).toBe("P2's TURN");
   });
 });
 
 describe('getTurnPanelSubtext', () => {
+  const mockT = (k: any) => {
+    if (k === 'msg_choose_mode') return 'Choose mode below';
+    if (k === 'color_blue') return '(blue)';
+    if (k === 'color_red') return '(red)';
+    return k;
+  };
   it('returns "Choose mode below" when idle', () => {
-    expect(getTurnPanelSubtext('idle', 'P1')).toBe('Choose mode below');
+    expect(getTurnPanelSubtext(mockT, 'idle', 'P1')).toBe('Choose mode below');
   });
 
   it('returns (blue) for P1 when ongoing', () => {
-    expect(getTurnPanelSubtext('ongoing', 'P1')).toBe('(blue)');
+    expect(getTurnPanelSubtext(mockT, 'ongoing', 'P1')).toBe('(blue)');
   });
 
   it('returns (red) for P2 when ongoing', () => {
-    expect(getTurnPanelSubtext('ongoing', 'P2')).toBe('(red)');
+    expect(getTurnPanelSubtext(mockT, 'ongoing', 'P2')).toBe('(red)');
   });
 
   it('returns (red) for P2 when finished', () => {
-    expect(getTurnPanelSubtext('finished', 'P2')).toBe('(red)');
+    expect(getTurnPanelSubtext(mockT, 'finished', 'P2')).toBe('(red)');
   });
 });
 

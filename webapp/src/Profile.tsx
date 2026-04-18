@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Profile.css';
+import { useTranslation } from 'react-i18next';
 import { AVAILABLE_AVATARS, DEFAULT_AVATAR } from './config/avatars';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -23,22 +24,18 @@ interface ProfileProps {
 }
 
 // ── Constants & Configuration ──────────────────────────────────────────────────
-
-const MODE_MAP: Record<string, string> = {
-    'hvh': 'Player vs Player',
-    'hvb': 'Player vs Bot',
-};
-
-const getModeLabel = (mode: string) => {
+const getModeLabel = (t: any, mode: string) => {
     const key = mode?.toLowerCase();
-    return MODE_MAP[key] || mode;
+    if (key === 'hvh') return t('mode_pvp');
+    if (key === 'hvb') return t('mode_pvc_short'); 
+    return mode;
 };
 
 const API_URL = import.meta.env.VITE_GAMEY_API_URL || 'http://localhost:3001';
 
 // ── Winrate Ring Component ─────────────────────────────────────────────────────
 
-const WinrateRing: React.FC<{ pct: number }> = ({ pct }) => {
+const WinrateRing: React.FC<{ pct: number, label: string }> = ({ pct, label }) => {
     const CIRC = 2 * Math.PI * 14; 
     const offset = CIRC - (pct / 100) * CIRC;
     return (
@@ -53,7 +50,7 @@ const WinrateRing: React.FC<{ pct: number }> = ({ pct }) => {
             </svg>
             <div style={{ textAlign: 'center' }}>
                 <span className="winrate-pct">{pct}%</span>
-                <span className="winrate-sub">Win rate</span>
+                <span className="winrate-sub">{label}</span>
             </div>
         </div>
     );
@@ -102,6 +99,7 @@ function useProfileStats() {
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, onLogout }) => {
+    const { t } = useTranslation();
     const { stats, loading } = useProfileStats();
     const [localSelectedAvatar, setLocalSelectedAvatar] = useState<string | null>(null);
     const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -129,7 +127,7 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
     };
 
     if (loading) {
-        return <div className="profile-loading-state">Loading Profile...</div>;
+        return <div className="profile-loading-state">{t('msg_loading_profile')}</div>;
     }
 
     const winRate      = stats?.winRate      ?? 0;
@@ -141,8 +139,8 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
             <nav className="profile-navbar">
                 <div className="profile-nav-logo">GAME Y</div>
                 <div className="profile-nav-right">
-                    <button className="profile-nav-play-btn" onClick={onPlayClick} type="button">Play</button>
-                    <button className="profile-nav-logout-btn" onClick={onLogout} type="button">Logout</button>
+                    <button className="profile-nav-play-btn" onClick={onPlayClick} type="button">{t('nav_play')}</button>
+                    <button className="profile-nav-logout-btn" onClick={onLogout} type="button">{t('nav_logout')}</button>
                 </div>
             </nav>
 
@@ -157,7 +155,7 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
                         >
                             <img 
                                 src={`/${currentAvatar}`} 
-                                alt="User avatar" 
+                                alt={t('alt_user_avatar')}
                                 className="profile-avatar-img" 
                             />
                             <div className="avatar-edit-badge" aria-hidden="true">✎</div>
@@ -175,7 +173,7 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
                                             e.stopPropagation();
                                             handleAvatarChange(file);
                                         }}
-                                        aria-label={`Select ${file} as avatar`}
+                                        aria-label={t('aria_select_avatar', { file })}
                                     >
                                         <img 
                                             src={`/${file}`}
@@ -191,22 +189,22 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
 
                     <div className="profile-data-row">
                         <div className="profile-stats-panel">
-                            <h2 className="profile-panel-label">Stats</h2>
-                            <WinrateRing pct={winRate} />
+                            <h2 className="profile-panel-label">{t('lbl_stats')}</h2>
+                            <WinrateRing pct={winRate} label={t('lbl_win_rate')} />
                             <div className="profile-score-block">
-                                <p className="profile-score-label">Best Score</p>
+                                <p className="profile-score-label">{t('lbl_best_score')}</p>
                                 <p className="profile-score-value">{bestScore.toLocaleString()}</p>
                             </div>
                         </div>
 
                         <div className="profile-history-panel">
-                            <h2 className="profile-panel-label">Match History</h2>
+                            <h2 className="profile-panel-label">{t('lbl_match_history')}</h2>
                             <table className="profile-history-table">
                                 <thead>
                                     <tr>
-                                        <th scope="col">Win / Lose</th>
-                                        <th scope="col">Points</th>
-                                        <th scope="col">Mode</th>
+                                        <th scope="col">{t('th_win_lose')}</th>
+                                        <th scope="col">{t('th_points')}</th>
+                                        <th scope="col">{t('th_mode')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -214,11 +212,11 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
                                     <tr key={match.id || idx}>
                                         <td>
                                             <span className={`result-badge ${match.result}`}>
-                                                {match.result === 'win' ? 'Win' : 'Lose'}
+                                                {match.result === 'win' ? t('badge_win') : t('badge_lose')}
                                             </span>
                                         </td>
                                         <td><span className="pts-value">{match.pts}</span></td>
-                                        <td>{getModeLabel(match.mode)}</td>
+                                        <td>{getModeLabel(t,match.mode)}</td>
                                     </tr>
                                 ))}
                                 </tbody>
