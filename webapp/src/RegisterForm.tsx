@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './RegisterForm.css';
+import LanguageSelector from './LanguageSelector';
 
 
 interface RegisterFormProps {
@@ -8,7 +9,7 @@ interface RegisterFormProps {
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
-  const { t, i18n } = useTranslation();
+  const { t} = useTranslation();
   const [mode, setMode] = useState<'login' | 'register'>('login');
 
   // States for the forms
@@ -75,53 +76,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
     setError(null);
   };
   
-  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-
-  
-  const languages = [
-    { code: 'en', label: 'English' },
-    { code: 'es', label: 'Español' },
-    { code: 'de', label: 'Deutsch' },
-     { code: 'tr', label: 'Türkçe' }
-  ];
-
-
 
   return (
     <div className="start-page-container">
    
-     <div className="language-menu-container">
-        
-        <button
-          type="button"
-          onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-          className="language-toggle-btn"
-        >
-          <span>{t('lbl_language')}</span> 
-          <span className="language-toggle-icon">{isLangMenuOpen ? '▲' : '▼'}</span>
-        </button>
-
-        
-     
-        {isLangMenuOpen && (
-              <div className="language-dropdown-menu">
-                {languages.map((lang) => (
-                  <button
-  key={lang.code}
-  type="button"
-  onClick={() => {
-    i18n.changeLanguage(lang.code);
-    setIsLangMenuOpen(false); 
-  }}
-  className={`language-option ${i18n.language === lang.code ? 'active-lang' : ''}`}
->
-  {lang.label}
-</button>
-                ))}
-              </div>
-            )}
-      </div>
-      
+   <LanguageSelector />
       <h1 className="game-title-large">GAME Y</h1>
 
       <form onSubmit={handleSubmit} className="auth-form" noValidate>

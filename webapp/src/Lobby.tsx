@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Lobby.css';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_AVATAR } from './config/avatars';
+import LanguageSelector from './LanguageSelector';
 
 interface LobbyProps {
   username?: string;
@@ -20,7 +21,7 @@ const Lobby: React.FC<LobbyProps> = ({
   onLogout, 
   onProfile 
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t} = useTranslation();
   // Local state to keep UI in sync with the database
   const [userData, setUserData] = useState({
     username: propUsername || t('guest_user'),
@@ -33,15 +34,7 @@ const Lobby: React.FC<LobbyProps> = ({
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const toggleHowToPlay = () => setShowHowToPlay(!showHowToPlay);
   const friends = ["Alice_99", "Bob_Builder", "Charlie_Hex"];
-  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-  const languages = [
-    { code: 'en', label: '🇬🇧 English' },
-    { code: 'es', label: '🇪🇸 Español' },
-    { code: 'de', label: '🇩🇪 Deutsch' },
-     { code: 'tr', label: '🇹🇷 Türkçe' }
-
-  ];
-
+ 
   // Sync avatar and username with the server on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -65,36 +58,7 @@ const Lobby: React.FC<LobbyProps> = ({
       <nav className="lobby-navbar">
         <div className="nav-logo">GAME Y</div>
        <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-  <div className="language-menu-container">
-            <button
-              type="button"
-              onClick={() => setIsLangMenuOpen(!isLangMenuOpen)}
-              className="language-toggle-btn"
-            >
-              <span>{t('lbl_language')}</span> 
-              <span className="language-toggle-icon">{isLangMenuOpen ? '▲' : '▼'}</span>
-            </button>
-
-            
-              {isLangMenuOpen && (
-              <div className="language-dropdown-menu">
-                {languages.map((lang) => (
-                 <button
-  key={lang.code}
-  type="button"
-  onClick={() => {
-    i18n.changeLanguage(lang.code);
-    setIsLangMenuOpen(false); 
-  }}
-  className={`language-option ${i18n.language === lang.code ? 'active-lang' : ''}`}
->
-  {lang.label}
-</button>
-                ))}
-              </div>
-            )}
-            
-          </div>
+        <LanguageSelector />
 
   <button className="help-icon-button" onClick={toggleHowToPlay} title={t('title_how_to_play')}>?</button>
   <button className="nav-logout-btn" onClick={onLogout}>{t('nav_logout')}</button>
