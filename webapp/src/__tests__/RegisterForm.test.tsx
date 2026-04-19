@@ -5,34 +5,46 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom'
 
       
-    
-    vi.mock('react-i18next', () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
+      
+      const dict: Record<string, string> = {
+        'msg_switch_register': "Don't have an account? Register here",
+        'msg_switch_login': "Already have an account? Login here",
+        'btn_login': 'Login',
+        'btn_register': 'Register',
+        'err_fill_fields': 'Please fill in all required fields',
+        'err_no_email': 'Please provide an email address',
+        'err_user_exists': 'User already exists',
+        'err_server': 'Server error occurred',
+        'err_network': 'Network error.'
+      };
+      
+     
+      if (dict[key]) return dict[key];
+
+      
       const lowerKey = key.toLowerCase();
-      
-  
-      if (lowerKey.includes('login') && !lowerKey.includes('switch') && !lowerKey.includes('already')) return 'Login';
-      if (lowerKey.includes('register') && !lowerKey.includes('switch') && !lowerKey.includes('don')) return 'Register';
-      
       if (lowerKey.includes('username') || lowerKey.includes('user')) return 'Username';
       if (lowerKey.includes('password') || lowerKey.includes('pass')) return 'Password';
       if (lowerKey.includes('email') || lowerKey.includes('mail')) return 'E-mail';
       
       
-      if (lowerKey.includes('account') || lowerKey.includes('don') || lowerKey.includes('switch_register')) return "Don't have an account? Register here";
-      if (lowerKey.includes('already') || lowerKey.includes('switch_login')) return "Already have an account? Login here";
-      if (lowerKey.includes('fill') || lowerKey.includes('required')) return 'Please fill in all required fields';
-      if (lowerKey.includes('provide') || lowerKey.includes('no_email')) return 'Please provide an email address';
-      if (lowerKey.includes('exist')) return 'User already exists';
-      if (lowerKey.includes('server')) return 'Server error occurred';
-      if (lowerKey.includes('network')) return 'Network error.';
-      
+      if (lowerKey.includes('account') || lowerKey.includes('hesap')) {
+          if (lowerKey.includes('register') || lowerKey.includes('kayit') || lowerKey.includes('yok')) {
+              return "Don't have an account? Register here";
+          }
+          return "Already have an account? Login here";
+      }
+
       return key;
     },
     i18n: { changeLanguage: vi.fn(), language: 'en' }
   })
 }));
+
+
 describe('RegisterForm', () => {
   afterEach(() => {
     vi.restoreAllMocks()
