@@ -75,14 +75,23 @@ const Lobby: React.FC<LobbyProps> = ({
               <span className="language-toggle-icon">{isLangMenuOpen ? '▲' : '▼'}</span>
             </button>
 
-            {isLangMenuOpen && (
+            
+              {isLangMenuOpen && (
               <div className="language-dropdown-menu">
                 {languages.map((lang) => (
                   <div
                     key={lang.code}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => {
                       i18n.changeLanguage(lang.code);
                       setIsLangMenuOpen(false); 
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        i18n.changeLanguage(lang.code);
+                        setIsLangMenuOpen(false);
+                      }
                     }}
                     className={`language-option ${i18n.language === lang.code ? 'active-lang' : ''}`}
                   >
@@ -91,6 +100,7 @@ const Lobby: React.FC<LobbyProps> = ({
                 ))}
               </div>
             )}
+            
           </div>
 
   <button className="help-icon-button" onClick={toggleHowToPlay} title={t('title_how_to_play')}>?</button>

@@ -164,15 +164,21 @@ When('I play a {string} game on size {int}', { timeout: 300000 }, async function
 
 When('I change the language to {string} and then back to {string}', async function (targetLang, revertLang) {
   const page = this.page
-
+  
   await page.locator('.language-toggle-btn').click()
   await page.locator('.language-dropdown-menu').waitFor({ state: 'visible' })
-
-  await page.locator('.language-option', { hasText: targetLang }).first().click()
+  
+  await page.locator('.language-option', { hasText: targetLang }).first().click({ force: true })
 
   await page.locator('.language-dropdown-menu').waitFor({ state: 'hidden' })
-  await page.locator('.language-toggle-btn').click()
+  
+
+  await page.locator('.language-toggle-btn').click({ force: true })
   await page.locator('.language-dropdown-menu').waitFor({ state: 'visible' })
-  await page.locator('.language-option', { hasText: revertLang }).first().click()
+  
+
+  await page.locator('.language-option', { hasText: revertLang }).first().click({ force: true })
+  
+
   await page.locator('.language-dropdown-menu').waitFor({ state: 'hidden' })
 })

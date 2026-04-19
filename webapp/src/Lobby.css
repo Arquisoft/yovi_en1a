@@ -485,12 +485,12 @@ body {
     padding: 8px 12px;
     border-radius: 4px;
     background: transparent;
-    color: #aaa;
-    border: 1px solid #555;
+    color: #ffffff,
+    border: 1px solid #777;
     cursor: pointer;
     font-family: inherit;
     font-size: 0.85rem;
-    font-weight: normal;
+    font-weight: bold; 
     text-transform: uppercase;
     letter-spacing: 1px;
     outline: none;
@@ -507,9 +507,11 @@ body {
     background: rgba(72, 61, 255, 0.05);
 }
 
+
+
 .language-toggle-icon {
     font-size: 0.6rem;
-    color: #aaa;
+    color: #ffffff; 
     margin-left: 10px;
     transition: color 0.2s ease;
 }

@@ -209,18 +209,19 @@
 }
 
 .language-toggle-btn {
-    padding: 10px 16px;
-    border-radius: 6px;
-    background: #1a1a1a;
-    color: #fff;
-    border: 1px solid #444;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: transparent;
+    color: #ffffff; 
+    border: 1px solid #777; 
     cursor: pointer;
     font-family: inherit;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     font-weight: bold;
     text-transform: uppercase;
+    letter-spacing: 1px;
     outline: none;
-    min-width: 160px;
+    min-width: 130px;
     display: inline-flex;
     justify-content: space-between;
     align-items: center;
@@ -234,10 +235,13 @@
     
 }
 
+
+
 .language-toggle-icon {
-    font-size: 0.7rem;
-    color: #483dff;
+    font-size: 0.6rem;
+    color: #ffffff;
     margin-left: 10px;
+    transition: color 0.2s ease;
 }
 
 .language-dropdown-menu {
