@@ -34,6 +34,8 @@ body {
   padding: 0 4%;
   box-sizing: border-box;
   border-bottom: 0.1rem solid #333;
+  position: relative;
+  z-index: 1000;
 }
 
 .nav-logo {
@@ -474,7 +476,7 @@ body {
 
   .friend-item {
     padding: 0.5rem 0;
-  }
+  }}
 
   .language-menu-container {
     position: relative;
