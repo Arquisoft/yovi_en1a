@@ -8,6 +8,46 @@ import GameBoard, {
   applyMovesToBoard,
 } from '../GameBoard.tsx';
 
+
+
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: any) => {
+      const dict: Record<string, string> = {
+        'btn_end_turn': 'END TURN',
+        'btn_undo': 'UNDO',
+        'btn_start_game': 'START GAME',
+        'lbl_selected_mode': 'SELECTED MODE',
+        'mode_pvp': 'Player vs Player',
+        'lbl_p2_bot': 'P2 (Bot)',
+        'lbl_p2_user': 'P2: USERN.',
+        'msg_great_match': 'Great match!',
+        'btn_rematch': 'REMATCH',
+        'btn_go_lobby': 'GO TO LOBBY',
+        'nav_profile': 'Profile',
+        'msg_bot_thinking': 'BOT THINKING…',
+        'msg_p2_turn': "P2's TURN",
+        'msg_choose_mode': 'Choose mode below',
+        'color_blue': '(blue)',
+        'color_red': '(red)',
+        'diff_beginner': 'beginner',
+        'diff_medium': 'medium',
+        'diff_advanced': 'advanced',
+        'lbl_chat': 'CHAT'
+      };
+
+      
+      if (key === 'mode_pvc') return `Player vs Computer (${options?.diff})`;
+      if (key === 'msg_winner') return `${options?.name} WINS!`;
+      if (key === 'msg_turn') return `${options?.name}'s TURN`;
+      if (key === 'lbl_pts') return `Pts: ${options?.score}`;
+
+      return dict[key] || key;
+    },
+    i18n: { changeLanguage: vi.fn(), language: 'en' }
+  })
+}));
 // ─── Mock fetch globally ───────────────────────────────────────────────────────
 
 const mockFetch = vi.fn();
