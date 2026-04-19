@@ -79,24 +79,17 @@ const Lobby: React.FC<LobbyProps> = ({
               {isLangMenuOpen && (
               <div className="language-dropdown-menu">
                 {languages.map((lang) => (
-                  <div
-                    key={lang.code}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      i18n.changeLanguage(lang.code);
-                      setIsLangMenuOpen(false); 
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        i18n.changeLanguage(lang.code);
-                        setIsLangMenuOpen(false);
-                      }
-                    }}
-                    className={`language-option ${i18n.language === lang.code ? 'active-lang' : ''}`}
-                  >
-                    {lang.label}
-                  </div>
+                 <button
+  key={lang.code}
+  type="button"
+  onClick={() => {
+    i18n.changeLanguage(lang.code);
+    setIsLangMenuOpen(false); 
+  }}
+  className={`language-option ${i18n.language === lang.code ? 'active-lang' : ''}`}
+>
+  {lang.label}
+</button>
                 ))}
               </div>
             )}

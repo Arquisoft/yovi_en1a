@@ -544,6 +544,11 @@ body {
     background: transparent;
     color: #fff;
     text-transform: none;
+    border: none;
+    border-bottom: 1px solid #2a2a2a; /* Zaten vardı, bunu tut */
+    width: 100%;
+    display: block;
+    font-family: inherit;
 }
 
 .language-option:last-child {
