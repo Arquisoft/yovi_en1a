@@ -161,20 +161,17 @@ When('I play a {string} game on size {int}', { timeout: 300000 }, async function
   const lobbyElement = page.getByText('SELECT MODE:', { exact: false }).first()
   await lobbyElement.waitFor({ state: 'visible', timeout: 10000 })
 })
+
 When('I change the language to {string} and then back to {string}', async function (targetLang, revertLang) {
   const page = this.page
-  await page.locator('.language-toggle-btn').click()
-  
-
-  await page.locator(`text=${targetLang}`).click()
-  
-  await page.locator('button:has-text("Çıkış")').waitFor({ state: 'visible', timeout: 5000 })
   
 
   await page.locator('.language-toggle-btn').click()
-
-  await page.locator(`text=${revertLang}`).click()
   
+  await page.locator(`text=${targetLang}`).click({ force: true })
 
+  await page.locator('button:has-text("Çıkış Yap")').waitFor({ state: 'visible', timeout: 5000 })
+  await page.locator('.language-toggle-btn').click({ force: true })
+  await page.locator(`text=${revertLang}`).click({ force: true })
   await page.locator('button:has-text("Logout")').waitFor({ state: 'visible', timeout: 5000 })
 })
