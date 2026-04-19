@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
 import LanguageSelector from '../LanguageSelector';
+import '@testing-library/jest-dom';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
