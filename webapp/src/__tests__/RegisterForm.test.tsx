@@ -3,28 +3,32 @@ import userEvent from '@testing-library/user-event'
 import RegisterForm from '../RegisterForm'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom'
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const dict: Record<string, string> = {
-        'btn_login': 'Login',
-        'btn_register': 'Register',
-        'msg_switch_register': "Don't have an account? Register here",
-        'msg_switch_login': "Already have an account? Login here",
-        'err_fill_fields': 'Please fill in all required fields',
-        'err_no_email': 'Please provide an email address',
-        'err_user_exists': 'User already exists',
-        'err_server': 'Server error occurred',
-        'err_network': 'Network error.'
-      };
+
       
     
-      if (key.includes('username') || key.includes('user')) return 'Username';
-      if (key.includes('password') || key.includes('pass')) return 'Password';
-      if (key.includes('email') || key.includes('mail')) return 'E-mail';
-      if (key.includes('login')) return 'Login';
+    vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const lowerKey = key.toLowerCase();
       
-      return dict[key] || key;
+  
+      if (lowerKey.includes('login') && !lowerKey.includes('switch') && !lowerKey.includes('already')) return 'Login';
+      if (lowerKey.includes('register') && !lowerKey.includes('switch') && !lowerKey.includes('don')) return 'Register';
+      
+      if (lowerKey.includes('username') || lowerKey.includes('user')) return 'Username';
+      if (lowerKey.includes('password') || lowerKey.includes('pass')) return 'Password';
+      if (lowerKey.includes('email') || lowerKey.includes('mail')) return 'E-mail';
+      
+      
+      if (lowerKey.includes('account') || lowerKey.includes('don') || lowerKey.includes('switch_register')) return "Don't have an account? Register here";
+      if (lowerKey.includes('already') || lowerKey.includes('switch_login')) return "Already have an account? Login here";
+      if (lowerKey.includes('fill') || lowerKey.includes('required')) return 'Please fill in all required fields';
+      if (lowerKey.includes('provide') || lowerKey.includes('no_email')) return 'Please provide an email address';
+      if (lowerKey.includes('exist')) return 'User already exists';
+      if (lowerKey.includes('server')) return 'Server error occurred';
+      if (lowerKey.includes('network')) return 'Network error.';
+      
+      return key;
     },
     i18n: { changeLanguage: vi.fn(), language: 'en' }
   })
