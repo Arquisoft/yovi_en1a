@@ -166,13 +166,12 @@ When('I change the language to {string} and then back to {string}', async functi
   const page = this.page
   
   await page.locator('.language-toggle-btn').click()
-  
 
   await page.locator('.language-option').filter({ hasText: targetLang }).click({ force: true })
 
-  await page.locator('.nav-logout-btn', { hasText: /Çıkış/i }).waitFor({ state: 'visible', timeout: 5000 })
-  
+  await page.locator('.primary-play-btn', { hasText: /OYNA/i }).waitFor({ state: 'visible', timeout: 5000 })
+
   await page.locator('.language-toggle-btn').click({ force: true })
   await page.locator('.language-option').filter({ hasText: revertLang }).click({ force: true })
-  await page.locator('.nav-logout-btn', { hasText: /Logout/i }).waitFor({ state: 'visible', timeout: 5000 })
+  await page.locator('.primary-play-btn', { hasText: /PLAY/i }).waitFor({ state: 'visible', timeout: 5000 })
 })
