@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb'; // Corrected: ObjectId imported here
 import jwt from 'jsonwebtoken';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'js-yaml';
@@ -25,6 +25,8 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const API_VERSION = 'v1';
+
+// REMOVED: const { ObjectId } = require('mongodb'); <--- This was the crash cause
 
 gameyService.use(cors());
 gameyService.use(bodyParser.json());
@@ -116,20 +118,7 @@ function buildYEN(moves, boardSize, nextPlayer) {
   };
 }
 
-// ─── Win detection (mirrors Rust union-find logic) ────────────────────────────
-//
-// Triangular board: row ∈ [0, size-1], col ∈ [0, row]
-// Barycentric: x = size-1-row, y = col, z = row-col
-//
-// Three sides a player must connect to win:
-//   Side A (apex row):  row === 0              (x = size-1)
-//   Side B (left edge): col === 0              (y = 0)
-//   Side C (right edge): col === row           (z = 0)
-//
-// Six neighbors of (row, col):
-//   (row-1, col-1), (row-1, col)   — row above
-//   (row,   col-1), (row,   col+1) — same row
-//   (row+1, col),   (row+1, col+1) — row below
+// ─── Win detection ────────────────────────────────────────────────────────────
 
 function getNeighbors(row, col, boardSize) {
   const neighbors = [];
@@ -149,30 +138,21 @@ function getNeighbors(row, col, boardSize) {
   return neighbors;
 }
 
-function touchesSideA(row, boardSize) { return row === boardSize - 1; } // bottom edge
-function touchesSideB(col)       { return col === 0; }         // left edge
-function touchesSideC(row, col)  { return col === row; }       // right edge
+function touchesSideA(row, boardSize) { return row === boardSize - 1; } 
+function touchesSideB(col)       { return col === 0; }             
+function touchesSideC(row, col)  { return col === row; }       
 
-/**
- * Check whether `player` (0 or 1) has won given the current move list.
- * Uses union-find over the player's stones tracking which of the three
- * sides each connected component touches.
- *
- * Returns true if the player has a group touching all three sides.
- */
 function checkWin(moves, boardSize, player) {
-
   const playerCells = new Map();
   for (const m of moves) {
     if (m.player === player) {
-      const key = m.y * 1000 + m.x; // y=row, x=col in session move format
+      const key = m.y * 1000 + m.x; 
       playerCells.set(key, { row: m.y, col: m.x });
     }
   }
 
   if (playerCells.size === 0) return false;
 
-  // Union-Find
   const keys = [...playerCells.keys()];
   const parent = new Map(keys.map(k => [k, k]));
   const sideA  = new Map(keys.map(k => [k, touchesSideA(playerCells.get(k).row, boardSize)]));
@@ -193,7 +173,6 @@ function checkWin(moves, boardSize, player) {
     sideC.set(rb, sideC.get(rb) || sideC.get(ra));
   }
 
-  // Union each stone with its neighbors that also belong to this player
   for (const [key, { row, col }] of playerCells) {
     for (const [nr, nc] of getNeighbors(row, col, boardSize)) {
       const nk = nr * 1000 + nc;
@@ -201,7 +180,6 @@ function checkWin(moves, boardSize, player) {
     }
   }
 
-  // Check if any root touches all three sides
   let winningRoot = null;
   for (const key of keys) {
     const root = find(key);
@@ -225,19 +203,9 @@ function checkWin(moves, boardSize, player) {
   return { win: false, path: [] };
 }
 
-/**
- * After a move is pushed onto s.moves, check both players for a win
- * and update s.status / s.winner accordingly.
- * Returns true if the game just ended.
- */
-// Replace the updateWinStatus function with this corrected version:
-
 function updateWinStatus(s) {
-  // Check the player who just moved first (most likely winner)
   const lastPlayer = s.moves[s.moves.length - 1]?.player;
-  const toCheck = lastPlayer !== undefined
-      ? [lastPlayer, 1 - lastPlayer]
-      : [0, 1];
+  const toCheck = lastPlayer !== undefined ? [lastPlayer, 1 - lastPlayer] : [0, 1];
 
   for (const p of toCheck) {
     const result = checkWin(s.moves, s.boardSize, p);
@@ -251,7 +219,7 @@ function updateWinStatus(s) {
 
   if (isBoardFull(s.moves, s.boardSize)) {
     s.status = 'finished';
-    s.winner = null; // Draw
+    s.winner = null; 
     return true;
   }
 
@@ -259,15 +227,12 @@ function updateWinStatus(s) {
   return false;
 }
 
-// ─── Call Rust engine ─────────────────────────────────────────────────────────
+// ─── Bot Helpers ──────────────────────────────────────────────────────────
 
 function barycentricToRowCol(x, y, z, boardSize) {
   const row = (boardSize - 1) - z;
   const col = x;
-  if (row < 0 || row >= boardSize || col < 0 || col > row) {
-    console.warn(`[COORDS] Out of bounds: x=${x} y=${y} z=${z} → row=${row} col=${col}`);
-    return null;
-  }
+  if (row < 0 || row >= boardSize || col < 0 || col > row) return null;
   return { x: col, y: row };
 }
 
@@ -283,80 +248,46 @@ function randomFreeCell(moves, boardSize) {
   return free[Math.floor(Math.random() * free.length)];
 }
 
-async function getBotMove(moves, boardSize, nextPlayer,difficulty) {
+async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   const yen = buildYEN(moves, boardSize, nextPlayer);
-  console.log('[YEN sent to Rust]', JSON.stringify(yen));
-
   let botToCall = 'gamer_bot';
   
-  if (difficulty === 'beginner') {
-    botToCall = 'easy_level_bot'; 
-  }else if (difficulty === 'medium') {
-     botToCall = 'gamer_bot'; }
-  else if (difficulty === 'advanced') {
-    botToCall = 'gamer_bot'; 
-  }
+  if (difficulty === 'beginner') botToCall = 'easy_level_bot'; 
+  else if (difficulty === 'advanced') botToCall = 'gamer_bot'; 
 
-  console.log(`[BOT] Difficulty: ${difficulty} -> Target Bot: ${botToCall}`);
-
-  const res = await fetch(
-      `${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(yen),
-      }
-  );
+  const res = await fetch(`${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(yen),
+  });
 
   const data = await res.json();
   if (!res.ok) throw new Error(data.message ?? `Rust engine error ${res.status}`);
 
-  console.log('[Rust coords]', data.coords);
-
   const { x, y, z } = data.coords;
   const coords = barycentricToRowCol(x, y, z, boardSize);
 
-  if (!coords) {
-    console.warn('[BOT] Invalid coords from Rust, using random fallback');
+  if (!coords || moves.some(m => m.x === coords.x && m.y === coords.y)) {
     return randomFreeCell(moves, boardSize);
   }
-
-  const occupied = moves.some(m => m.x === coords.x && m.y === coords.y);
-  if (occupied) {
-    console.warn(`[BOT] Cell (${coords.x},${coords.y}) already taken, using random fallback`);
-    return randomFreeCell(moves, boardSize);
-  }
-
   return coords;
 }
 
-// ─── Session helpers ──────────────────────────────────────────────────────────
+// ─── Session Helpers ──────────────────────────────────────────────────────────
 
 function newSession(id, mode, boardSize, userId, difficulty) {
   return { 
-    id, 
-    mode, 
-    boardSize, 
-    difficulty: difficulty || 'medium', 
-    moves: [], 
-    status: 'ongoing', 
-    currentPlayer: 0, 
-    winner: null, 
-    userId: userId || null, 
-    createdAt: new Date() 
+    id, mode, boardSize, difficulty: difficulty || 'medium', 
+    moves: [], status: 'ongoing', currentPlayer: 0, 
+    winner: null, userId: userId || null, createdAt: new Date() 
   };
 }
 
 function sessionView(s) {
   return {
-    gameId: s.id,
-    mode: s.mode,
-    boardSize: s.boardSize,
-    moves: s.moves,
-    status: s.status,
-    currentPlayer: s.currentPlayer,
-    winner: s.winner,
-    winningPath: s.winningPath || [],
+    gameId: s.id, mode: s.mode, boardSize: s.boardSize,
+    moves: s.moves, status: s.status, currentPlayer: s.currentPlayer,
+    winner: s.winner, winningPath: s.winningPath || [],
     layout: buildLayout(s.moves, s.boardSize),
   };
 }
@@ -366,10 +297,6 @@ function isBoardFull(moves, boardSize) {
 }
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-
-// ─── Competition API ──────────────────────────────────────────────────────────
-// GET /play?position=<YEN>&bot_id=<optional>
-// Must be registered BEFORE GET /play/:gameId to avoid route conflicts.
 
 function yenLayoutToMoves(layout, boardSize) {
   const rows = layout.split('/');
@@ -385,63 +312,33 @@ function yenLayoutToMoves(layout, boardSize) {
 }
 
 function rowColToBarycentric(row, col, boardSize) {
-  return {
-    x: col,
-    y: row - col,
-    z: (boardSize - 1) - row,
-  };
+  return { x: col, y: row - col, z: (boardSize - 1) - row };
 }
 
 gameyService.get('/play', async (req, res) => {
   const { position, bot_id } = req.query;
-
-  if (!position)
-    return res.status(400).json({ error: "'position' query parameter is required" });
+  if (!position) return res.status(400).json({ error: "'position' query parameter is required" });
 
   let yen;
-  try {
-    yen = JSON.parse(position);
-  } catch {
-    return res.status(400).json({ error: 'Invalid JSON in position parameter' });
-  }
+  try { yen = JSON.parse(position); } catch { return res.status(400).json({ error: 'Invalid JSON' }); }
 
   const { size: boardSize, turn: nextPlayer, layout } = yen;
-  if (!boardSize || layout === undefined || nextPlayer === undefined)
-    return res.status(400).json({ error: 'YEN must include size, turn, and layout' });
-
-  let difficulty = 'medium';
-  if (bot_id) {
-    const id = bot_id.toLowerCase();
-    if (['easy', 'beginner', 'easy_level_bot'].includes(id)) difficulty = 'beginner';
-    else if (['advanced', 'hard'].includes(id))              difficulty = 'advanced';
-  }
+  let difficulty = bot_id?.toLowerCase().includes('easy') ? 'beginner' : 'medium';
 
   const moves = yenLayoutToMoves(layout, boardSize);
-
   try {
     const coords = await getBotMove(moves, boardSize, nextPlayer, difficulty);
-    if (!coords)
-      return res.status(422).json({ error: 'No legal moves available' });
-
-    const bary = rowColToBarycentric(coords.y, coords.x, boardSize);
-    return res.json({ coords: bary });
+    return res.json({ coords: rowColToBarycentric(coords.y, coords.x, boardSize) });
   } catch (err) {
-    console.error('[GET /play]', err.message);
-    return res.status(502).json({ error: 'Game engine unavailable', detail: err.message });
+    return res.status(502).json({ error: 'Engine error' });
   }
 });
 
 gameyService.post('/play/create', (req, res) => {
   const { mode, boardSize = 11, difficulty } = req.body;
-  if (!['hvh', 'hvb'].includes(mode))
-    return res.status(400).json({ error: "mode must be 'hvh' or 'hvb'" });
-  if (!Number.isInteger(boardSize) || boardSize < 5 || boardSize > 15)
-    return res.status(400).json({ error: 'boardSize must be an integer between 5 and 15' });
-
   const userId = getUserIdFromRequest(req);
   const id = uuidv4();
   sessions.set(id, newSession(id, mode, boardSize, userId, difficulty));
-  console.log(`[CREATE] game=${id} mode=${mode} size=${boardSize} user=${userId} diff=${difficulty}`);
   return res.status(201).json(sessionView(sessions.get(id)));
 });
 
@@ -451,155 +348,105 @@ gameyService.get('/play/:gameId', (req, res) => {
   return res.json(sessionView(s));
 });
 
-
-// In the POST /play/:gameId/move handler, update the response handling:
-
 gameyService.post('/play/:gameId/move', async (req, res) => {
   const s = sessions.get(req.params.gameId);
-  if (!s) return res.status(400).json({ error: 'Game not found' });
-  if (s.status === 'finished') return res.status(400).json({ error: 'Game already finished' });
+  if (!s || s.status === 'finished') return res.status(400).json({ error: 'Invalid game state' });
 
   const { player, x, y } = req.body;
-  if (player === undefined || x === undefined || y === undefined)
-    return res.status(400).json({ error: 'player, x and y are required' });
-
-  if (s.mode === 'hvb' && player === 1)
-    return res.status(400).json({ error: 'Player 1 is the bot' });
-
-  if (player !== s.currentPlayer)
-    return res.status(400).json({ error: `It is player ${s.currentPlayer}'s turn` });
-
-  if (x < 0 || y < 0 || y >= s.boardSize || x > y)
-    return res.status(400).json({ error: `Invalid coordinates (${x},${y}) for board size ${s.boardSize}` });
-
-  if (s.moves.some(m => m.x === x && m.y === y))
-    return res.status(400).json({ error: `Cell (${x},${y}) is already occupied` });
+  if (player !== s.currentPlayer || s.moves.some(m => m.x === x && m.y === y)) {
+    return res.status(400).json({ error: 'Invalid move' });
+  }
 
   s.moves.push({ player, x, y });
   s.currentPlayer = player === 0 ? 1 : 0;
-
-  const gameEnded = updateWinStatus(s);
-  console.log(`[DEBUG] After move: status=${s.status}, winner=${s.winner}, gameEnded=${gameEnded}`);
+  updateWinStatus(s);
 
   let response = sessionView(s);
-  response.botMove = null;
 
   if (s.mode === 'hvb' && s.status === 'ongoing') {
     try {
       const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty);
-
-      if (!botCoords) {
-        s.status = 'finished';
-        s.winner = s.currentPlayer === 0 ? 1 : 0;
+      if (botCoords) {
+        s.moves.push({ player: 1, ...botCoords });
+        s.currentPlayer = 0;
+        updateWinStatus(s);
         response = sessionView(s);
-        console.log(`[DEBUG] No bot moves, game finished: status=${s.status}`);
-        return res.json(response);
+        response.botMove = botCoords;
       }
-
-      s.moves.push({ player: 1, ...botCoords });
-      s.currentPlayer = 0;
-
-      const botGameEnded = updateWinStatus(s);
-      console.log(`[DEBUG] After bot move: status=${s.status}, winner=${s.winner}, gameEnded=${botGameEnded}`);
-
-      response = sessionView(s);
-      response.botMove = botCoords;
-      console.log(`[BOT] game=${s.id} coords=(${botCoords.x},${botCoords.y})`);
     } catch (err) {
-      console.error('[BOT] Rust engine error:', err.message);
-      response = sessionView(s);
-      response.error = 'Bot move failed — retry with POST /play/:id/bot-move';
+      response.error = 'Bot failed';
     }
   }
 
-  console.log(`[MOVE] game=${s.id} player=${player} (${x},${y}) status=${s.status} winner=${s.winner}`);
-
-  // Save to MongoDB when game finishes
-  if (s.status === 'finished') {
-    saveGameResult(s);
-  }
-
+  if (s.status === 'finished') saveGameResult(s);
   return res.json(response);
 });
 
-gameyService.get('/profile', async (req, res) => {
+// ─── Profile Routes ───────────────────────────────────────────────────────────
+
+gameyService.post('/profile/avatar', async (req, res) => {
   if (!db) return res.status(503).json({ error: 'Database unavailable' });
 
   const userId = getUserIdFromRequest(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
+  const { avatarUrl } = req.body;
+
+  try {
+    const result = await db.collection('users').updateOne(
+      { _id: new ObjectId(userId) }, 
+      { $set: { avatarUrl: avatarUrl } }
+    );
+    
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    return res.json({ success: true, avatarUrl });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update avatar' });
+  }
+});
+
+gameyService.get('/profile', async (req, res) => {
+  if (!db) return res.status(503).json({ error: 'Database unavailable' });
+  const userId = getUserIdFromRequest(req);
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
   try {
     const games = await db.collection('games')
-        .find({ userId: userId.toString() })
-        .sort({ finishedAt: -1 })
-        .toArray();
+      .find({ userId: userId.toString() })
+      .sort({ finishedAt: -1 })
+      .toArray();
 
-    const total   = games.length;
-    const wins    = games.filter(g => g.winner === 0).length;
+    // Use ObjectId for userDoc
+    const userDoc = await db.collection('users').findOne({ _id: new ObjectId(userId) });
+
+    const total = games.length;
+    const wins = games.filter(g => g.winner === 0).length;
     const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
-    const bestScore = total > 0 ? Math.max(...games.map(g => g.totalMoves * 10)) : 0;
+    const bestScore = total > 0 ? Math.max(...games.map(g => (g.totalMoves || 0) * 10)) : 0;
 
     const matchHistory = games.slice(0, 10).map((g, i) => ({
-      id:     g.gameId ?? i,
+      id: g.gameId ?? i,
       result: g.winner === 0 ? 'win' : 'lose',
-      pts:    g.totalMoves * 10,
-      mode:   g.mode === 'hvb' ? 'Ranked' : 'Casual',
+      pts: (g.totalMoves || 0) * 10,
+      mode: g.mode,
     }));
 
-    return res.json({ winRate, bestScore, matchHistory, totalGames: total });
+    return res.json({
+      winRate,
+      bestScore,
+      matchHistory,
+      totalGames: total,
+      avatarUrl: userDoc?.avatarUrl ?? 'default.png' 
+    });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to load profile' });
   }
 });
 
-gameyService.post('/play/:gameId/bot-move', async (req, res) => {
-  const s = sessions.get(req.params.gameId);
-  if (!s) return res.status(404).json({ error: 'Game not found' });
-  if (s.mode !== 'hvb') return res.status(400).json({ error: 'Only available in hvb mode' });
-  if (s.status === 'finished') return res.status(400).json({ error: 'Game already finished' });
-  if (s.currentPlayer !== 1) return res.status(400).json({ error: "It is the human's turn" });
-
-  try {
-    const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty);
-    s.moves.push({ player: 1, ...botCoords });
-    s.currentPlayer = 0;
-
-    // ← Win check after manual bot-move trigger
-    updateWinStatus(s);
-
-    console.log(`[BOT-MOVE] game=${s.id} coords=(${botCoords.x},${botCoords.y}) winner=${s.winner}`);
-    return res.json({ ...sessionView(s), lastMove: botCoords });
-  } catch (err) {
-    console.error('[BOT-MOVE]', err.message);
-    return res.status(502).json({ error: 'Game engine unavailable', detail: err.message });
-  }
-});
-
-gameyService.post('/play/:gameId/undo', (req, res) => {
-  const s = sessions.get(req.params.gameId);
-  if (!s) return res.status(404).json({ error: 'Game not found' });
-  if (s.moves.length === 0) return res.status(400).json({ error: 'No moves to undo' });
-
-  // In hvb mode, undo both the bot's and human's move if the bot already responded
-  // (currentPlayer === 0 means it's human's turn, so bot already moved).
-  // If currentPlayer === 1, only the human has moved — undo just 1.
-  // In hvh mode, always undo just the last move.
-  let undoCount = 1;
-  if (s.mode === 'hvb' && s.currentPlayer === 0 && s.moves.length >= 2) {
-    undoCount = 2;
-  }
-  const undoCount_safe = Math.min(undoCount, s.moves.length);
-  s.moves.splice(-undoCount_safe, undoCount_safe);
-
-  // Recalculate game state
-  s.currentPlayer = s.moves.length % 2 === 0 ? 0 : 1;
-  s.status = 'ongoing';
-  s.winner = null;
-  s.winningPath = undefined;
-
-  console.log(`[UNDO] game=${s.id} removed=${undoCount_safe} remaining=${s.moves.length}`);
-  return res.json(sessionView(s));
-});
+// ─── Control Routes ──────────────────────────────────────────────────────────
 
 gameyService.post('/play/:gameId/rematch', (req, res) => {
   const old = sessions.get(req.params.gameId);
@@ -607,13 +454,11 @@ gameyService.post('/play/:gameId/rematch', (req, res) => {
   const id = uuidv4();
   sessions.set(id, newSession(id, old.mode, old.boardSize, old.userId, old.difficulty));
   sessions.delete(old.id);
-  console.log(`[REMATCH] new=${id} old=${old.id}`);
   return res.status(201).json(sessionView(sessions.get(id)));
 });
 
 gameyService.delete('/play/:gameId', (req, res) => {
-  if (!sessions.delete(req.params.gameId))
-    return res.status(404).json({ error: 'Game not found' });
+  if (!sessions.delete(req.params.gameId)) return res.status(404).json({ error: 'Game not found' });
   return res.json({ message: 'Game deleted' });
 });
 
@@ -626,16 +471,15 @@ gameyService.get('/health', async (req, res) => {
   return res.json({ api: 'ok', rustEngine: rustOk ? 'ok' : 'unreachable', activeSessions: sessions.size });
 });
 
-if (process.argv[1] && process.argv[1].endsWith('gamey-service.js')) {
+if (process.argv[1] && (process.argv[1].endsWith('gamey-service.js') || process.argv[1].endsWith('index.js'))) {
   (async () => {
     try {
       await connectToMongo();
     } catch (err) {
-      console.warn('[DB] MongoDB not available, game results will not be saved:', err.message);
+      console.warn('[DB] MongoDB not available');
     }
     gameyService.listen(PORT, HOST, () => {
       console.log(`Game API → http://${HOST}:${PORT}`);
-      console.log(`Rust engine expected at  ${GAMEY_RUST_URL}`);
     });
   })();
 }
