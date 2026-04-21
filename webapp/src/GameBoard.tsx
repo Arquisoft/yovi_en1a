@@ -67,12 +67,21 @@ function coordsToIndex(x: number, y: number): number {
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
+function sanitizePath(path: string): string {
+  const normalized = path.replace(/\/+/g, '/');
+  if (!normalized.startsWith('/') || normalized.includes('..')) {
+    throw new Error('Invalid path');
+  }
+  return normalized;
+}
+
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const token = localStorage.getItem('token');
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const safePath = sanitizePath(path);
+  const res = await fetch(`${API_URL}${safePath}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
