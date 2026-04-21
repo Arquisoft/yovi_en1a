@@ -44,3 +44,17 @@ Feature: Full Game Flow
     Then I should see "SELECT MODE:"
     When I click "Logout"
     Then I should see "Register here"
+
+
+
+    Scenario: Verify Why Not rule selection and transition to GameBoard
+    Given I am on the login page
+    When I fill in "Username" with "E2EPlayer"
+    And I fill in "Password" with "password123"
+    And I click "LOGIN"
+    Then I should see "SELECT MODE:"
+    When I click "Why Not"
+    And I click "PLAY"
+    And I click "START GAME"
+    Then I should see "RULE: WHY NOT"
+    And I should see "P1: E2EPlayer"

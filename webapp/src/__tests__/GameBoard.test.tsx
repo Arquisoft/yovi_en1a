@@ -34,7 +34,10 @@ vi.mock('react-i18next', () => ({
         'diff_beginner': 'beginner',
         'diff_medium': 'medium',
         'diff_advanced': 'advanced',
-        'lbl_chat': 'CHAT'
+        'lbl_chat': 'CHAT',
+        'lbl_rule': 'RULE',
+        'rule_classic': 'CLASSIC',
+        'rule_whynot': 'WHY NOT (Avoid Edges!)'
       };
 
       
@@ -519,7 +522,7 @@ describe('GameBoard Component', () => {
     delete (window as any).location;
     window.location = {
       ...originalLocation,
-      search: '?mode=pvp&difficulty=advanced'
+    search: '?mode=pvp&difficulty=advanced&rule=whynot'
     } as any;
 
     render(<GameBoard />);
@@ -531,7 +534,21 @@ describe('GameBoard Component', () => {
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(body.mode).toBe('hvh');
       expect(body.difficulty).toBe('advanced');
+      expect(body.rule).toBe('whynot');
     });
+
+    window.location = originalLocation as any;
+  });
+  it('should display the correct rule text in idle state based on URL', () => {
+    const originalLocation = window.location;
+    delete (window as any).location;
+    window.location = {
+      ...originalLocation,
+      search: '?rule=whynot'
+    } as any;
+
+    render(<GameBoard />);
+    expect(screen.getByText(/WHY NOT \(Avoid Edges!\)/i)).toBeInTheDocument();
 
     window.location = originalLocation as any;
   });
