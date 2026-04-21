@@ -256,7 +256,7 @@ mod tests {
         assert_eq!(classic_move, Coordinates::new(0, 0, 2), "Bot should pick the winning move in Classic mode");
 
         // Why Not Mode: Bot MUST AVOID the winning (now losing) move
-        let mut why_not_game = GameY::new_with_mode(3, GameMode::WhyNot);
+        let mut why_not_game = GameY::new_with_mode(3, GameMode::Why_Not);
         for mv in &moves {
             why_not_game.add_move(mv.clone()).unwrap();
         }

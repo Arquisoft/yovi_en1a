@@ -110,10 +110,10 @@ fn test_easy_bot_mode_differences() {
     assert_eq!(classic_move, Coordinates::new(0, 0, 2), "Bot should pick the winning move in Classic mode");
 
     // Why Not Mode: Bot MUST AVOID the winning (now losing) move
-    let mut whynot_game = GameY::new_with_mode(3, GameMode::WhyNot);
+    let mut why_not_game = GameY::new_with_mode(3, GameMode::Why_Not);
     for mv in &moves {
         whynot_game.add_move(mv.clone()).unwrap();
     }
-    let whynot_move = bot.choose_move(&whynot_game).unwrap();
+    let whynot_move = bot.choose_move(&why_not_game).unwrap();
     assert_ne!(whynot_move, Coordinates::new(0, 0, 2), "Bot should avoid the losing move in Why Not mode");
 }
