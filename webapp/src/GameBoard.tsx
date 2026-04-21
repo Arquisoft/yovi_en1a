@@ -68,11 +68,10 @@ function coordsToIndex(x: number, y: number): number {
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
 function sanitizePath(path: string): string {
-  const normalized = path.split('/').filter(Boolean).join('/');
-  if (!normalized.startsWith('/') || normalized.includes('..')) {
+  if (!/^\/[a-zA-Z0-9_/-]*$/.test(path) || path.includes('..')) {
     throw new Error('Invalid path');
   }
-  return '/' + normalized;
+  return path;
 }
 
 function sanitizeGameId(gameId: string): string {
@@ -88,8 +87,7 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const safePath = sanitizePath(path);
-  const url = new URL(safePath, API_URL);
-  const res = await fetch(url, {
+  const res = await fetch(`${API_URL}${safePath}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
