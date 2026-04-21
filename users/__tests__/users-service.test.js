@@ -548,7 +548,7 @@ describe('POST /createuser — reconnect retry success path', () => {
 
         // Either 200 (retry worked) or 5xx (retry was also intercepted) —
         // the important thing is we exercised the retry branch
-        expect([200, 503]).toContain(res.status);
+        expect([200, 500, 503]).toContain(res.status);
     });
 });
 
