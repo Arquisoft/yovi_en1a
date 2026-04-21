@@ -13,6 +13,23 @@ vi.mock('./config/avatars', () => ({
     DEFAULT_AVATAR: 'default.png'
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: any) => {
+      const dict: Record<string, string> = {
+        'msg_loading_profile': 'loading profile',
+        'mode_pvp': 'Player vs Player',
+        'aria_change_avatar': 'change profile picture',
+        'aria_select_avatar': `select ${options?.file} as avatar`, 
+        'nav_play': 'play',
+        'nav_logout': 'logout'
+      };
+      return dict[key] || key;
+    },
+    i18n: { changeLanguage: vi.fn(), language: 'en' }
+  })
+}));
+
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 

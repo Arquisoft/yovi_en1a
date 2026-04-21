@@ -29,6 +29,9 @@ Before(async function () {
 
   this.browser = await browsers[browserName].launch(launchOptions)
   this.page = await this.browser.newPage()
+  await this.page.addInitScript(() => {
+    window.localStorage.setItem('i18nextLng', 'en');
+  });
 })
 
 After(async function () {

@@ -161,3 +161,27 @@ When('I play a {string} game on size {int}', { timeout: 300000 }, async function
   const lobbyElement = page.getByText('SELECT MODE:', { exact: false }).first()
   await lobbyElement.waitFor({ state: 'visible', timeout: 10000 })
 })
+
+
+When('I change the language to {string} and then back to {string}', async function (targetLang, revertLang) {
+  const page = this.page;
+
+  await page.locator('.language-toggle-btn').click();
+  const dropdown = page.locator('.language-dropdown-menu');
+  
+  await dropdown.waitFor({ state: 'visible' });
+  const targetOption = dropdown.locator('.language-option', { hasText: targetLang }).first();
+  await targetOption.waitFor({ state: 'visible' }); 
+  await targetOption.click();
+
+  await dropdown.waitFor({ state: 'hidden' });
+  
+ 
+  await page.locator('.language-toggle-btn').click();
+  await dropdown.waitFor({ state: 'visible' });
+
+  const revertOption = dropdown.locator('.language-option', { hasText: revertLang }).first();
+  await revertOption.waitFor({ state: 'visible' });
+  await revertOption.click();
+  await dropdown.waitFor({ state: 'hidden' });
+});

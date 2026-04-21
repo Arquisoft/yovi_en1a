@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './Lobby.css';
+import { useTranslation } from 'react-i18next';
 import { DEFAULT_AVATAR } from './config/avatars';
+import LanguageSelector from './LanguageSelector';
 
 interface LobbyProps {
   username?: string;
@@ -19,9 +21,10 @@ const Lobby: React.FC<LobbyProps> = ({
   onLogout, 
   onProfile 
 }) => {
+  const { t} = useTranslation();
   // Local state to keep UI in sync with the database
   const [userData, setUserData] = useState({
-    username: propUsername || "Guest User",
+    username: propUsername || t('guest_user'),
     avatarUrl: propAvatar || DEFAULT_AVATAR
   });
 
@@ -29,10 +32,9 @@ const Lobby: React.FC<LobbyProps> = ({
   const [selectedDifficulty, setSelectedDifficulty] = useState('beginner');
   const [boardSize, setBoardSize] = useState(11);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
-  
   const toggleHowToPlay = () => setShowHowToPlay(!showHowToPlay);
   const friends = ["Alice_99", "Bob_Builder", "Charlie_Hex"];
-
+ 
   // Sync avatar and username with the server on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -44,7 +46,7 @@ const Lobby: React.FC<LobbyProps> = ({
       .then(r => r.json())
       .then(data => {
         setUserData({
-          username: data.username || propUsername || "Guest User",
+          username: data.username || propUsername || t('guest_user'),
           avatarUrl: data.avatarUrl || propAvatar || DEFAULT_AVATAR
         });
       })
@@ -55,10 +57,12 @@ const Lobby: React.FC<LobbyProps> = ({
     <div className="lobby-page-wrapper">
       <nav className="lobby-navbar">
         <div className="nav-logo">GAME Y</div>
-        <div className="nav-actions">
-          <button className="help-icon-button" onClick={toggleHowToPlay} title="How to Play">?</button>
-          <button className="nav-logout-btn" onClick={onLogout}>Logout</button>
-        </div>
+       <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <LanguageSelector />
+
+  <button className="help-icon-button" onClick={toggleHowToPlay} title={t('title_how_to_play')}>?</button>
+  <button className="nav-logout-btn" onClick={onLogout}>{t('nav_logout')}</button>
+</div>
       </nav>
 
       <main className="lobby-main-content">
@@ -67,31 +71,31 @@ const Lobby: React.FC<LobbyProps> = ({
           <div className="game-setup-column">
             <div className="setup-options-row">
               <div className="white-panel mode-panel">
-                <h4 className="panel-title">SELECT MODE:</h4>
+                <h4 className="panel-title">{t('lbl_select_mode')}</h4>
                 <button
                   className={`mode-option-btn ${selectedMode === 'pvp' ? 'active' : ''}`}
                   onClick={() => setSelectedMode('pvp')}
-                >PLAYER VS. PLAYER</button>
+                >{t('btn_pvp')}</button>
                 <button
                   className={`mode-option-btn ${selectedMode === 'pvc' ? 'active' : ''}`}
                   onClick={() => setSelectedMode('pvc')}
-                >PLAYER VS. COMPUTER</button>
+                >{t('btn_pvc')}</button>
               </div>
 
               <div className="white-panel difficulty-panel">
-                <h4 className="panel-title">SELECT DIFFICULTY:</h4>
+                <h4 className="panel-title">{t('lbl_select_difficulty')}</h4>
                 {['beginner', 'medium', 'advanced'].map((lvl) => (
                   <button
                     key={lvl}
                     className={`mode-option-btn ${selectedDifficulty === lvl ? 'active' : ''} ${selectedMode === 'pvp' ? 'disabled' : ''}`}
                     onClick={() => selectedMode !== 'pvp' && setSelectedDifficulty(lvl)}
                     disabled={selectedMode === 'pvp'}
-                  >{lvl.toUpperCase()}</button>
+                  >{t(`diff_${lvl}`)}</button>
                 ))}
               </div>
 
               <div className="white-panel size-panel">
-                <h4 className="panel-title">BOARD SIZE: {boardSize}</h4>
+                <h4 className="panel-title">{t('lbl_board_size')} {boardSize}</h4>
                 <input
                   type="range"
                   min="5"
@@ -104,7 +108,7 @@ const Lobby: React.FC<LobbyProps> = ({
               </div>
             </div>
             <button className="primary-play-btn" onClick={() => onPlay?.(selectedMode, selectedDifficulty, boardSize)}>
-              PLAY
+              {t('btn_play')}
             </button>
           </div>
 
@@ -124,7 +128,7 @@ const Lobby: React.FC<LobbyProps> = ({
             </button>
 
             <div className="white-panel friends-panel">
-              <h4 className="panel-title">FRIENDS</h4>
+              <h4 className="panel-title">{t('lbl_friends')}</h4>
               <div className="friends-scroll-container">
                 {friends.map((name) => (
                   <div key={name} className="friend-item">
@@ -143,16 +147,18 @@ const Lobby: React.FC<LobbyProps> = ({
         <div className="how-to-play-overlay">
           <button className="modal-backdrop-exit" onClick={toggleHowToPlay} />
           <dialog open className="how-to-play-content">
-            <h2 className="modal-title">HOW TO PLAY: GAME Y</h2>
-            <div className="rules-list">
-              <h3><span className="step-num">1</span> Objective</h3>
-              <p>Connect all three sides of the triangular board with a continuous chain of your stones.</p>
-              <h3><span className="step-num">2</span> Placement</h3>
-              <p>Players take turns placing one stone of their color on any empty space.</p>
-              <h3><span className="step-num">3</span> Winning</h3>
-              <p>The first player to form a path connecting all three sides wins.</p>
-            </div>
-            <button className="close-modal-btn" onClick={toggleHowToPlay}>Got it!</button>
+           <h2 className="modal-title">{t('modal_title_how_to_play')}</h2>
+<div className="rules-list">
+  <h3><span className="step-num">1</span> {t('rule_1_title')}</h3>
+  <p>{t('rule_1_desc')}</p>
+  
+  <h3><span className="step-num">2</span> {t('rule_2_title')}</h3>
+  <p>{t('rule_2_desc')}</p>
+  
+  <h3><span className="step-num">3</span> {t('rule_3_title')}</h3>
+  <p>{t('rule_3_desc')}</p>
+</div>
+<button className="close-modal-btn" onClick={toggleHowToPlay}>{t('btn_got_it')}</button>
           </dialog>
         </div>
       )}

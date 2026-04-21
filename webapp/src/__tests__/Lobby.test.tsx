@@ -4,6 +4,29 @@ import App from '../App';
 import Lobby from '../Lobby';
 import '@testing-library/jest-dom';
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const dict: Record<string, string> = {
+        'btn_play': 'PLAY',
+        'btn_pvp': 'PLAYER VS. PLAYER',
+        'btn_pvc': 'PLAYER VS. COMPUTER',
+        'diff_beginner': 'BEGINNER',
+        'diff_medium': 'MEDIUM',
+        'lbl_select_mode': 'SELECT MODE:',
+        'btn_got_it': 'Got it!',
+        'nav_logout': 'Logout'
+      };
+      const lowerKey = key.toLowerCase();
+      if (lowerKey.includes('how_to_play_title') || lowerKey.includes('modal_title')) return 'HOW TO PLAY: GAME Y';
+      if (lowerKey.includes('how_to_play') || lowerKey.includes('help')) return 'How to Play';
+      
+      return dict[key] || key;
+    },
+    i18n: { changeLanguage: vi.fn(), language: 'en' }
+  })
+}));
+
 describe('App & Lobby Coverage Booster', () => {
   beforeEach(() => {
     localStorage.clear();

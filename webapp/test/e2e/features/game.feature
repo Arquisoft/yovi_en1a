@@ -26,6 +26,8 @@ Feature: Full Game Flow
     And I fill in "Password" with "password123"
     And I click "LOGIN"
     Then I should see "SELECT MODE:"
+# multiple language changes test
+    When I change the language to "Türkçe" and then back to "English"
 
     # 3 Full Matches: 3 Difficulties, 2 small boards, 1 medium board
     When I play a "BEGINNER" game on size 5
