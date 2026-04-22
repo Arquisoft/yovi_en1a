@@ -65,7 +65,9 @@ services:
       - "9090:9090"
     depends_on:
       - users
-      - gameyapi
+      - gamey-service
+    networks:
+      - monitor-net
 
   grafana:
     image: grafana/grafana
@@ -74,7 +76,11 @@ services:
     ports:
       - "9091:3000"
     depends_on:
-      - prometheus
+      - users
+      - gamey-service
+    networks:
+      - monitor-net
+
 
   mongodb:
     image: mongo:latest

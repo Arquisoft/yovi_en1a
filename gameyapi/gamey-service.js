@@ -31,9 +31,9 @@ gameyService.use(cors());
 gameyService.use(bodyParser.json());
 
 // Prometheus setup
-const promBundle = require('express-prom-bundle');
+import promBundle from 'express-prom-bundle';
 const metricsMiddleware = promBundle({ includeMethod: true });
-app.use(metricsMiddleware);
+gameyService.use(metricsMiddleware);
 
 // ─── MongoDB connection ─────────────────────────────────────────────────────────
 let db;
