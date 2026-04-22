@@ -90,10 +90,10 @@ fn test_easy_bot_multiple_calls_return_valid_moves() {
 
 }
 #[test]
+
 fn test_easy_bot_mode_differences() {
     let bot = easy_level_bot;
 
-    // Setup: Player 0 connecting (0, 0, 2) connects all 3 sides
     let moves = vec![
         Movement::Placement { player: PlayerId::new(0), coords: Coordinates::new(0, 2, 0) },
         Movement::Placement { player: PlayerId::new(1), coords: Coordinates::new(2, 0, 0) },
@@ -101,22 +101,29 @@ fn test_easy_bot_mode_differences() {
         Movement::Placement { player: PlayerId::new(1), coords: Coordinates::new(1, 1, 0) },
     ];
 
-    // Classic Mode: Bot MUST pick the winning move
     let mut classic_game = GameY::new_with_mode(3, GameMode::Classic);
     for mv in &moves {
         classic_game.add_move(mv.clone()).unwrap();
     }
     let classic_move = bot.choose_move(&classic_game).unwrap();
-    assert_eq!(classic_move, Coordinates::new(0, 0, 2), "Bot should pick the winning move in Classic mode");
+    
+   
+    assert!(
+        classic_move == Coordinates::new(0, 0, 2) || classic_move == Coordinates::new(1, 0, 1),
+        "Bot should pick a winning move in Classic mode"
+    );
 
- 
     let mut whynotgame = GameY::new_with_mode(3, GameMode::Why_Not);
     
     for mv in &moves {
-       
         whynotgame.add_move(mv.clone()).unwrap(); 
     }
     
     let why_not_move = bot.choose_move(&whynotgame).unwrap();
-    assert_ne!(why_not_move, Coordinates::new(0, 0, 2), "Bot should avoid the losing move in Why Not mode");
+    
+ 
+    assert!(
+        why_not_move != Coordinates::new(0, 0, 2) && why_not_move != Coordinates::new(1, 0, 1),
+        "Bot should avoid the losing moves in Why Not mode"
+    );
 }
