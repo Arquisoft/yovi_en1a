@@ -1,4 +1,4 @@
-use crate::{Coordinates, GameY, YBot, Movement, PlayerId, YEN,GameMode,GameStatus};
+use crate::{Coordinates, GameY, YBot, Movement, PlayerId,GameMode,GameStatus};
 use rand::prelude::IndexedRandom; // For randomly selecting among equally good moves
 
 pub struct easy_level_bot;

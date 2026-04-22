@@ -40,9 +40,12 @@ impl GamerBot {
         // If someone won, return a near-infinite score
         // This ensures the bot always picks a winning move over a "good" positional move
         if let GameStatus::Finished { winner } = board.status() {
-            // Winning is everything
-            return if winner.id() == bot_id { 1000000 } else { -1000000 };
-        }
+    let mut score = if winner.id() == bot_id { 1000000 } else { -1000000 };
+    if board.mode == GameMode::Why_Not { 
+        score = -score; 
+    }
+    return score;
+}
 
         // DEPTH LIMIT: Stops at depth 0 to keep computation time reasonable
         if depth == 0 {
@@ -85,8 +88,8 @@ impl GamerBot {
         let yen: YEN = board.into();
         let layout: Vec<char> = yen.layout().replace("/", "").chars().collect();
         
-        let my_char = if bot_id == 0 { 'R' } else { 'B' };
-        let _opp_char = if bot_id == 0 { 'B' } else { 'R' };
+       let my_char = if bot_id == 0 { 'B' } else { 'R' };
+        let _opp_char = if bot_id == 0 { 'R' } else { 'B' };
 
         let mut score = 0;
 
