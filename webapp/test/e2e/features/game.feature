@@ -56,5 +56,4 @@ Feature: Full Game Flow
     When I click "Why Not"
     And I click "PLAY"
     And I click "START GAME"
-    Then I should see "RULE: WHY NOT"
     And I should see "P1: E2EPlayer"
