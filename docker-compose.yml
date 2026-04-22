@@ -59,23 +59,22 @@ services:
 
   prometheus:
     image: prom/prometheus
-    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
-    volumes:
-      - ./users/monitoring/prometheus:/etc/prometheus
-    networks:
-      - monitor-net
+    depends_on:
+      - users
+      - gameyapi
 
   grafana:
     image: grafana/grafana
-    container_name: grafana
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     ports:
       - "9091:3000"
-    volumes:
-      - ./users/monitoring/grafana/provisioning:/etc/grafana/provisioning
-    networks:
-      - monitor-net
+    depends_on:
+      - prometheus
 
   mongodb:
     image: mongo:latest
