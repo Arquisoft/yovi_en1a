@@ -60,7 +60,7 @@ services:
   prometheus:
     image: prom/prometheus
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     depends_on:
