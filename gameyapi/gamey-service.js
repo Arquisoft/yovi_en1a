@@ -252,8 +252,9 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   const yen = buildYEN(moves, boardSize, nextPlayer);
   let botToCall = 'gamer_bot';
   
-  if (difficulty === 'beginner') botToCall = 'easy_level_bot'; 
-  else if (difficulty === 'advanced') botToCall = 'gamer_bot'; 
+  if (difficulty === 'beginner') botToCall = 'easy_level_bot';
+  else if (difficulty === 'medium') botToCall = 'gamer_bot';
+  else if (difficulty === 'advanced') botToCall = 'evil_bot'; 
 
   const res = await fetch(`${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}`, {
     method: 'POST',
