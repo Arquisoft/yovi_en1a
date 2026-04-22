@@ -10,8 +10,7 @@ const path = require('path');
 
 const app = express();
 
-const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8'));
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+
 
 // -------------------- CORS Configuration --------------------
 // In production set ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
@@ -32,6 +31,9 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 // -------------------- MongoDB Connection --------------------
 let client;
@@ -82,26 +84,11 @@ async function closeMongoConnection() {
 
 // -------------------- DB Health Middleware --------------------
 app.use(async (req, res, next) => {
-  if (req.path === '/createuser' || req.path === '/login') {
-    if (!db) {
-      return res.status(503).json({ error: 'Database not initialized' });
-    }
-    try {
-      await db.command({ ping: 1 });
-      next();
-    } catch (err) {
-      console.error('Database health check failed:', err.message);
-      try {
-        await client.connect();
-        next();
-      } catch (reconnectErr) {
-        console.error('Reconnection failed:', reconnectErr.message);
-        res.status(503).json({ error: 'Database temporarily unavailable' });
-      }
-    }
-  } else {
-    next();
+  if ((req.path === '/createuser' || req.path === '/login') && !db) {
+    return res.status(503).json({ error: 'Database not initialized' });
   }
+
+  next();
 });
 
 
