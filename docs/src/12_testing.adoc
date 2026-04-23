@@ -1,0 +1,96 @@
+[[section-testing]]
+== Testing
+
+This section describes the testing strategy, the technologies utilized, and the improvements made to the application based on the results obtained during the development lifecycle.
+
+
+=== Unit Testing
+Unit tests focus on verifying the smallest parts of the application in isolation.
+
+* **Technologies:**
+** **Jest:** Used as the primary test runner for both frontend and backend.
+** **React Testing Library:** Employed to test UI components without relying on implementation details.
+** **Supertest:** Used for testing the REST API endpoints of the microservices.
+* **Results:** We maintained a high code coverage (target > 80%). These tests helped identify edge cases in the scoring logic and user validation early.
+* **Changes Made:** Refactored the question generation logic into modular functions to eliminate side effects, making the code more deterministic and easier to verify.
+
+
+=== Acceptance Testing (E2E)
+Acceptance testing ensures the application fulfills the business requirements by simulating real user behavior across different environments.
+
+* **Technologies:**
+** **Cucumber.js:** For defining test scenarios in Gherkin syntax, providing a bridge between technical implementation and functional requirements.
+** **Playwright:** Chosen for its superior speed and native support for modern web features.
+** **Cross-Browser:** Tests are executed across **Chromium, Firefox, and WebKit** to ensure UI consistency.
+
+* **Results:**
+** **3-Games E2E Macro:** We successfully automated the complete user journey: Registration -> Playing 3 matches on varying difficulties -> Verifying the "WINS!" UI popup -> Validating Profile Statistics updates -> Logout.
+** **CI/CD Integration:** Automated checks are now triggered on every Pull Request and prior to each release, ensuring zero regressions in core features.
+
+
+=== Usability Testing
+
+To evaluate if the application is intuitive and identify visual or flow weaknesses, we conducted a moderated usability test with external users.
+
+==== Methodology
+The test was conducted as an "at-home" experience. Users were given specific tasks without any guidance to observe natural interaction. We utilized the **"Think Aloud"** protocol, where participants narrated their thoughts and frustrations in real-time.
+
+* **Privacy:** No personal data (names, IDs) was recorded to ensure complete anonymity.
+* **Participant Profiles:** A single batch of 5 users was selected with varying ages, genders, and **Computer Knowledge (CK)** on a scale of 0-10.
+* **The Ideal Scenario (Benchmark):** Within the batch, one user was assigned a **CK of 10** (Software Student/Professional). This user serves as the **ideal scenario**, representing the best possible interaction time and providing a reference point for the maximum efficiency of the current UI.
+* **Tasks Performed:**
+  1. Register a new account or Log In.
+  2. Complete a game session on **Medium Difficulty**.
+  3. Locate and review personal statistics in the Profile section.
+
+==== Test Results (Batch Report)
+The following metrics were captured during the session with 5 participants:
+
+[cols="1,1,1,1,1,1"]
+|===
+| Age | Gender | CK (0-10) | Time (sec) | Completed? | Grade (0-10)
+| 21 | M | 10 (Ref) | [Sec] | Yes | 8
+| 63 | M | 3 | [Sec] | Yes | 8
+| 58 | F | 8 | [Sec] | Yes | 9
+| 31 | F | 7 | [Sec] | Yes | 8
+| 34 | M | 5 | [Sec] | Yes | 9
+|===
+
+* **Average Age:** 41.4 years.
+* **Gender Ratio:** 60% Male / 40% Female.
+* **Average Time by Gender:** Male: [X]s | Female: [X]s.
+* **Average Time by Age Group:** ** [20-30]: [X]s
+** [30-40]: [X]s
+** [50-65]: [X]s
+* **Overall Application Grade:** **8.4 / 10**
+
+==== Conclusions and Observations
+* **Benchmark Comparison:** By comparing the 'normal' users against our **CK 10 (Ideal Scenario)**, we identified that the primary time difference occurred during the registration phase and navigation to the statistics page.
+* **Demographic Patterns:** While our oldest user (63) successfully completed the test and gave a high grade, their completion time was significantly higher than the benchmark, confirming that navigation flow needs to be more explicit for those with lower CK.
+
+==== Proposed Changes (Future Versions)
+Based on the feedback and observations from our test batch, the following improvements are proposed for future releases to enhance clarity and streamline the user flow:
+
+* **Lobby Logic Optimization:** Currently, game difficulty settings remain visible in the lobby regardless of the selected mode. We propose hiding these settings unless the **PvC (Player vs Computer)** mode is active, as they do not apply to other modes and cause confusion for new users.
+* **Explicit Help Navigation:** The "How to Play" section is currently represented only by a `?` icon in the navbar. To improve discoverability for users with lower computer dexterity, we propose adding an explicit **"How to Play" label** next to the icon or implementing a "First-time user" guided tour.
+* **Game Start Visibility:** Users noted that the "Start Game" button is too visually similar to other interface elements, leading to delays in beginning the match. We propose two possible solutions:
+    ** **Option A:** Redesign the button with a high-contrast "Call to Action" (CTA) style to make it stand out.
+    ** **Option B:** Implement an **automatic start** sequence once all parameters are selected, removing the extra click entirely.
+* **Accessibility:** Increase font sizes and improve color contrast to better accommodate users in higher age brackets who struggled with small text.
+
+
+=== Load Testing
+
+Load testing was conducted to determine the application's stability and performance limits when handling multiple concurrent users.
+
+==== Methodology
+We used **Gatling** to simulate increasing traffic loads. To ensure the tests were realistic, we followed a recording and refactoring process:
+
+* **Recording:** Used `./record.sh` in a clean Firefox environment (Private Mode) to capture a standard user session (Login -> Game -> Profile).
+* **Refactoring:** Modified the simulation scripts in the `gatling-simulations` folder to include randomized user "think times" to avoid artificial spikes and better simulate human behavior.
+* **Incremental Stress:** We performed tests in small increments (**5, 10, 20, 50, and 100 concurrent users**) rather than large jumps, allowing us to pinpoint exactly when performance began to degrade.
+
+==== Results and Quality Goals
+Our performance goal was to maintain a response time under **1.5 seconds** for 95% of requests.
+
+`TODO`
