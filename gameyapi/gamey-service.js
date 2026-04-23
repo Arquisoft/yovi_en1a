@@ -264,7 +264,25 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message ?? `Rust engine error ${res.status}`);
 
+  if (data.action) {
+    console.log('[BOT] Received action:', data.action);
+    return { action: data.action };
+  }
+
+  if (!data.coords) {
+    console.warn('[BOT] No coords in response, using random fallback');
+    return randomFreeCell(moves, boardSize);
+  }
+
+  console.log('[Rust response]', data);
+
   const { x, y, z } = data.coords;
+  
+  if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') {
+    console.warn('[BOT] Invalid coordinate types from Rust:', data.coords);
+    return randomFreeCell(moves, boardSize);
+  }
+
   const coords = barycentricToRowCol(x, y, z, boardSize);
 
   if (!coords || moves.some(m => m.x === coords.x && m.y === coords.y)) {
@@ -327,8 +345,20 @@ gameyService.get('/play', async (req, res) => {
 
   const moves = yenLayoutToMoves(layout, boardSize);
   try {
-    const coords = await getBotMove(moves, boardSize, nextPlayer, difficulty);
-    return res.json({ coords: rowColToBarycentric(coords.y, coords.x, boardSize) });
+    const result = await getBotMove(moves, boardSize, nextPlayer, difficulty);
+    if (!result)
+      return res.status(422).json({ error: 'No legal moves available' });
+
+    if (result.action) {
+      return res.json({ action: result.action });
+    }
+
+    if (result.x === undefined || result.y === undefined || result.x === null || result.y === null) {
+      return res.status(422).json({ error: 'Invalid coordinates returned' });
+    }
+
+    const bary = rowColToBarycentric(result.y, result.x, boardSize);
+    return res.json({ coords: bary });
   } catch (err) {
     return res.status(502).json({ error: 'Engine error' });
   }
