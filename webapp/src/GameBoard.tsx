@@ -68,12 +68,27 @@ function coordsToIndex(x: number, y: number): number {
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
+function sanitizePath(path: string): string {
+  if (!/^\/[a-zA-Z0-9_/-]*$/.test(path) || path.includes('..')) {
+    throw new Error('Invalid path');
+  }
+  return path;
+}
+
+function sanitizeGameId(gameId: string): string {
+  if (!/^[a-zA-Z0-9_-]+$/.test(gameId)) {
+    throw new Error('Invalid gameId');
+  }
+  return gameId;
+}
+
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const token = localStorage.getItem('token');
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const safePath = sanitizePath(path);
+  const res = await fetch(`${API_URL}${safePath}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -235,7 +250,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
 
     try {
       const data = await apiPost<GameSession & { botMove?: { x: number; y: number } | null }>(
-          `/play/${session.gameId}/move`,
+        `/play/${sanitizeGameId(session.gameId)}/move`,
           { player: playerNum, x, y }
       );
       syncFromSession(data);
@@ -251,7 +266,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   const handleUndo = async () => {
     if (!session || session.moves.length === 0) return;
     try {
-      const data = await apiPost<GameSession>(`/play/${session.gameId}/undo`, {});
+      const data = await apiPost<GameSession>(`/play/${sanitizeGameId(session.gameId)}/undo`, {});
       syncFromSession(data);
       setErrorMsg(null);
       setWinner(null);
@@ -265,7 +280,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   const handleRematch = async () => {
     if (!session) return handleStartGame();
     try {
-      const data = await apiPost<GameSession>(`/play/${session.gameId}/rematch`, {});
+      const data = await apiPost<GameSession>(`/play/${sanitizeGameId(session.gameId)}/rematch`, {});
       const actualSize = data.boardSize || boardSize;
       const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
       setBoard(new Array(actualTotalCells).fill('.'));
