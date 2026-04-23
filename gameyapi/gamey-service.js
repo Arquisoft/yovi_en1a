@@ -67,6 +67,10 @@ function getUserIdFromRequest(req) {
 
 async function saveGameResult(session) {
   if (!db) return;
+  if (session.rule !== 'classic') {
+    console.log(`[DB] Game ${session.id} skipped (Rule: ${session.rule})`);
+    return;
+  }
   try {
     await db.collection('games').insertOne({
       gameId: session.id,
@@ -211,7 +215,7 @@ function updateWinStatus(s) {
     const result = checkWin(s.moves, s.boardSize, p);
     if (result.win) {
       s.status = 'finished';
-      s.winner = p;
+      s.winner = (s.rule === 'whynot') ? (1 - p) : p;
       s.winningPath = result.path;
       return true;
     }
@@ -293,9 +297,10 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
 
 // ─── Session Helpers ──────────────────────────────────────────────────────────
 
-function newSession(id, mode, boardSize, userId, difficulty) {
+function newSession(id, mode, boardSize, userId, difficulty, rule) {
   return { 
     id, mode, boardSize, difficulty: difficulty || 'medium', 
+    rule: rule || 'classic',
     moves: [], status: 'ongoing', currentPlayer: 0, 
     winner: null, userId: userId || null, createdAt: new Date() 
   };
@@ -304,6 +309,7 @@ function newSession(id, mode, boardSize, userId, difficulty) {
 function sessionView(s) {
   return {
     gameId: s.id, mode: s.mode, boardSize: s.boardSize,
+    rule: s.rule,
     moves: s.moves, status: s.status, currentPlayer: s.currentPlayer,
     winner: s.winner, winningPath: s.winningPath || [],
     layout: buildLayout(s.moves, s.boardSize),
@@ -365,10 +371,10 @@ gameyService.get('/play', async (req, res) => {
 });
 
 gameyService.post('/play/create', (req, res) => {
-  const { mode, boardSize = 11, difficulty } = req.body;
+  const { mode, boardSize = 11, difficulty, rule } = req.body;
   const userId = getUserIdFromRequest(req);
   const id = uuidv4();
-  sessions.set(id, newSession(id, mode, boardSize, userId, difficulty));
+  sessions.set(id, newSession(id, mode, boardSize, userId, difficulty, rule));
   return res.status(201).json(sessionView(sessions.get(id)));
 });
 
@@ -464,6 +470,7 @@ gameyService.get('/profile', async (req, res) => {
       mode: g.mode,
     }));
 
+
     return res.json({
       winRate,
       bestScore,
@@ -482,7 +489,7 @@ gameyService.post('/play/:gameId/rematch', (req, res) => {
   const old = sessions.get(req.params.gameId);
   if (!old) return res.status(404).json({ error: 'Game not found' });
   const id = uuidv4();
-  sessions.set(id, newSession(id, old.mode, old.boardSize, old.userId, old.difficulty));
+  sessions.set(id, newSession(id, old.mode, old.boardSize, old.userId, old.difficulty, old.rule));
   sessions.delete(old.id);
   return res.status(201).json(sessionView(sessions.get(id)));
 });

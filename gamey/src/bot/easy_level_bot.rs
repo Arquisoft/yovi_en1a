@@ -1,4 +1,4 @@
-use crate::{Coordinates, GameY, YBot, Movement, PlayerId, YEN};
+use crate::{Coordinates, GameY, YBot, Movement, PlayerId,GameMode,GameStatus};
 use rand::prelude::IndexedRandom; // For randomly selecting among equally good moves
 
 pub struct easy_level_bot;
@@ -46,6 +46,16 @@ impl YBot for easy_level_bot {
 
 impl easy_level_bot {
     fn evaluate_board(&self, board: &GameY, bot_id: u32) -> i32 {
+        match board.status() {
+            GameStatus::Finished { winner } => {
+                if winner.id() == bot_id {
+                    return i32::MAX;
+                } else {
+                    return i32::MIN;
+                }
+            }
+            GameStatus::Ongoing { .. } => {} 
+        }
         let size = board.board_size();
         let yen: crate::YEN = board.into();
         let layout: Vec<char> = yen.layout().replace("/", "").chars().collect();
@@ -68,7 +78,11 @@ impl easy_level_bot {
                 score -= (val as f32 * 1.2) as i32; 
             }
         }
+        if board.mode == GameMode::Why_Not {
+            score = -score;
+        }
         score
+        
     }
 
   

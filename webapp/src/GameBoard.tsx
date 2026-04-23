@@ -14,6 +14,7 @@ interface GameSession {
   mode: GameMode;
   difficulty?: string;
   boardSize: number;
+  rule?: string;
   moves: { player: number; x: number; y: number }[];
   status: 'ongoing' | 'finished';
   currentPlayer: number;
@@ -149,16 +150,19 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
     const modeParam = params.get('mode');
     const diffParam = params.get('difficulty');
     const sizeParam = params.get('size');
+    const ruleParam = params.get('rule');
     return {
       mode: modeParam === 'pvp' ? ('hvh' as GameMode) : ('hvb' as GameMode),
       diff: diffParam || 'beginner',
       size: sizeParam ? Number.parseInt(sizeParam, 10) : 11,
+      rule: ruleParam || 'classic',
     };
   };
 
   const initialParams = getInitialParams();
   const selectedMode = initialParams.mode;
   const selectedDifficulty = initialParams.diff;
+  const selectedRule = initialParams.rule;
   const boardSize = initialParams.size;
   const totalCells = (boardSize * (boardSize + 1)) / 2;
 
@@ -225,6 +229,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
         mode: selectedMode,
         difficulty: selectedDifficulty,
         boardSize: boardSize,
+        rule: selectedRule,
       });
       syncFromSession(data);
     } catch (e: unknown) {
@@ -385,6 +390,9 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
                 <div className="game-panel-header" style={{ color: '#ccc' }}>{t('lbl_selected_mode')}</div>
                 <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
                   {selectedMode === 'hvh' ? t('mode_pvp') : t('mode_pvc', { diff: t(`diff_${selectedDifficulty}`) })}
+                </div>
+                <div style={{ color: selectedRule === 'whynot' ? '#ff4444' : '#44ff44', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase' }}>
+                  {t('lbl_rule')}: {selectedRule === 'whynot' ? t('rule_whynot') : t('rule_classic')}
                 </div>
               </div>
             )}

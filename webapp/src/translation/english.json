@@ -75,5 +75,10 @@
   "th_mode": "Mode",
   "badge_win": "Win",
   "badge_lose": "Lose",
-  "mode_pvc_short": "Player vs Computer"
+  "mode_pvc_short": "Player vs Computer",
+  "lbl_rule": "Rule",
+  "rule_classic": "Classic",
+  "rule_whynot": "Why Not (Avoid Edges!)",
+  "lbl_game_rule": "Game Rule",
+  "rule_whynot_name": "Why Not"
 }
