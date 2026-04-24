@@ -30,6 +30,20 @@ vi.mock('react-i18next', () => ({
   })
 }));
 
+vi.mock('../SoundService', () => ({
+  soundService: {
+    settings: { muteMove: false, muteWin: false, muteLoss: false, muteBGM: false, theme: 'ysound' },
+    updateSettings: vi.fn(),
+    playMove: vi.fn(),
+    playBotMove: vi.fn(),
+    playWin: vi.fn(),
+    playLoss: vi.fn(),
+    startBGM: vi.fn(),
+    stopBGM: vi.fn(),
+  },
+  AVAILABLE_PACKS: ['ysound'],
+}));
+
 describe('App & Lobby Coverage Booster', () => {
   beforeEach(() => {
     localStorage.clear();

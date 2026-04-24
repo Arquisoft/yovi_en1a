@@ -51,6 +51,20 @@ vi.mock('react-i18next', () => ({
     i18n: { changeLanguage: vi.fn(), language: 'en' }
   })
 }));
+
+vi.mock('../SoundService', () => ({
+  soundService: {
+    settings: { muteMove: false, muteWin: false, muteLoss: false, muteBGM: false, theme: 'ysound' },
+    updateSettings: vi.fn(),
+    playMove: vi.fn(),
+    playBotMove: vi.fn(),
+    playWin: vi.fn(),
+    playLoss: vi.fn(),
+    startBGM: vi.fn(),
+    stopBGM: vi.fn(),
+  },
+  AVAILABLE_PACKS: ['ysound'],
+}));
 // ─── Mock fetch globally ───────────────────────────────────────────────────────
 
 const mockFetch = vi.fn();
