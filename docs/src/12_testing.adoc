@@ -70,7 +70,8 @@ The following metrics were captured during the session with 5 participants:
 * **Average Age:** 41.4 years.
 * **Gender Ratio:** 60% Male / 40% Female.
 * **Average Time by Gender:** Male: 153.3s | Female: 102.5s.
-* **Average Time by Age Group:** ** [20-30]: 73s
+* **Average Time by Age Group:** 
+** [20-30]: 73s
 ** [30-40]: 118.5s
 ** [50-65]: 177.5s
 * **Overall Application Grade:** **8.4 / 10**
