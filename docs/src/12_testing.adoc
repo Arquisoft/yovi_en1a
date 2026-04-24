@@ -11,8 +11,7 @@ Unit tests focus on verifying the smallest parts of the application in isolation
 ** **Jest:** Used as the primary test runner for both frontend and backend.
 ** **React Testing Library:** Employed to test UI components without relying on implementation details.
 ** **Supertest:** Used for testing the REST API endpoints of the microservices.
-* **Results:** We maintained a high code coverage (target > 80%). These tests helped identify edge cases in the scoring logic and user validation early.
-* **Changes Made:** Refactored the question generation logic into modular functions to eliminate side effects, making the code more deterministic and easier to verify.
+* **Results:** We maintained a high code coverage (target > 80%). Critical components such as the game logic, user authentication, and profile management were thoroughly tested, ensuring that core functionalities are reliable and regressions are minimized during development.
 
 
 === Acceptance Testing (E2E)
@@ -82,17 +81,4 @@ Based on the feedback and observations from our test batch, the following improv
 
 
 === Load Testing
-
-Load testing was conducted to determine the application's stability and performance limits when handling multiple concurrent users.
-
-==== Methodology
-We used **Gatling** to simulate increasing traffic loads. To ensure the tests were realistic, we followed a recording and refactoring process:
-
-* **Recording:** Used `./record.sh` in a clean Firefox environment (Private Mode) to capture a standard user session (Login -> Game -> Profile).
-* **Refactoring:** Modified the simulation scripts in the `gatling-simulations` folder to include randomized user "think times" to avoid artificial spikes and better simulate human behavior.
-* **Incremental Stress:** We performed tests in small increments (**5, 10, 20, 50, and 100 concurrent users**) rather than large jumps, allowing us to pinpoint exactly when performance began to degrade.
-
-==== Results and Quality Goals
-Our performance goal was to maintain a response time under **1.5 seconds** for 95% of requests.
-
 `TODO`
