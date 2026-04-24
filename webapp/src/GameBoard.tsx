@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import './GameBoard.css';
+import { soundService } from './SoundService';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -158,6 +159,15 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   const [p2Score, setP2Score] = useState(0);
   const [hasScored, setHasScored] = useState(false);
 
+  // ── Global Mute Toggle
+  const [muted, setMuted] = useState(() => soundService.settings.muteMove && soundService.settings.muteBGM);
+  const toggleMute = () => {
+    const newMuted = !muted;
+    setMuted(newMuted);
+    soundService.updateSettings({ muteMove: newMuted, muteWin: newMuted, muteLoss: newMuted, muteBGM: newMuted });
+    if (!newMuted && gameStatus === 'ongoing') soundService.startBGM();
+  };
+
   // ── Screen size for dynamic board sizing
   const [screenSize, setScreenSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
@@ -166,6 +176,17 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // ── Background Music Control
+  useEffect(() => {
+    if (gameStatus === 'ongoing') {
+      soundService.startBGM();
+    } else {
+      soundService.stopBGM();
+    }
+    // Cleanup BGM on unmount
+    return () => soundService.stopBGM();
+  }, [gameStatus]);
 
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
@@ -185,8 +206,17 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
         if (s.status === 'finished') {
           setWinner(s.winner === 0 ? 'P1' : 'P2');
           if (!hasScored) {
-            if (s.winner === 0) setP1Score((prev) => prev + 1);
-            if (s.winner === 1) setP2Score((prev) => prev + 1);
+            if (s.winner === 0) {
+               setP1Score((prev) => prev + 1);
+               // If human won
+               soundService.playWin();
+            }
+            if (s.winner === 1) {
+               setP2Score((prev) => prev + 1);
+               // Bot won or player 2 won
+               if (s.mode === 'hvb') soundService.playLoss();
+               else soundService.playWin(); // both humans hear win sound
+            }
             setHasScored(true);
           }
         }
@@ -228,6 +258,8 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
     const optimistic = [...board];
     optimistic[index] = playerNum === 0 ? 'B' : 'R';
     setBoard(optimistic);
+    soundService.playMove();
+
     if (session.mode === 'hvb') setIsBotThinking(true);
 
     try {
@@ -236,6 +268,12 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
           { player: playerNum, x, y }
       );
       syncFromSession(data);
+      
+      // If playing against bot, and the game didn't just end from human move, bot made a move
+      if (session.mode === 'hvb' && data.moves.length > session.moves.length + 1) {
+          // Add a tiny delay so it feels like bot thinking
+          setTimeout(() => soundService.playBotMove(), 50);
+      }
     } catch (e: unknown) {
       setBoard(prev => prev.map((v, i) => (i === index ? '.' : v)));
       setErrorMsg(`Move failed: ${(e as Error).message}`);
@@ -337,14 +375,27 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
       {/* TOP BAR - Ahora fuera del contenedor principal */}
       <nav className="game-top-bar" style={{ padding: '10px 20px' }}>
         <h1 className="game-title">GAME Y</h1>
-        <button
-          className="game-profile-btn"
-          title="View Profile"
-          onClick={onProfile}
-          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-        >
-          Profile 👤
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button
+            onClick={toggleMute}
+            title={muted ? 'Unmute' : 'Mute'}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: muted ? '#555' : '#aaa', padding: '4px', display: 'flex', alignItems: 'center' }}
+          >
+            {muted ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+            )}
+          </button>
+          <button
+            className="game-profile-btn"
+            title="View Profile"
+            onClick={onProfile}
+            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+          >
+            Profile 👤
+          </button>
+        </div>
       </nav>
 
       <div className="game-container">
