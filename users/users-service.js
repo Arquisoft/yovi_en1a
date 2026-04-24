@@ -123,12 +123,14 @@ app.post('/createuser', async (req, res) => {
       username,
       email,
       password: hashedPassword,
+      soundTheme: 'default',
       createdAt: new Date()
     });
 
     res.status(200).json({
       message: `Hello ${username}! Welcome to the course!`,
-      userId: result.insertedId
+      userId: result.insertedId,
+      soundTheme: 'default'
     });
   } catch (error) {
     if (error.code === 11000) {
@@ -145,11 +147,13 @@ app.post('/createuser', async (req, res) => {
           username,
           email,
           password: hashedPassword,
+          soundTheme: 'default',
           createdAt: new Date()
         });
         return res.status(200).json({
           message: `Hello ${username}! Welcome to the course!`,
-          userId: result.insertedId
+          userId: result.insertedId,
+          soundTheme: 'default'
         });
       } catch (retryError) {
         console.error('Retry failed:', retryError.message);
@@ -201,10 +205,29 @@ app.post('/login', async (req, res) => {
     res.status(200).json({
       message: `Login successful for ${user.username}`,
       token,
-      username: user.username
+      username: user.username,
+      soundTheme: user.soundTheme || 'default'
     });
   } catch (error) {
     console.error('Error during login:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.put('/settings/theme', async (req, res) => {
+  const { username, theme } = req.body;
+  if (!username || !theme) {
+    return res.status(400).json({ error: 'Missing username or theme' });
+  }
+
+  try {
+    const result = await db.collection('users').updateOne(
+      { username },
+      { $set: { soundTheme: theme } }
+    );
+    res.status(200).json({ message: 'Theme updated successfully' });
+  } catch (error) {
+    console.error('Error updating theme:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

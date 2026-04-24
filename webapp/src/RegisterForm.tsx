@@ -52,6 +52,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         if (data.token) {
           localStorage.setItem('token', data.token);
         }
+
         onRegisterSuccess(data.username || username);
       } else {
         setError(data.error || 'Server error occurred');
