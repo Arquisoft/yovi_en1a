@@ -64,9 +64,9 @@ docker-compose up --build
 | Service | URL |
 |---|---|
 | 🌐 Web App | http://localhost |
-| 👤 Users API | http://localhost:3000 |
+| 👤 Users API | http://localhost:3000 / http://localhost:3000/api-docs |
 | 🦀 Gamey Engine | http://localhost:4000 |
-| 🎮 Game API | http://localhost:3001 |
+| 🎮 Game API | http://localhost:3001 / http://localhost:3001/api-docs |
 | 📈 Prometheus | http://localhost:9090 |
 | 📊 Grafana | http://localhost:9091 |
 

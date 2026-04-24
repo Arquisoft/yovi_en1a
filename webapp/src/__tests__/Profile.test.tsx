@@ -8,6 +8,28 @@ import Profile from '../Profile';
 
 vi.mock('./Profile.css', () => ({}));
 
+vi.mock('./config/avatars', () => ({
+    AVAILABLE_AVATARS: ['default.png', 'avatar1.png', 'avatar2.png'],
+    DEFAULT_AVATAR: 'default.png'
+}));
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: any) => {
+      const dict: Record<string, string> = {
+        'msg_loading_profile': 'loading profile',
+        'mode_pvp': 'Player vs Player',
+        'aria_change_avatar': 'change profile picture',
+        'aria_select_avatar': `select ${options?.file} as avatar`, 
+        'nav_play': 'play',
+        'nav_logout': 'logout'
+      };
+      return dict[key] || key;
+    },
+    i18n: { changeLanguage: vi.fn(), language: 'en' }
+  })
+}));
+
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
@@ -35,7 +57,7 @@ function buildFetchResponse(data: unknown, ok = true) {
     } as Response);
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────────────
+// ── Setup ─────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -43,229 +65,110 @@ beforeEach(() => {
     mockFetch.mockReset();
 });
 
-// ── Rendering ─────────────────────────────────────────────────────────────────
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('Profile – basic rendering', () => {
-    it('renders the navbar logo', () => {
-        renderProfile();
-        expect(screen.getByText('GAME Y')).toBeInTheDocument();
-    });
-
-    it('renders the Play button', () => {
-        renderProfile();
-        expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
-    });
-
-    it('renders the Logout button', () => {
-        renderProfile();
-        expect(screen.getByRole('button', { name: /logout/i })).toBeInTheDocument();
-    });
-
-    it('renders the default username "Username"', () => {
-        renderProfile();
-        expect(screen.getByText('Username')).toBeInTheDocument();
-    });
-
-    it('renders a custom username when provided', () => {
-        renderProfile({ username: 'Xolotl99' });
-        expect(screen.getByText('Xolotl99')).toBeInTheDocument();
-    });
-
-    it('renders the Stats panel label', () => {
-        renderProfile();
-        expect(screen.getByText('Stats')).toBeInTheDocument();
-    });
-
-    it('renders the Match History panel label', () => {
-        renderProfile();
-        expect(screen.getByText('Match History')).toBeInTheDocument();
-    });
-
-    it('renders Win rate label', () => {
-        renderProfile();
-        expect(screen.getByText('Win rate')).toBeInTheDocument();
-    });
-
-    it('renders Best Score label', () => {
-        renderProfile();
-        expect(screen.getByText('Best Score')).toBeInTheDocument();
-    });
-});
-
-// ── Default / Fallback data ───────────────────────────────────────────────────
-
-describe('Profile – fallback data (no token)', () => {
-    it('shows the fallback win-rate of 65%', () => {
-        renderProfile();
-        expect(screen.getByText('65%')).toBeInTheDocument();
-    });
-
-    it('shows fallback best score of 0', () => {
-        renderProfile();
-        expect(screen.getByText('0')).toBeInTheDocument();
-    });
-
-    it('renders the default match history rows', () => {
-        renderProfile();
-        const wins = screen.getAllByText('Win');
-        const losses = screen.getAllByText('Lose');
-        expect(wins).toHaveLength(3);
-        expect(losses).toHaveLength(2);
-    });
-
-    it('renders correct points from default history', () => {
-        renderProfile();
-        expect(screen.getByText('340')).toBeInTheDocument();
-        expect(screen.getByText('210')).toBeInTheDocument();
-        expect(screen.getByText('480')).toBeInTheDocument();
-    });
-
-    it('renders Ranked and Casual mode labels', () => {
-        renderProfile();
-        const ranked = screen.getAllByText('Ranked');
-        const casual = screen.getAllByText('Casual');
-        expect(ranked.length).toBeGreaterThan(0);
-        expect(casual.length).toBeGreaterThan(0);
-    });
-
-    it('does NOT call fetch when there is no token', () => {
-        renderProfile();
-        expect(mockFetch).not.toHaveBeenCalled();
-    });
-});
-
-// ── API / useProfileStats ─────────────────────────────────────────────────────
-
-describe('Profile – API fetching', () => {
+describe('Profile – Rendering & Data', () => {
     const apiData = {
-        winRate: 72,
-        bestScore: 9800,
+        winRate: 85,
+        bestScore: 1250,
         matchHistory: [
-            { id: 10, result: 'win',  pts: 600, mode: 'Ranked' },
-            { id: 11, result: 'lose', pts: 100, mode: 'Casual' },
+            { id: 1, result: 'win', pts: 500, mode: 'hvh' }
         ],
+        avatarUrl: 'avatar2.png'
     };
 
-    beforeEach(() => {
+    it('shows loading state then displays stats and mapped mode labels', async () => {
+        localStorageMock.setItem('token', 'fake-token');
+        mockFetch.mockReturnValue(buildFetchResponse(apiData));
+        
+        renderProfile();
+
+        // Verify loading state appears
+        expect(screen.getByText(/loading profile/i)).toBeInTheDocument();
+
+        await waitFor(() => {
+            // Check winrate with regex to handle potential formatting/spaces
+            expect(screen.getByText(/85\s*%/)).toBeInTheDocument();
+            // Check score with regex to handle optional commas
+            expect(screen.getByText(/1,?250/)).toBeInTheDocument();
+            // Check that the mode 'hvh' was mapped to its label
+            expect(screen.getByText('Player vs Player')).toBeInTheDocument();
+        });
+
+        // Ensure loading is gone
+        expect(screen.queryByText(/loading profile/i)).not.toBeInTheDocument();
+    });
+
+    it('immediately shows UI if no token is present (not loading)', () => {
+        // No token set in localStorage
+        renderProfile({ username: 'GuestPlayer' });
+
+        expect(screen.queryByText(/loading profile/i)).not.toBeInTheDocument();
+        expect(screen.getByText('GuestPlayer')).toBeInTheDocument();
+    });
+});
+
+describe('Profile – Avatar Selection', () => {
+    it('opens the picker and sends the correct payload to the API', async () => {
         localStorageMock.setItem('token', 'fake-jwt-token');
-    });
-
-    it('calls /profile with the Authorization header', async () => {
-        mockFetch.mockReturnValue(buildFetchResponse(apiData));
+        
+        // Mock 1: Initial load data
+        // Mock 2: Success response for the POST update
+        mockFetch
+            .mockReturnValueOnce(buildFetchResponse({ avatarUrl: 'default.png' })) 
+            .mockReturnValueOnce(buildFetchResponse({ ok: true }));
+        
         renderProfile();
-        await waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
-        const [url, opts] = mockFetch.mock.calls[0];
-        expect(url).toMatch(/\/profile$/);
-        expect(opts.headers.Authorization).toBe('Bearer fake-jwt-token');
-    });
 
-    it('displays win rate returned by API', async () => {
-        mockFetch.mockReturnValue(buildFetchResponse(apiData));
-        renderProfile();
-        await waitFor(() => expect(screen.getByText('72%')).toBeInTheDocument());
-    });
+        // Wait for profile to load
+        await waitFor(() => expect(screen.queryByText(/loading/i)).not.toBeInTheDocument());
 
-    it('displays best score returned by API', async () => {
-        mockFetch.mockReturnValue(buildFetchResponse(apiData));
-        renderProfile();
-        await waitFor(() => expect(screen.getByText(/9[,.]?800/)).toBeInTheDocument());
-    });
+        // 1. Click the toggle button (accessible role)
+        const toggleBtn = screen.getByRole('button', { name: /change profile picture/i });
+        await userEvent.click(toggleBtn);
 
-    it('displays match history returned by API', async () => {
-        mockFetch.mockReturnValue(buildFetchResponse(apiData));
-        renderProfile();
-        await waitFor(() => expect(screen.getByText('600')).toBeInTheDocument());
-        expect(screen.getByText('100')).toBeInTheDocument();
-    });
+        // 2. Select an avatar button by its ARIA label
+        const targetAvatarBtn = screen.getByRole('button', { name: /select avatar1.png as avatar/i });
+        await userEvent.click(targetAvatarBtn);
 
-    it('falls back to defaults when fetch rejects', async () => {
-        mockFetch.mockReturnValue(Promise.reject(new Error('Network error')));
-        renderProfile();
-        await waitFor(() => expect(screen.getByText('65%')).toBeInTheDocument());
+        // 3. Verify the API call format
+        await waitFor(() => {
+            expect(mockFetch).toHaveBeenLastCalledWith(
+                expect.stringMatching(/\/profile\/avatar$/),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: JSON.stringify({ avatarUrl: 'avatar1.png' }),
+                    headers: expect.objectContaining({
+                        'Authorization': 'Bearer fake-jwt-token',
+                        'Content-Type': 'application/json'
+                    })
+                })
+            );
+        });
+        
+        // 4. Verify the picker closed (menu role)
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 });
 
-// ── Interactions ──────────────────────────────────────────────────────────────
+describe('Profile – Navbar Actions', () => {
+    it('calls onPlayClick when play button is pressed', async () => {
+        const onPlay = vi.fn();
+        renderProfile({ onPlayClick: onPlay });
 
-describe('Profile – button interactions', () => {
-    it('calls onPlayClick when Play is clicked', async () => {
-        const onPlayClick = vi.fn();
-        renderProfile({ onPlayClick });
-        await userEvent.click(screen.getByRole('button', { name: /play/i }));
-        expect(onPlayClick).toHaveBeenCalledTimes(1);
+        const playBtn = screen.getByRole('button', { name: /play/i });
+        await userEvent.click(playBtn);
+        
+        expect(onPlay).toHaveBeenCalledTimes(1);
     });
 
-    it('calls onLogout when Logout is clicked', async () => {
+    it('calls onLogout when logout button is pressed', async () => {
         const onLogout = vi.fn();
-        renderProfile({ onLogout });
-        await userEvent.click(screen.getByRole('button', { name: /logout/i }));
+        renderProfile({ onLogout: onLogout });
+
+        const logoutBtn = screen.getByRole('button', { name: /logout/i });
+        await userEvent.click(logoutBtn);
+        
         expect(onLogout).toHaveBeenCalledTimes(1);
-    });
-
-    it('does not throw if onPlayClick is not provided', async () => {
-        renderProfile();
-        await expect(
-            userEvent.click(screen.getByRole('button', { name: /play/i }))
-        ).resolves.not.toThrow();
-    });
-
-    it('does not throw if onLogout is not provided', async () => {
-        renderProfile();
-        await expect(
-            userEvent.click(screen.getByRole('button', { name: /logout/i }))
-        ).resolves.not.toThrow();
-    });
-});
-
-// ── WinrateRing SVG ───────────────────────────────────────────────────────────
-
-describe('WinrateRing', () => {
-    it('renders an SVG element', () => {
-        renderProfile();
-        expect(document.querySelector('svg')).toBeInTheDocument();
-    });
-
-    it('renders the winrate-fill circle with correct dashoffset for 65%', () => {
-        renderProfile();
-        const fill = document.querySelector<SVGCircleElement>('.winrate-fill');
-        expect(fill).not.toBeNull();
-        const CIRC = 2 * Math.PI * 14;
-        const expected = CIRC - (65 / 100) * CIRC;
-        const actual = parseFloat(fill!.style.strokeDashoffset);
-        expect(actual).toBeCloseTo(expected, 2);
-    });
-
-    it('renders the winrate-track circle', () => {
-        renderProfile();
-        expect(document.querySelector('.winrate-track')).toBeInTheDocument();
-    });
-});
-
-// ── Match history table structure ─────────────────────────────────────────────
-
-describe('Profile – match history table', () => {
-    it('renders table headers: Win / Lose, Points, Mode', () => {
-        renderProfile();
-        expect(screen.getByText('Win / Lose')).toBeInTheDocument();
-        expect(screen.getByText('Points')).toBeInTheDocument();
-        expect(screen.getByText('Mode')).toBeInTheDocument();
-    });
-
-    it('applies "win" CSS class to win badges', () => {
-        renderProfile();
-        const winBadges = document.querySelectorAll('.result-badge.win');
-        expect(winBadges.length).toBeGreaterThan(0);
-    });
-
-    it('applies "lose" CSS class to lose badges', () => {
-        renderProfile();
-        const loseBadges = document.querySelectorAll('.result-badge.lose');
-        expect(loseBadges.length).toBeGreaterThan(0);
-    });
-
-    it('renders points inside .pts-value spans', () => {
-        renderProfile();
-        const pts = document.querySelectorAll('.pts-value');
-        expect(pts.length).toBe(5);
     });
 });

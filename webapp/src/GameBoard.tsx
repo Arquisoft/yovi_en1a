@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import './GameBoard.css';
 import { soundService } from './SoundService';
 
@@ -14,6 +15,7 @@ interface GameSession {
   mode: GameMode;
   difficulty?: string;
   boardSize: number;
+  rule?: string;
   moves: { player: number; x: number; y: number }[];
   status: 'ongoing' | 'finished';
   currentPlayer: number;
@@ -68,12 +70,27 @@ function coordsToIndex(x: number, y: number): number {
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
 
+function sanitizePath(path: string): string {
+  if (!/^\/[a-zA-Z0-9_/-]*$/.test(path) || path.includes('..')) {
+    throw new Error('Invalid path');
+  }
+  return path;
+}
+
+function sanitizeGameId(gameId: string): string {
+  if (!/^[a-zA-Z0-9_-]+$/.test(gameId)) {
+    throw new Error('Invalid gameId');
+  }
+  return gameId;
+}
+
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const token = localStorage.getItem('token');
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const safePath = sanitizePath(path);
+  const res = await fetch(`${API_URL}${safePath}`, {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
@@ -92,25 +109,26 @@ export function getCellClass(cellValue: CellValue, isWinning: boolean): string {
 }
 
 export function getTurnPanelHeader(
+    t: any,
     gameStatus: GameStatus,
     winner: PlayerTurn | null,
     isBotThinking: boolean,
     currentTurn: PlayerTurn,
     username: string
 ): string {
-  if (gameStatus === 'idle') return 'START GAME';
+  if (gameStatus === 'idle') return t('btn_start_game');
   if (gameStatus === 'finished') {
     const winnerName = winner === 'P1' ? username : 'P2';
-    return `${winnerName} WINS!`;
+    return t('msg_winner', { name: winnerName }); 
   }
-  if (isBotThinking) return 'BOT THINKING…';
-  if (currentTurn === 'P1') return `${username}'s TURN`;
-  return "P2's TURN";
+  if (isBotThinking) return t('msg_bot_thinking');
+  if (currentTurn === 'P1') return t('msg_turn', { name: username });
+  return t('msg_p2_turn');
 }
 
-export function getTurnPanelSubtext(gameStatus: GameStatus, currentTurn: PlayerTurn): string {
-  if (gameStatus === 'idle') return 'Choose mode below';
-  return currentTurn === 'P1' ? '(blue)' : '(red)';
+export function getTurnPanelSubtext(t:any,gameStatus: GameStatus, currentTurn: PlayerTurn): string {
+  if (gameStatus === 'idle') return t('msg_choose_mode');
+  return currentTurn === 'P1' ? t('color_blue') : t('color_red');
 }
 
 export function applyMovesToBoard(moves: GameSession['moves'], totalCells: number): CellValue[] {
@@ -125,6 +143,7 @@ export function applyMovesToBoard(moves: GameSession['moves'], totalCells: numbe
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function GameBoard({ username = "Guest User", onProfile, onLobby }: GameBoardProps) {
+  const { t } = useTranslation();
   // ── Determine initial mode and difficulty from URL parameters
   const getInitialParams = () => {
     if (globalThis.window === undefined) return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11 };
@@ -132,16 +151,19 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
     const modeParam = params.get('mode');
     const diffParam = params.get('difficulty');
     const sizeParam = params.get('size');
+    const ruleParam = params.get('rule');
     return {
       mode: modeParam === 'pvp' ? ('hvh' as GameMode) : ('hvb' as GameMode),
       diff: diffParam || 'beginner',
       size: sizeParam ? Number.parseInt(sizeParam, 10) : 11,
+      rule: ruleParam || 'classic',
     };
   };
 
   const initialParams = getInitialParams();
   const selectedMode = initialParams.mode;
   const selectedDifficulty = initialParams.diff;
+  const selectedRule = initialParams.rule;
   const boardSize = initialParams.size;
   const totalCells = (boardSize * (boardSize + 1)) / 2;
 
@@ -237,6 +259,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
         mode: selectedMode,
         difficulty: selectedDifficulty,
         boardSize: boardSize,
+        rule: selectedRule,
       });
       syncFromSession(data);
     } catch (e: unknown) {
@@ -264,7 +287,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
 
     try {
       const data = await apiPost<GameSession & { botMove?: { x: number; y: number } | null }>(
-          `/play/${session.gameId}/move`,
+        `/play/${sanitizeGameId(session.gameId)}/move`,
           { player: playerNum, x, y }
       );
       syncFromSession(data);
@@ -286,7 +309,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   const handleUndo = async () => {
     if (!session || session.moves.length === 0) return;
     try {
-      const data = await apiPost<GameSession>(`/play/${session.gameId}/undo`, {});
+      const data = await apiPost<GameSession>(`/play/${sanitizeGameId(session.gameId)}/undo`, {});
       syncFromSession(data);
       setErrorMsg(null);
       setWinner(null);
@@ -300,7 +323,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   const handleRematch = async () => {
     if (!session) return handleStartGame();
     try {
-      const data = await apiPost<GameSession>(`/play/${session.gameId}/rematch`, {});
+      const data = await apiPost<GameSession>(`/play/${sanitizeGameId(session.gameId)}/rematch`, {});
       const actualSize = data.boardSize || boardSize;
       const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
       setBoard(new Array(actualTotalCells).fill('.'));
@@ -366,10 +389,9 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   };
 
   const activeTurn = isBotThinking ? 'P2' : currentTurn;
-  const turnPanelHeader = getTurnPanelHeader(gameStatus, winner, isBotThinking, currentTurn, username);
-  const turnPanelSubtext = getTurnPanelSubtext(gameStatus, activeTurn);
-  const p2Label = selectedMode === 'hvb' ? 'P2 (Bot)' : 'P2: USERN.';
-
+  const turnPanelHeader = getTurnPanelHeader(t,gameStatus, winner, isBotThinking, currentTurn, username);
+  const turnPanelSubtext = getTurnPanelSubtext(t, gameStatus, activeTurn);
+  const p2Label = selectedMode === 'hvb' ? t('lbl_p2_bot') : t('lbl_p2_user');
   return (
     <>
       {/* TOP BAR - Ahora fuera del contenedor principal */}
@@ -393,7 +415,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
             onClick={onProfile}
             style={{ background: 'none', border: 'none', cursor: 'pointer' }}
           >
-            Profile 👤
+            {t('nav_profile')}
           </button>
         </div>
       </nav>
@@ -416,16 +438,19 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
 
             {gameStatus === 'idle' && (
               <div className="game-panel" style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
-                <div className="game-panel-header" style={{ color: '#ccc' }}>SELECTED MODE</div>
+                <div className="game-panel-header" style={{ color: '#ccc' }}>{t('lbl_selected_mode')}</div>
                 <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
-                  {selectedMode === 'hvh' ? 'Player vs Player' : `Player vs Computer (${selectedDifficulty})`}
+                  {selectedMode === 'hvh' ? t('mode_pvp') : t('mode_pvc', { diff: t(`diff_${selectedDifficulty}`) })}
+                </div>
+                <div style={{ color: selectedRule === 'whynot' ? '#ff4444' : '#44ff44', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase' }}>
+                  {t('lbl_rule')}: {selectedRule === 'whynot' ? t('rule_whynot') : t('rule_classic')}
                 </div>
               </div>
             )}
 
             {gameStatus === 'idle' && (
               <button className="game-action-btn btn-end" onClick={handleStartGame}>
-                START GAME
+                {t('btn_start_game')}
               </button>
             )}
 
@@ -436,7 +461,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
             )}
 
             <div className="game-panel chat-panel">
-              <div className="game-panel-header" style={{ color: '#ccc' }}>CHAT</div>
+              <div className="game-panel-header" style={{ color: '#ccc' }}>{t('lbl_chat')}</div>
               <div className="chat-content">...</div>
             </div>
           </div>
@@ -463,14 +488,14 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
                 {gameStatus === 'finished' && winner && (
                     <div className="winner-popup-overlay">
                       <div className="winner-popup-content">
-                        <h2>{winner === 'P1' ? `${username} WINS!` : 'P2 WINS!'}</h2>
-                        <p>Great match!</p>
+                        <h2>{t('msg_winner', { name: winner === 'P1' ? username : 'P2' })}</h2>
+                        <p>{t('msg_great_match')}</p>
                         <div className="winner-popup-buttons">
                           <button className="winner-btn btn-rematch" onClick={handleRematch}>
-                            REMATCH
+                            {t('btn_rematch')}
                           </button>
                           <button className="winner-btn btn-lobby" onClick={onLobby}>
-                            GO TO LOBBY
+                            {t('btn_go_lobby')}
                           </button>
                         </div>
                       </div>
@@ -484,7 +509,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
           <div className="game-sidebar">
             <div className="game-panel p1-card">
               <div className="game-panel-header text-p1">P1: {username}</div>
-              <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>Pts: {p1Score}</div>
+              <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>{t('lbl_pts', { score: p1Score })}</div>
             </div>
 
             <button
@@ -492,17 +517,17 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
               onClick={handleUndo}
               disabled={!session || session.moves.length === 0 || gameStatus !== 'ongoing' || isBotThinking}
             >
-              UNDO
+              {t('btn_undo')}
             </button>
 
             <button className="game-action-btn btn-end" disabled>
-              END TURN
+              {t('btn_end_turn')}
             </button>
 
             <div className="game-panel p2-card">
               <div className="game-panel-header text-p2">{p2Label}</div>
               <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>
-                {isBotThinking ? '🤔 thinking...' : `Pts: ${p2Score}`}
+                {isBotThinking ? t('status_thinking') : t('lbl_pts', { score: p2Score })}
               </div>
             </div>
           </div>

@@ -3,11 +3,16 @@ info:
   title: User Service API
   version: 1.0.0
   description: API for managing users
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
 paths:
   /createuser:
     post:
       summary: Creates a new user
-      description: Creates a new user with the given username.
+      description: Creates a new user with the given username, email, and password.
       requestBody:
         required: true
         content:
@@ -16,10 +21,19 @@ paths:
               type: object
               required:
                 - username
+                - email
+                - password
               properties:
                 username:
                   type: string
                   example: "testuser"
+                email:
+                  type: string
+                  example: "test@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "securepassword123"
       responses:
         '200':
           description: User created successfully
@@ -30,6 +44,59 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "Hello testuser! welcome to the course!"
+                    example: "Hello testuser! Welcome to the course!"
+                  userId:
+                    type: string
         '400':
-          description: Error creating user
+          description: Bad request - missing fields or invalid email format
+        '409':
+          description: Conflict - username or email already exists
+
+  /login:
+    post:
+      summary: User login
+      description: Authenticates a user with username or email and password, returns JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - usernameOrEmail
+                - password
+              properties:
+                usernameOrEmail:
+                  type: string
+                  example: "testuser"
+                password:
+                  type: string
+                  format: password
+                  example: "securepassword123"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login successful for testuser"
+                  token:
+                    type: string
+                    description: JWT authentication token
+                  username:
+                    type: string
+        '400':
+          description: Bad request - missing fields
+        '401':
+          description: Invalid credentials
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

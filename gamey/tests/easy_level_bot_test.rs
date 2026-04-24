@@ -1,4 +1,4 @@
-use gamey::{Coordinates, GameY, Movement, PlayerId, YBot};
+use gamey::{Coordinates, GameY, Movement, PlayerId, YBot, GameMode};
 use gamey::easy_level_bot;
 
 #[test]
@@ -87,4 +87,5 @@ fn test_easy_bot_multiple_calls_return_valid_moves() {
         assert!(index < 28);
         assert!(game.available_cells().contains(&index));
     }
+
 }
