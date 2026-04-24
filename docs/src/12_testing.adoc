@@ -4,14 +4,26 @@
 This section describes the testing strategy, the technologies utilized, and the improvements made to the application based on the results obtained during the development lifecycle.
 
 
-=== Unit Testing
-Unit tests focus on verifying the smallest parts of the application in isolation.
+=== Unit and Integration Testing
+
+Our testing strategy focuses on verifying the reliability of both the internal logic and the interaction between microservices. We employ a "bottom-up" approach, moving from isolated utility functions to full API endpoint validation.
 
 * **Technologies:**
-** **Jest:** Used as the primary test runner for both frontend and backend.
-** **React Testing Library:** Employed to test UI components without relying on implementation details.
-** **Supertest:** Used for testing the REST API endpoints of the microservices.
-* **Results:** We maintained a high code coverage (target > 80%). Critical components such as the game logic, user authentication, and profile management were thoroughly tested, ensuring that core functionalities are reliable and regressions are minimized during development.
+** **Vitest:** Used as the modern, high-performance test runner for both the React frontend and the Node.js microservices.
+** **React Testing Library & user-event:** Employed to validate UI components by simulating authentic user behavior and ensuring accessibility through ARIA role-based queries.
+** **Supertest:** Utilized for black-box testing of REST API endpoints, verifying HTTP response codes and JSON payloads.
+** **MongoDB Memory Server:** Used to provide isolated, ephemeral database instances for every test suite, ensuring zero side effects between test runs.
+
+* **Results and Verification:**
+** **Core Game Mechanics:** We maintained high coverage of the hexagonal grid logic, specifically verifying cell state transitions, coordinate mapping, and winning path calculations.
+** **Infrastructure Resiliency:** Tests verify the "Health Guard" middleware, ensuring the system can handle database disconnects and execute automatic retries for `MongoNotConnectedError` without impacting the user experience.
+** **Identity & Security:** The authentication lifecycle was rigorously tested, covering `bcrypt` password hashing, JWT issuance, and strict CORS origin filtering to prevent unauthorized cross-site requests.
+** **Personalization & Localization:** Verified the integration of `react-i18next` for multilingual support and the secure handling of user profile updates (e.g., avatar selection) via authenticated API calls.
+
+[NOTE]
+====
+By prioritizing critical paths—such as move validation, session security, and database connectivity—we maintained a code coverage target of **>80%**, ensuring that core functionalities remain stable as the architecture scales.
+====
 
 
 === Acceptance Testing (E2E)
