@@ -26,10 +26,14 @@ const HOST = process.env.HOST || '0.0.0.0';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const API_VERSION = 'v1';
 
-// REMOVED: const { ObjectId } = require('mongodb'); <--- This was the crash cause
 
 gameyService.use(cors());
 gameyService.use(bodyParser.json());
+
+// Prometheus setup
+import promBundle from 'express-prom-bundle';
+const metricsMiddleware = promBundle({ includeMethod: true });
+gameyService.use(metricsMiddleware);
 
 // ─── MongoDB connection ─────────────────────────────────────────────────────────
 let db;

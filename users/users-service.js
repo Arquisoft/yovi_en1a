@@ -31,7 +31,12 @@ app.use(cors({
   }
 }));
 
+// Prometheus setup
+
 app.use(express.json());
+const promBundle = require('express-prom-bundle');
+const metricsMiddleware = promBundle({ includeMethod: true });
+app.use(metricsMiddleware);
 
 // -------------------- MongoDB Connection --------------------
 let client;
@@ -103,6 +108,7 @@ app.use(async (req, res, next) => {
     next();
   }
 });
+
 
 
 
