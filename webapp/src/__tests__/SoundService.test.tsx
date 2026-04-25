@@ -4,10 +4,7 @@ import { soundService } from '../SoundService';
 describe('SoundService', () => {
   beforeEach(() => {
     localStorage.clear();
-    // Simulate pristine load
     soundService.settings = { muteMove: false, muteWin: false, muteLoss: false, muteBGM: false, theme: 'ysound' };
-    
-    // Mock the HTML Audio element API
     vi.spyOn(window.HTMLMediaElement.prototype, 'play').mockImplementation(async () => {});
     vi.spyOn(window.HTMLMediaElement.prototype, 'pause').mockImplementation(() => {});
   });
