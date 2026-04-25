@@ -6,7 +6,7 @@
 [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en1a&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en1a)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en1a&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en1a)
 
-### 🌐 [▶ Play now! → http://20.251.170.191](http://20.251.170.191)
+### 🌐 [▶ Play now! → http://20.251.170.191](http://20.199.137.85)
 
 ### 💻 [▶ Presentation about our project!](https://www.canva.com/design/DAHEDEt87NU/3sfOKeuWXhSWBLjhyTD-tA/view?utm_content=DAHEDEt87NU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h9077cf4937)
 
