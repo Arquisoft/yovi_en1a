@@ -3,35 +3,47 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-design-decisions]]
 == Architecture Decisions
 
+This section contains the most important architectural decisions made during the development of the Yovi (Game Y) application. The decisions are documented as lightweight Architecture Decision Records (ADR).
 
-ifdef::arc42help[]
-[role="arc42help"]
-****
-.Contents
-Important, expensive, large scale or risky architecture decisions including rationales.
-With "decisions" we mean selecting one alternative based on given criteria.
+=== ADR 1: Microservices Architecture
+* **Status:** Accepted
+* **Context:** The application needs to handle various distinct domains: user management (registration, auth, profiles), game state management, and core game logic (especially AI and complex win-condition evaluations).
+* **Decision:** We opted for a Microservices Architecture instead of a Monolith. The system is split into multiple independent services (`users`, `gamey-service`, and `gamey`).
+* **Consequences:** 
+  ** *Pros:* Loose coupling, independent scalability (e.g., the computationally heavy Rust game engine can be scaled separately), and technology heterogeneity.
+  ** *Cons:* High operational overhead, complexities in inter-service communication, and necessity of orchestration tools like Docker Compose.
 
-Please use your judgement to decide whether an architectural decision should be documented
-here in this central section or whether you better document it locally
-(e.g. within the white box template of one building block).
+=== ADR 2: Polyglot Technology Stack
+* **Status:** Accepted
+* **Context:** We needed a fast and responsive frontend, a reliable and rapid API layer, and an incredibly fast backend for game rule calculations and AI.
+* **Decision:** We selected a polyglot stack:
+  ** Frontend: **React with Vite and TypeScript** for high performance and type safety.
+  ** API Services: **Node.js with Express** for `users` and `gamey-service` to allow rapid REST API development heavily reliant on asynchronous I/O.
+  ** Game Core: **Rust** for the `gamey` engine to guarantee extreme performance and memory safety when calculating paths and generating bot moves.
+* **Consequences:** Excellent performance characteristics for each domain, but developers must be familiar with both TypeScript/JavaScript and Rust.
 
-Avoid redundancy. 
-Refer to section 4, where you already captured the most important decisions of your architecture.
+=== ADR 3: Data Persistence with MongoDB
+* **Status:** Accepted
+* **Context:** We need a persistence layer to store user profiles, credentials, match history, and active game sessions.
+* **Decision:** We selected **MongoDB**, a NoSQL document database.
+* **Consequences:** The document paradigm perfectly fits our JSON-heavy communication and enables rapid iterations on the schema (e.g., adding user avatars or changing session structures) without complex migrations.
 
-.Motivation
-Stakeholders of your system should be able to comprehend and retrace your decisions.
+=== ADR 4: Containerization with Docker
+* **Status:** Accepted
+* **Context:** Deploying a polyglot microservice application directly to host operating systems is error-prone due to varying dependencies.
+* **Decision:** We use **Docker** and **Docker Compose** for containerization and orchestration.
+* **Consequences:** Standardized environments across development, testing, and production. Developers can quickly spin up the entire ecosystem, including the database and monitoring tools, with a single command (`docker compose up`).
 
-.Form
-Various options:
+=== ADR 5: Local Storage for Ephemeral Preferences
+* **Status:** Accepted
+* **Context:** We implemented persistent game audio with mutable settings (volume, mute toggles, themes), which needed to be remembered between sessions.
+* **Decision:** Instead of saving sound settings in the MongoDB user profile, we use browser **localStorage**. (User Avatars, however, are explicitly synchronized with the database).
+* **Consequences:** 
+  ** *Pros:* Zero latency on startup, no unnecessary backend API calls, reduces database load.
+  ** *Cons:* Settings are tied to the browser/device and do not sync across a user's cross-platform logins.
 
-* ADR (https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions[Documenting Architecture Decisions]) for every important decision
-* List or table, ordered by importance and consequences or:
-* more detailed in form of separate sections per decision
-
-.Further Information
-
-See https://docs.arc42.org/section-9/[Architecture Decisions] in the arc42 documentation.
-There you will find links and examples about ADR.
-
-****
-endif::arc42help[]
+=== ADR 6: Infrastructure Monitoring
+* **Status:** Accepted
+* **Context:** Monitoring system health, API response times, and traffic is crucial for a microservice environment.
+* **Decision:** We integrated **Prometheus** for time-series metric scraping and **Grafana** for dashboarding and visualization.
+* **Consequences:** Deep insights into the Node.js and Rust services. Requires exposing `/metrics` endpoints on all APIs, slightly increasing the implementation burden for new services.
