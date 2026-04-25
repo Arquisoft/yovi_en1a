@@ -140,4 +140,27 @@ describe('App & Lobby Coverage Booster', () => {
    
     expect(onPlayMock).toHaveBeenLastCalledWith('pvp', 'beginner', 11, 'whynot');
   });
+
+  it('Lobby: Opens and interacts with the Sound Settings popup', () => {
+    render(<Lobby onPlay={vi.fn()} onLogout={vi.fn()} username="Tester" />);
+    
+    // Open settings
+    const settingsBtn = screen.getByTitle('Settings');
+    fireEvent.click(settingsBtn);
+    expect(screen.getByText('SETTINGS')).toBeInTheDocument();
+    
+    // Toggle a checkbox
+    const moveSoundsCheckbox = screen.getByLabelText(/Move Sounds/i);
+    fireEvent.click(moveSoundsCheckbox);
+    
+    // Change soundpack
+    const select = screen.getByRole('combobox');
+    fireEvent.change(select, { target: { value: 'retro' } });
+    
+    // Close settings
+    const closeBtn = screen.getByText('Save & Close');
+    fireEvent.click(closeBtn);
+    
+    expect(screen.queryByText('SETTINGS')).not.toBeInTheDocument();
+  });
 });
