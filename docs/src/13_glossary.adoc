@@ -22,6 +22,9 @@
 | CORS
 | Cross-Origin Resource Sharing - a security mechanism that allows a web page to access resources from a different origin.
 
+| Cucumber.js
+| A tool for running automated tests written in plain language (Gherkin), used for the project's Acceptance Testing.
+
 | Docker
 | A containerization platform used to package and run the application services consistently across environments.
 
@@ -36,6 +39,9 @@
 
 | GameY API
 | The Node.js‑based API Gateway that routes moves and YEN payloads between the Webapp (or external bots) and the Rust Logic Engine.
+
+| Gherkin
+| A domain-specific language for defining test scenarios using Given/When/Then syntax, making technical tests readable for stakeholders.
 
 | Grafana
 | An observability platform used to visualize metrics collected by Prometheus.
@@ -57,6 +63,9 @@
 
 | Node.js
 | The JavaScript runtime used for the User Service.
+
+| Playwright
+| A cross-browser automation framework used for End-to-End (E2E) testing on Chromium, Firefox, and WebKit.
 
 | PlantUML
 | A tool for creating UML diagrams from plain text, used to generate all architectural diagrams in this documentation.
@@ -81,6 +90,9 @@
 
 | User Service
 | The Node.js‑based subsystem responsible for user registration, authentication, and persistence of statistics.
+
+| Vitest
+| A Vite-native testing framework used as the primary runner for unit and integration tests across the stack.
 
 | Webapp
 | The React frontend application that provides the user interface and orchestrates requests to the backend services.
