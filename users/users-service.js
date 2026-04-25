@@ -134,7 +134,6 @@ app.post('/createuser', async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      soundTheme: 'default',
       avatarUrl: avatarUrl || 'default.png',
       createdAt: new Date()
     };
@@ -152,7 +151,6 @@ app.post('/createuser', async (req, res) => {
       message: `Hello ${username}! Welcome to the course!`,
       token,
       userId: result.insertedId,
-      soundTheme: 'default',
       avatarUrl: newUser.avatarUrl,
       username: newUser.username
     });
@@ -204,8 +202,7 @@ app.post('/login', async (req, res) => {
     res.status(200).json({
       message: `Login successful for ${user.username}`,
       token,
-      username: user.username,
-      soundTheme: user.soundTheme || 'default'
+      username: user.username
     });
   } catch (error) {
     console.error('Error during login:', error);
@@ -213,23 +210,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-app.put('/settings/theme', async (req, res) => {
-  const { username, theme } = req.body;
-  if (!username || !theme) {
-    return res.status(400).json({ error: 'Missing username or theme' });
-  }
 
-  try {
-    const result = await db.collection('users').updateOne(
-      { username },
-      { $set: { soundTheme: theme } }
-    );
-    res.status(200).json({ message: 'Theme updated successfully' });
-  } catch (error) {
-    console.error('Error updating theme:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 // -------------------- Server Startup --------------------
 
