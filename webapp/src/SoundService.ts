@@ -30,7 +30,14 @@ class SoundService {
   }
 
   private save() {
-    try { localStorage.setItem('soundSettings', JSON.stringify(this.settings)); } catch {}
+    const settings = {
+      muteMove: Boolean(this.settings.muteMove),
+      muteWin: Boolean(this.settings.muteWin),
+      muteLoss: Boolean(this.settings.muteLoss),
+      muteBGM: Boolean(this.settings.muteBGM),
+      theme: AVAILABLE_PACKS.includes(this.settings.theme) ? String(this.settings.theme) : 'ysound'
+    };
+    try { localStorage.setItem('soundSettings', JSON.stringify(sanitized)); } catch { }
   }
 
   private loadTheme(theme: string) {
@@ -40,7 +47,7 @@ class SoundService {
     this.lossAudio.src = `/sounds/${theme}/loss.mp3`;
     const wasPlaying = !this.bgmAudio.paused;
     this.bgmAudio.src = `/sounds/${theme}/bgm.mp3`;
-    if (wasPlaying) this.bgmAudio.play().catch(() => {});
+    if (wasPlaying) this.bgmAudio.play().catch(() => { });
   }
 
   updateSettings(updates: Partial<SoundSettings>) {
@@ -55,7 +62,7 @@ class SoundService {
 
   private play(audio: HTMLAudioElement) {
     audio.currentTime = 0;
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
   }
 
   playMove() { if (!this.settings.muteMove) this.play(this.moveAudio); }
@@ -65,7 +72,7 @@ class SoundService {
 
   startBGM() {
     if (this.settings.muteBGM) return;
-    this.bgmAudio.play().catch(() => {});
+    this.bgmAudio.play().catch(() => { });
   }
 
   stopBGM() {
