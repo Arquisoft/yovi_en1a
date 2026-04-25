@@ -208,30 +208,30 @@ const Lobby: React.FC<LobbyProps> = ({
               <h3 style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
                 <span className="step-num" style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-                </span>
+                </span>{' '}
                 Sound Options
               </h3>
               <label style={{display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0'}}>
-                <input type="checkbox" checked={!settings.muteMove} onChange={(e) => handleSettingChange({muteMove: !e.target.checked})} />
+                <input type="checkbox" checked={!settings.muteMove} onChange={(e) => handleSettingChange({muteMove: !e.target.checked})} />{' '}
                 Move Sounds
               </label>
               <label style={{display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0'}}>
-                <input type="checkbox" checked={!settings.muteWin} onChange={(e) => handleSettingChange({muteWin: !e.target.checked})} />
+                <input type="checkbox" checked={!settings.muteWin} onChange={(e) => handleSettingChange({muteWin: !e.target.checked})} />{' '}
                 Win Sound
               </label>
               <label style={{display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0'}}>
-                <input type="checkbox" checked={!settings.muteLoss} onChange={(e) => handleSettingChange({muteLoss: !e.target.checked})} />
+                <input type="checkbox" checked={!settings.muteLoss} onChange={(e) => handleSettingChange({muteLoss: !e.target.checked})} />{' '}
                 Loss Sound
               </label>
               <label style={{display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0'}}>
-                <input type="checkbox" checked={!settings.muteBGM} onChange={(e) => handleSettingChange({muteBGM: !e.target.checked})} />
+                <input type="checkbox" checked={!settings.muteBGM} onChange={(e) => handleSettingChange({muteBGM: !e.target.checked})} />{' '}
                 Background Music
               </label>
 
               <h3 style={{marginTop: 20, display: 'flex', alignItems: 'center', gap: '8px'}}>
                 <span className="step-num" style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-                </span>
+                </span>{' '}
                 Soundpack
               </h3>
               <select 

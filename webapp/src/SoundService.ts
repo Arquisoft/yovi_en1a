@@ -10,11 +10,11 @@ export const AVAILABLE_PACKS = ['ysound', 'retro', 'funky'];
 
 class SoundService {
   public settings: SoundSettings;
-  private moveAudio = new Audio();
-  private botMoveAudio = new Audio();
-  private winAudio = new Audio();
-  private lossAudio = new Audio();
-  private bgmAudio = new Audio();
+  private readonly moveAudio = new Audio();
+  private readonly botMoveAudio = new Audio();
+  private readonly winAudio = new Audio();
+  private readonly lossAudio = new Audio();
+  private readonly bgmAudio = new Audio();
 
   constructor() {
     const defaults: SoundSettings = { muteMove: false, muteWin: false, muteLoss: false, muteBGM: false, theme: 'ysound' };
@@ -30,7 +30,7 @@ class SoundService {
   }
 
   private save() {
-    const settings = {
+    const sanitized = {
       muteMove: Boolean(this.settings.muteMove),
       muteWin: Boolean(this.settings.muteWin),
       muteLoss: Boolean(this.settings.muteLoss),

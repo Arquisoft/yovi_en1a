@@ -210,6 +210,23 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
     return () => soundService.stopBGM();
   }, [gameStatus]);
 
+  const handleGameFinished = useCallback((winner: number | null, mode: string) => {
+    if (hasScored || winner === null) return;
+
+    if (winner === 0) {
+      setP1Score((prev) => prev + 1);
+      soundService.playWin();
+    } else if (winner === 1) {
+      setP2Score((prev) => prev + 1);
+      if (mode === 'hvb') {
+         soundService.playLoss();
+      } else {
+         soundService.playWin();
+      }
+    }
+    setHasScored(true);
+  }, [hasScored]);
+
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
       (s: GameSession & { layout?: string; botMove?: { x: number; y: number } | null; winningPath?: { x: number; y: number }[] }) => {
@@ -227,23 +244,10 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
 
         if (s.status === 'finished') {
           setWinner(s.winner === 0 ? 'P1' : 'P2');
-          if (!hasScored) {
-            if (s.winner === 0) {
-               setP1Score((prev) => prev + 1);
-               // If human won
-               soundService.playWin();
-            }
-            if (s.winner === 1) {
-               setP2Score((prev) => prev + 1);
-               // Bot won or player 2 won
-               if (s.mode === 'hvb') soundService.playLoss();
-               else soundService.playWin(); // both humans hear win sound
-            }
-            setHasScored(true);
-          }
+          handleGameFinished(s.winner, s.mode);
         }
       },
-      [hasScored, boardSize]
+      [boardSize, handleGameFinished]
   );
 
   // ── Start a new game
