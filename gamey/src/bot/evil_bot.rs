@@ -72,6 +72,7 @@ impl Topo {
 
 fn has_path(cells: &[u8], player: u8, topo: &Topo) -> bool {
     let n = cells.len();
+    if n == 0 { return false; }
     let mut seen = vec![false; n];
     let mut stack = Vec::with_capacity(n);
     for i in 0..n { if cells[i] == player && topo.side_a[i] { stack.push(i); seen[i] = true; } }
@@ -123,12 +124,12 @@ impl YBot for EvilBot {
         nodes.push(Node::new(None, usize::MAX, 0, empties.clone()));
 
         while start.elapsed() < tl {
-            // SELECTION: go down best UCB path
+            // SELECTION: traverse tree via UCB while fully expanded
             let mut cur = 0;
             let mut pl = ME;
             
-            // Selection phase: while fully expanded, go deep via UCB
-            while !nodes[cur].childs.is_empty() && !nodes[cur].untried.is_empty() {
+            // KORREKT: UCB only when fully expanded (no untried moves left)
+            while nodes[cur].untried.is_empty() && !nodes[cur].childs.is_empty() {
                 let pv = nodes[cur].visits;
                 let (mut best_ch, mut best_ucb) = (0, f64::NEG_INFINITY);
                 for &ch in &nodes[cur].childs {
@@ -142,33 +143,62 @@ impl YBot for EvilBot {
             // EXPANSION: add new node if we have untried moves
             if !nodes[cur].untried.is_empty() {
                 let untried_len = nodes[cur].untried.len();
-                let move_idx = nodes[cur].untried.swap_remove(rng.us(untried_len));
-                let new_node = Node::new(Some(cur), move_idx, pl, vec![]);
+                let m = nodes[cur].untried.swap_remove(rng.us(untried_len));
+                
+                // Build new untried list (all remaining cells except this move)
+                let mut new_untried: Vec<usize> = vec![];
+                for &e in &empties {
+                    if e != m { new_untried.push(e); }
+                }
+                
+                let new_node = Node::new(Some(cur), m, pl, new_untried);
                 let new_idx = nodes.len();
                 nodes.push(new_node);
                 nodes[cur].childs.push(new_idx);
                 cur = new_idx;
                 pl = 3 - pl;
             } else {
-                // Fully expanded leaf, use it for simulation
-                if nodes[cur].childs.is_empty() { break; }
+                // Can't expand - either no children or leaf, use this node for simulation
+                if nodes[cur].childs.is_empty() && nodes[cur].untried.is_empty() {
+                    break;
+                }
             }
 
-            // SIMULATION: randomized playout
-            let mut cur_c = cells.clone();
-            let mut cur_emp: Vec<usize> = empties.clone();
+            // SIMULATION: apply the path from root to current node BEFORE simulation
+            let mut sim_cells = cells.clone();
             
-            // Shuffle remaining cells
-            for i in (1..cur_emp.len()).rev() {
-                let j = rng.us(i + 1);
-                cur_emp.swap(i, j);
+            // Reconstruct path and apply moves
+            let mut path: Vec<(usize, u8)> = vec![];
+            let mut node = cur;
+            while let Some(parent_idx) = nodes[node].parent {
+                path.push((nodes[node].m, nodes[node].p));
+                node = parent_idx;
+            }
+            path.reverse();
+            
+            for (cell_idx, player) in &path {
+                sim_cells[*cell_idx] = *player;
+                pl = 3 - *player;
+            }
+
+            // Playout: fill remaining empty cells randomly
+            let mut remaining: Vec<usize> = vec![];
+            for i in 0..tot {
+                if sim_cells[i] == 0 { remaining.push(i); }
             }
             
-            for &c in &cur_emp {
-                cur_c[c] = pl;
+            // Shuffle
+            for i in (1..remaining.len()).rev() {
+                let j = rng.us(i + 1);
+                remaining.swap(i, j);
+            }
+            
+            for &c in &remaining {
+                sim_cells[c] = pl;
                 pl = 3 - pl;
             }
-            let winner = if has_path(&cur_c, ME, &topo) { ME } else { OPP };
+            
+            let winner = if has_path(&sim_cells, ME, &topo) { ME } else { OPP };
 
             // BACKPROP: update all nodes in path
             let mut bp = Some(cur);
