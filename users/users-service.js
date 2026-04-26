@@ -19,7 +19,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'];
-
+app.options('*', cors());
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no Origin header (same-origin, curl, Postman, server-to-server)
