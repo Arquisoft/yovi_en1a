@@ -61,6 +61,7 @@
   "lbl_pts": "Puan: {{score}}",
   "btn_undo": "GERİ AL",
   "btn_end_turn": "TURU BİTİR",
+  "btn_back": "GERİ",
   "status_thinking": "🤔 düşünüyor...",
   "msg_loading_profile": "Profil Yükleniyor...",
   "nav_play": "Oyna",

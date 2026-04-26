@@ -25,11 +25,31 @@ function App() {
   };
 
   const handleGoToGame = (mode: string, difficulty: string, boardSize: number = 11) => {
-    globalThis.location.href = globalThis.location.pathname + `?view=game&mode=${mode}&difficulty=${difficulty}&size=${boardSize}`;
+    const params = `view=game&mode=${mode}&difficulty=${difficulty}&size=${boardSize}`;
+    localStorage.setItem('gameParams', params);
+    globalThis.location.href = globalThis.location.pathname + '?' + params;
   };
 
-  const handleGoToProfile = () => {
+  const handleGoToProfile = (fromView?: string) => {
+    if (fromView) {
+      localStorage.setItem('previousView', fromView);
+    }
     globalThis.location.href = globalThis.location.pathname + '?view=profile';
+  };
+
+  const handleBackFromProfile = () => {
+    const prev = localStorage.getItem('previousView');
+    localStorage.removeItem('previousView');
+    if (prev === 'game') {
+      const params = localStorage.getItem('gameParams');
+      if (params) {
+        globalThis.location.href = globalThis.location.pathname + '?' + params;
+      } else {
+        globalThis.location.href = globalThis.location.pathname + '?view=game&mode=hvb&difficulty=beginner&size=11';
+      }
+    } else {
+      globalThis.location.href = globalThis.location.pathname + '?view=lobby';
+    }
   };
 
   const handleLogout = () => {
@@ -42,7 +62,7 @@ function App() {
     return (
         <GameBoard
             username={storedUsername || "Guest User"}
-            onProfile={handleGoToProfile}
+            onProfile={() => handleGoToProfile('game')}
             onLobby={() => globalThis.location.href = globalThis.location.pathname + '?view=lobby'}
         />
     );
@@ -54,6 +74,7 @@ function App() {
             username={storedUsername}
             onPlayClick={() => globalThis.location.href = globalThis.location.pathname + '?view=lobby'}
             onLogout={handleLogout}
+            onBack={handleBackFromProfile}
         />
     );
   }
@@ -65,7 +86,7 @@ function App() {
               username={storedUsername}
               onPlay={handleGoToGame}
               onLogout={handleLogout}
-              onProfile={handleGoToProfile}
+              onProfile={() => handleGoToProfile('lobby')}
           />
         </div>
     );

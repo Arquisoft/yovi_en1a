@@ -170,6 +170,20 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Restore game from localStorage
+  useEffect(() => {
+    const savedSession = localStorage.getItem('savedGameSession');
+    if (savedSession) {
+      try {
+        const parsed = JSON.parse(savedSession);
+        syncFromSession(parsed);
+      } catch (e) {
+        console.error('Failed to restore game:', e);
+        localStorage.removeItem('savedGameSession');
+      }
+    }
+  }, []);
+
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
       (s: GameSession & { layout?: string; botMove?: { x: number; y: number } | null; winningPath?: { x: number; y: number }[] }) => {
@@ -179,6 +193,9 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
         setBoard(applyMovesToBoard(s.moves, actualTotalCells));
         setCurrentTurn(s.currentPlayer === 0 ? 'P1' : 'P2');
         setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
+
+        // Save to localStorage for persistence
+        localStorage.setItem('savedGameSession', JSON.stringify(s));
 
         if (s.winningPath) {
           const indices = new Set(s.winningPath.map(p => coordsToIndex(p.x, p.y)));
