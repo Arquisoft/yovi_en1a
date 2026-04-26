@@ -86,22 +86,20 @@ function getUserIdFromRequest(req) {
 
 async function saveGameResult(session) {
   if (!db) return;
-  if (session.rule !== 'classic') {
-    console.log(`[DB] Game ${session.id} skipped (Rule: ${session.rule})`);
-    return;
-  }
+
   try {
     await db.collection('games').insertOne({
       gameId: session.id,
       userId: session.userId || null,
       mode: session.mode,
+      rule: session.rule || 'classic',
       boardSize: session.boardSize,
       winner: session.winner,
       totalMoves: session.moves.length,
       finishedAt: new Date(),
       createdAt: session.createdAt,
     });
-    console.log(`[DB] Game ${session.id} saved`);
+    console.log(`[DB] Game ${session.id} saved (Rule: ${session.rule})`);
   } catch (err) {
     console.error('[DB] Failed to save game:', err.message);
   }
@@ -482,13 +480,13 @@ gameyService.get('/profile', async (req, res) => {
     const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
     const bestScore = total > 0 ? Math.max(...games.map(g => (g.totalMoves || 0) * 10)) : 0;
 
-    const matchHistory = games.slice(0, 10).map((g, i) => ({
-      id: g.gameId ?? i,
-      result: g.winner === 0 ? 'win' : 'lose',
-      pts: (g.totalMoves || 0) * 10,
-      mode: g.mode,
-    }));
-
+  const matchHistory = games.slice(0, 10).map((g, i) => ({
+    id: g.gameId ?? i,
+    result: g.winner === 0 ? 'win' : 'lose',
+    pts: (g.totalMoves || 0) * 10,
+    mode: g.mode,
+    rule: g.rule || 'classic', // Added this line
+  }));
 
     return res.json({
       winRate,
