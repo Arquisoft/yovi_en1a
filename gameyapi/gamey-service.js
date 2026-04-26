@@ -25,15 +25,18 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const API_VERSION = 'v1';
-gameyService.options('/{*path}', cors());
 
 gameyService.use(cors({
   origin: process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-      : ['http://localhost:3000'],
+      : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-gameyService.use(bodyParser.json());
+
+gameyService.options('*', cors());
+
 
 // Prometheus setup
 import promBundle from 'express-prom-bundle';
