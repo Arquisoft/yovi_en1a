@@ -877,5 +877,150 @@ describe('GameY API Service', () => {
                 expect(finalResponse.body.status).toBe('finished');
                 expect(finalResponse.body.winner).toBe(1); 
             });
+
         });
+
+
+
+describe('POST /play/create - fortuney rule', () => {
+  it('should create a fortuney game with needsFlip: true', async () => {
+    const response = await request(gameyService)
+      .post('/play/create')
+      .send({ mode: 'hvh', boardSize: 5, rule: 'fortuney' })
+      .expect(201);
+
+    expect(response.body.rule).toBe('fortuney');
+    expect(response.body.needsFlip).toBe(true);
+    expect(response.body.coinFlip).toBeNull();
+  });
+});
+
+describe('POST /play/:gameId/flip', () => {
+  let gameId;
+
+  beforeEach(async () => {
+    const res = await request(gameyService)
+      .post('/play/create')
+      .send({ mode: 'hvh', boardSize: 5, rule: 'fortuney' });
+    gameId = res.body.gameId;
+  });
+
+  it('should return 400 for non-existent game', async () => {
+    const response = await request(gameyService)
+      .post(`/play/${uuidv4()}/flip`)
+      .expect(400);
+    expect(response.body.error).toContain('Cannot flip now');
+  });
+
+  it('should return 400 if rule is not fortuney', async () => {
+    const classicRes = await request(gameyService)
+      .post('/play/create')
+      .send({ mode: 'hvh', boardSize: 5, rule: 'classic' });
+
+    const response = await request(gameyService)
+      .post(`/play/${classicRes.body.gameId}/flip`)
+      .expect(400);
+    expect(response.body.error).toContain('Cannot flip now');
+  });
+
+  it('should return 400 when needsFlip is already false', async () => {
+    // First flip consumes needsFlip
+    await request(gameyService).post(`/play/${gameId}/flip`);
+
+    const response = await request(gameyService)
+      .post(`/play/${gameId}/flip`)
+      .expect(400);
+    expect(response.body.error).toContain('Cannot flip now');
+  });
+
+  it('should return coinFlip and set needsFlip to false', async () => {
+    const response = await request(gameyService)
+      .post(`/play/${gameId}/flip`)
+      .expect(200);
+
+    expect(['heads', 'tails']).toContain(response.body.coinFlip);
+    expect(response.body.needsFlip).toBe(false);
+  });
+
+  it('should set currentPlayer to 0 on heads', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1); // < 0.5 = heads
+
+    const response = await request(gameyService)
+      .post(`/play/${gameId}/flip`)
+      .expect(200);
+
+    expect(response.body.coinFlip).toBe('heads');
+    expect(response.body.currentPlayer).toBe(0);
+    vi.restoreAllMocks();
+  });
+
+  it('should set currentPlayer to 1 on tails (hvh)', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.9); // >= 0.5 = tails
+
+    const response = await request(gameyService)
+      .post(`/play/${gameId}/flip`)
+      .expect(200);
+
+    expect(response.body.coinFlip).toBe('tails');
+    expect(response.body.currentPlayer).toBe(1);
+    vi.restoreAllMocks();
+  });
+
+  it('should trigger bot move on tails in hvb mode', async () => {
+    const hvbRes = await request(gameyService)
+      .post('/play/create')
+      .send({ mode: 'hvb', boardSize: 5, rule: 'fortuney' });
+    const hvbGameId = hvbRes.body.gameId;
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ coords: { x: 1, y: 0, z: 3 } }),
+    });
+    vi.spyOn(Math, 'random').mockReturnValue(0.9); // tails → bot plays
+
+    const response = await request(gameyService)
+      .post(`/play/${hvbGameId}/flip`)
+      .expect(200);
+
+    expect(response.body.moves.length).toBe(1);
+    expect(response.body.moves[0].player).toBe(1);
+    vi.restoreAllMocks();
+  });
+});
+
+describe('POST /play/:gameId/move - fortuney rule', () => {
+  it('should set needsFlip to true after a move', async () => {
+    const createRes = await request(gameyService)
+      .post('/play/create')
+      .send({ mode: 'hvh', boardSize: 5, rule: 'fortuney' });
+    const gameId = createRes.body.gameId;
+
+    vi.spyOn(Math, 'random').mockReturnValue(0.1); // heads → P1 goes first
+    await request(gameyService).post(`/play/${gameId}/flip`);
+    vi.restoreAllMocks();
+
+    const response = await request(gameyService)
+      .post(`/play/${gameId}/move`)
+      .send({ player: 0, x: 0, y: 0 })
+      .expect(200);
+
+    expect(response.body.needsFlip).toBe(true);
+    expect(response.body.status).toBe('ongoing');
+  });
+});
+
+describe('POST /play/:gameId/rematch - fortuney rule', () => {
+  it('should preserve fortuney rule and reset needsFlip to true', async () => {
+    const createRes = await request(gameyService)
+      .post('/play/create')
+      .send({ mode: 'hvh', boardSize: 5, rule: 'fortuney' });
+
+    const rematchRes = await request(gameyService)
+      .post(`/play/${createRes.body.gameId}/rematch`)
+      .expect(201);
+
+    expect(rematchRes.body.rule).toBe('fortuney');
+    expect(rematchRes.body.needsFlip).toBe(true);
+  });
+});
     });

@@ -126,4 +126,14 @@ describe('App & Lobby Coverage Booster', () => {
    
     expect(onPlayMock).toHaveBeenLastCalledWith('pvp', 'beginner', 11, 'whynot');
   });
+
+  it('Lobby: Selects fortuney rule and passes it to onPlay', () => {
+  const onPlayMock = vi.fn();
+  render(<Lobby onPlay={onPlayMock} onLogout={vi.fn()} username="Tester" />);
+
+  fireEvent.click(screen.getByRole('button', { name: /fortuney/i }));
+  fireEvent.click(screen.getByRole('button', { name: /^PLAY$/i }));
+
+  expect(onPlayMock).toHaveBeenLastCalledWith('pvp', 'beginner', 11, 'fortuney');
+});
 });

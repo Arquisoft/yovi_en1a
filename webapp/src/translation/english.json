@@ -80,5 +80,19 @@
   "rule_classic": "Classic",
   "rule_whynot": "Why Not (Avoid Edges!)",
   "lbl_game_rule": "Game Rule",
-  "rule_whynot_name": "Why Not"
+  "rule_whynot_name": "Why Not",
+  "rule_fortuney": "Lucky (Fortuney)",
+  "tooltip_view_profile": "View Profile",
+  "lbl_chance_time": "Chance Time!",
+  "desc_flip_coin": "Flip a coin to decide who plays first.",
+  "btn_flip_coin": "FLIP COIN",
+  "msg_playing": "{{name}} is Playing!",
+  "btn_close_and_play": "CLOSE AND PLAY",
+  "err_failed_create": "Failed to create game: {{msg}}",
+  "err_move_failed": "Move failed: {{msg}}",
+  "err_undo_failed": "Undo failed: {{msg}}",
+  "err_flip_failed": "Flip failed: {{msg}}",
+  "err_rematch_failed": "Rematch failed: {{msg}}",
+  "msg_determining_turn": "Determining next turn..."
+
 }

@@ -80,6 +80,19 @@
   "rule_classic": "Klasik",
   "rule_whynot": "Why Not (Kenarlardan Kaç!)",
   "lbl_game_rule": "Oyun Kuralı",
-  "rule_whynot_name": "Why Not"
+  "rule_whynot_name": "Why Not",
+  "rule_fortuney": "Şanslı (Fortuney)",
+  "tooltip_view_profile": "Profili Görüntüle",
+  "lbl_chance_time": "Şans Zamanı",
+  "desc_flip_coin": "Sıranın kimde olduğunu belirlemek için para atın.",
+  "btn_flip_coin": "PARA AT",
+  "msg_playing": "{{name}} Oynuyor!",
+  "btn_close_and_play": "KAPAT VE OYNA",
+  "err_failed_create": "Oyun oluşturulamadı: {{msg}}",
+  "err_move_failed": "Hamle başarısız: {{msg}}",
+  "err_undo_failed": "Geri alma başarısız: {{msg}}",
+  "err_flip_failed": "Para atma başarısız: {{msg}}",
+  "err_rematch_failed": "Rövanş başarısız: {{msg}}",
+  "msg_determining_turn": "Sıra belirleniyor..."
 
 }
