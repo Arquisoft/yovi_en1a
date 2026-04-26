@@ -218,12 +218,13 @@ impl YBot for EvilBot {
 mod tests {
     use super::*;
     use crate::{Movement, PlayerId};
-    #[test] fn n() { assert_eq!(EvilBot.name(&EvilBot), "evil_bot"); }
-    #[test] fn m() { let g = GameY::new(4); assert!(EvilBot.choose_move(&g).is_some()); }
+    #[test] fn n() { let bot = EvilBot; assert_eq!(bot.name(), "evil_bot"); }
+    #[test] fn m() { let g = GameY::new(4); let bot = EvilBot; assert!(bot.choose_move(&g).is_some()); }
     #[test] fn v() {
         let mut g = GameY::new(3);
         g.add_move(Movement::Placement { player: PlayerId::new(0), coords: Coordinates::new(2,0,0) }).unwrap();
-        let c = EvilBot.choose_move(&g).unwrap();
+        let bot = EvilBot;
+        let c = bot.choose_move(&g).unwrap();
         let idx = c.to_index(3);
         assert!(g.available_cells().contains(&idx));
     }

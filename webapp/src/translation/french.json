@@ -61,6 +61,7 @@
   "lbl_pts": "Pts: {{score}}",
   "btn_undo": "ANNULER",
   "btn_end_turn": "FIN DU TOUR",
+  "btn_back": "RETOUR",
   "status_thinking": "🤔 réflexion...",
   "msg_loading_profile": "Chargement du Profil...",
   "nav_play": "Jouer",
@@ -75,5 +76,10 @@
   "th_mode": "Mode",
   "badge_win": "Victoire",
   "badge_lose": "Défaite",
-  "mode_pvc_short": "Joueur vs. Ordinateur"
+  "mode_pvc_short": "Joueur vs. Ordinateur",
+  "lbl_rule": "Règle",
+  "rule_classic": "Classique",
+  "rule_whynot": "Why Not (Évitez les bords!)",
+  "lbl_game_rule": "Règle du jeu",
+  "rule_whynot_name": "Why Not"
 }
