@@ -15,6 +15,9 @@ const __dirname = path.dirname(__filename);
 
 const gameyService = express();
 
+gameyService.use(express.json()); 
+gameyService.use(bodyParser.json());
+
 const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8'));
 gameyService.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 const PORT = process.env.PORT || 3001;
