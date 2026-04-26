@@ -16,7 +16,7 @@ impl RNG {
         x ^= x << 13; x ^= x >> 7; x ^= x << 17;
         self.state = x; x
     }
-    fn us(&mut self, max: usize) -> usize { (self.next() % (max as u64)) as usize }
+    fn us(&mut self, max: usize) -> usize {(self.next() % (max as u64)) as usize}
 }
 
 struct Node {
@@ -35,9 +35,7 @@ impl Node {
     }
     fn ucb(&self, pv: u32) -> f64 {
         if self.visits == 0 { return f64::INFINITY; }
-        let exploitation = self.wins / (self.visits as f64);
-        let exploration = C_PARAM * ((pv as f64).ln() / (self.visits as f64)).sqrt();
-        exploitation + exploration
+        self.wins / (self.visits as f64) + C_PARAM * ((pv as f64).ln() / (self.visits as f64)).sqrt()
     }
 }
 
@@ -67,6 +65,14 @@ impl Topo {
             }
         }
         t
+    }
+    fn heuristic(&self, idx: usize) -> f64 {
+        let mut h = 0.0;
+        if self.side_a[idx] { h += 50.0; }
+        if self.side_b[idx] { h += 50.0; }
+        if self.side_c[idx] { h += 50.0; }
+        h += (self.adj[idx].len() as f64) * 5.0;
+        h
     }
 }
 
@@ -108,27 +114,32 @@ impl YBot for EvilBot {
         let lay: Vec<char> = yen.layout().replace("/", "").chars().collect();
         let my_c = if my_id == 0 { 'B' } else { 'R' };
         let op_c = if my_id == 0 { 'R' } else { 'B' };
+        let my_player = if my_id == 0 { ME } else { OPP };
+        let opp_player = if my_id == 0 { OPP } else { ME };
 
         let mut cells = vec![0u8; tot];
         let empties: Vec<usize> = (0..tot).filter(|&i| lay[i] == '.').collect();
         for i in 0..lay.len() {
-            if lay[i] == my_c { cells[i] = ME; }
-            else if lay[i] == op_c { cells[i] = OPP; }
+            if lay[i] == my_c { cells[i] = my_player; }
+            else if lay[i] == op_c { cells[i] = opp_player; }
         }
 
         let mut rng = RNG::new(0xCAFEBABE);
         let start = Instant::now();
         let tl = Duration::from_millis(4800);
         
-        let mut nodes: Vec<Node> = Vec::with_capacity(250_000);
+        let mut nodes: Vec<Node> = Vec::with_capacity(300_000);
         nodes.push(Node::new(None, usize::MAX, 0, empties.clone()));
 
         while start.elapsed() < tl {
-            // SELECTION: traverse tree via UCB while fully expanded
+            // === SELECTION + EXPANSION together ===
             let mut cur = 0;
-            let mut pl = ME;
+            let mut pl = my_player;
+            let mut state = cells.clone();
+            let mut available: Vec<usize> = empties.clone();
+            let mut path_nodes: Vec<usize> = vec![];
             
-            // KORREKT: UCB only when fully expanded (no untried moves left)
+            // Selection: go down UCB path while fully expanded
             while nodes[cur].untried.is_empty() && !nodes[cur].childs.is_empty() {
                 let pv = nodes[cur].visits;
                 let (mut best_ch, mut best_ucb) = (0, f64::NEG_INFINITY);
@@ -137,70 +148,52 @@ impl YBot for EvilBot {
                     if u > best_ucb { best_ucb = u; best_ch = ch; }
                 }
                 cur = best_ch;
+                path_nodes.push(cur);
+                state[nodes[cur].m] = pl;
+                available.retain(|&e| e != nodes[cur].m);
                 pl = 3 - pl;
             }
 
-            // EXPANSION: add new node if we have untried moves
+            // Expansion: add new node
             if !nodes[cur].untried.is_empty() {
-                let untried_len = nodes[cur].untried.len();
-                let m = nodes[cur].untried.swap_remove(rng.us(untried_len));
-                
-                // Build new untried list (all remaining cells except this move)
-                let mut new_untried: Vec<usize> = vec![];
-                for &e in &empties {
-                    if e != m { new_untried.push(e); }
-                }
-                
-                let new_node = Node::new(Some(cur), m, pl, new_untried);
+                let ut_len = nodes[cur].untried.len();
+                let m = nodes[cur].untried.swap_remove(rng.us(ut_len));
+                available.retain(|&e| e != m);
+                let new_node = Node::new(Some(cur), m, pl, available.clone());
                 let new_idx = nodes.len();
                 nodes.push(new_node);
                 nodes[cur].childs.push(new_idx);
                 cur = new_idx;
+                path_nodes.push(cur);
+                state[m] = pl;
                 pl = 3 - pl;
-            } else {
-                // Can't expand - either no children or leaf, use this node for simulation
-                if nodes[cur].childs.is_empty() && nodes[cur].untried.is_empty() {
-                    break;
-                }
+            } else if nodes[cur].childs.is_empty() {
+                break;
             }
 
-            // SIMULATION: apply the path from root to current node BEFORE simulation
-            let mut sim_cells = cells.clone();
-            
-            // Reconstruct path and apply moves
-            let mut path: Vec<(usize, u8)> = vec![];
-            let mut node = cur;
-            while let Some(parent_idx) = nodes[node].parent {
-                path.push((nodes[node].m, nodes[node].p));
-                node = parent_idx;
-            }
-            path.reverse();
-            
-            for (cell_idx, player) in &path {
-                sim_cells[*cell_idx] = *player;
-                pl = 3 - *player;
-            }
-
-            // Playout: fill remaining empty cells randomly
-            let mut remaining: Vec<usize> = vec![];
-            for i in 0..tot {
-                if sim_cells[i] == 0 { remaining.push(i); }
-            }
-            
-            // Shuffle
-            for i in (1..remaining.len()).rev() {
+            // === SIMULATION with heuristic bias ===
+            // Shuffle remaining cells
+            let mut rem: Vec<usize> = available;
+            for i in (1..rem.len()).rev() {
                 let j = rng.us(i + 1);
-                remaining.swap(i, j);
+                rem.swap(i, j);
             }
             
-            for &c in &remaining {
-                sim_cells[c] = pl;
+            // Heuristic shuffle: prefer good cells
+            rem.sort_by(|&a, &b| {
+                let ha = topo.heuristic(a);
+                let hb = topo.heuristic(b);
+                hb.partial_cmp(&ha).unwrap()
+            });
+            
+            for &c in &rem {
+                state[c] = pl;
                 pl = 3 - pl;
             }
             
-            let winner = if has_path(&sim_cells, ME, &topo) { ME } else { OPP };
+            let winner = if has_path(&state, my_player, &topo) { my_player } else { opp_player };
 
-            // BACKPROP: update all nodes in path
+            // === BACKPROP ===
             let mut bp = Some(cur);
             while let Some(idx) = bp {
                 nodes[idx].visits += 1;
@@ -209,7 +202,7 @@ impl YBot for EvilBot {
             }
         }
 
-        // SELECT BEST CHILD with most visits
+        // SELECT BEST
         let root = &nodes[0];
         let mut best_move: Option<usize> = None;
         let mut most_vis = 0u32;
