@@ -25,7 +25,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const API_VERSION = 'v1';
-gameyService.options('*', cors());
+gameyService.options('/{*path}', cors());
 
 gameyService.use(cors({
   origin: process.env.ALLOWED_ORIGINS
