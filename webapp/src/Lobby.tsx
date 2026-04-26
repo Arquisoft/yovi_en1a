@@ -7,7 +7,7 @@ import LanguageSelector from './LanguageSelector';
 interface LobbyProps {
   username?: string;
   avatarUrl?: string; 
-  onPlay?: (mode: string, difficulty: string, boardSize: number) => void;
+  onPlay?: (mode: string, difficulty: string, boardSize: number,rule: string) => void;
   onLogout?: () => void;
   onProfile?: () => void;
 }
@@ -33,7 +33,8 @@ const Lobby: React.FC<LobbyProps> = ({
   const [boardSize, setBoardSize] = useState(11);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   const toggleHowToPlay = () => setShowHowToPlay(!showHowToPlay);
-  const friends = ["Alice_99", "Bob_Builder", "Charlie_Hex"];
+ // const friends = ["Alice_99", "Bob_Builder", "Charlie_Hex"];
+  const [selectedRule, setSelectedRule] = useState('classic');
  
   // Sync avatar and username with the server on mount
   useEffect(() => {
@@ -107,7 +108,7 @@ const Lobby: React.FC<LobbyProps> = ({
                 />
               </div>
             </div>
-            <button className="primary-play-btn" onClick={() => onPlay?.(selectedMode, selectedDifficulty, boardSize)}>
+           <button className="primary-play-btn" onClick={() => onPlay?.(selectedMode, selectedDifficulty, boardSize, selectedRule)}>
               {t('btn_play')}
             </button>
           </div>
@@ -127,7 +128,7 @@ const Lobby: React.FC<LobbyProps> = ({
               </div>
             </button>
 
-            <div className="white-panel friends-panel">
+            {/* <div className="white-panel friends-panel">
               <h4 className="panel-title">{t('lbl_friends')}</h4>
               <div className="friends-scroll-container">
                 {friends.map((name) => (
@@ -136,6 +137,24 @@ const Lobby: React.FC<LobbyProps> = ({
                     <span className="friend-name">{name}</span>
                   </div>
                 ))}
+              </div>
+            </div> */}
+            {/* Game rule panel (CLASSIC / WHY NOT)*/}
+            <div className="white-panel rule-panel">
+              <h4 className="panel-title">{t('lbl_game_rule')}</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
+                <button
+                  className={`mode-option-btn ${selectedRule === 'classic' ? 'active' : ''}`}
+                  onClick={() => setSelectedRule('classic')}
+                >
+                  {t('rule_classic')}
+                </button>
+                <button
+                  className={`mode-option-btn ${selectedRule === 'whynot' ? 'active' : ''}`}
+                  onClick={() => setSelectedRule('whynot')}
+                >
+                  {t('rule_whynot_name')}
+                </button>
               </div>
             </div>
           </aside>

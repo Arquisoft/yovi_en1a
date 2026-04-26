@@ -13,15 +13,15 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/yovi
       - JWT_SECRET=${JWT_SECRET}
-      - ALLOWED_ORIGINS=http://localhost,http://localhost:3000,http://localhost:80,http://20.251.170.191
+      - ALLOWED_ORIGINS=http://localhost,http://localhost:3000,http://localhost:80,http://20.199.137.85
 
   webapp:
     build:
       context: ./webapp
       args:
-        - VITE_API_URL=http://localhost:3000
-        - VITE_GAMEY_URL=http://localhost:4000
-        - VITE_GAMEY_API_URL=http://localhost:3001
+        - VITE_API_URL=http://${DEPLOY_HOST:-localhost}:3000
+        - VITE_GAMEY_URL=http://${DEPLOY_HOST:-localhost}:4000
+        - VITE_GAMEY_API_URL=http://${DEPLOY_HOST:-localhost}:3001
     container_name: webapp
     image: ghcr.io/arquisoft/yovi_en1a-webapp:latest
     ports:
@@ -59,23 +59,28 @@ services:
 
   prometheus:
     image: prom/prometheus
-    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
-    volumes:
-      - ./users/monitoring/prometheus:/etc/prometheus
+    depends_on:
+      - users
+      - gamey-service
     networks:
       - monitor-net
 
   grafana:
     image: grafana/grafana
-    container_name: grafana
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     ports:
       - "9091:3000"
-    volumes:
-      - ./users/monitoring/grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - users
+      - gamey-service
     networks:
       - monitor-net
+
 
   mongodb:
     image: mongo:latest

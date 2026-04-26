@@ -5,6 +5,12 @@ use std::collections::HashMap;
 use std::fmt::Write;
 use std::path::Path;
 
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GameMode {
+    Classic,
+    Why_Not,
+}
 /// A Result type alias for game operations that may fail with a `GameYError`.
 pub type Result<T> = std::result::Result<T, crate::GameYError>;
 
@@ -30,6 +36,7 @@ pub struct GameY {
     sets: Vec<PlayerSet>,
 
     available_cells: Vec<u32>,
+    pub mode: GameMode,
 }
 
 /// Represents the state of a single cell on the board.
@@ -44,18 +51,10 @@ pub enum Cell {
 impl GameY {
     /// Creates a new game with the specified board size and number of players.
     pub fn new(board_size: u32) -> Self {
-        let total_cells = (board_size * (board_size + 1)) / 2;
-        Self {
-            board_size,
-            board_map: HashMap::new(),
-            history: Vec::new(),
-            sets: Vec::new(),
-            status: GameStatus::Ongoing {
-                next_player: PlayerId::new(0),
-            },
-            available_cells: (0..total_cells).collect(),
-        }
+        Self::new_with_mode(board_size, GameMode::Classic)
+       
     }
+
 
     /// Returns the current game status.
     pub fn status(&self) -> &GameStatus {
@@ -192,8 +191,14 @@ impl GameY {
         if self.check_game_over() {
             tracing::info!("Game was already over. Move ignored for status update.");
         } else if won {
-            tracing::debug!("Player {} wins the game!", player);
-            self.status = GameStatus::Finished { winner: player };
+            // Check game mode to determine winner
+            let winner = match self.mode {
+                GameMode::Classic => player,
+                GameMode::Why_Not => other_player(player),  // In Why_Not mode, the player who completes the connection loses, so the other player wins.
+            };
+            
+            tracing::debug!("Player {} wins the game!", winner);
+            self.status = GameStatus::Finished { winner };
         } else {
             // tracing::debug!("No win yet..."); // Optional debug
             self.status = GameStatus::Ongoing {
@@ -440,6 +445,21 @@ impl GameY {
                 && self.sets[root_j].touches_side_c;
         }
         false
+    }
+
+    pub fn new_with_mode(board_size: u32, mode: GameMode) -> Self {
+        let total_cells = (board_size * (board_size + 1)) / 2;
+        Self {
+            board_size,
+            board_map: HashMap::new(),
+            history: Vec::new(),
+            sets: Vec::new(),
+            status: GameStatus::Ongoing {
+                next_player: PlayerId::new(0),
+            },
+            available_cells: (0..total_cells).collect(),
+            mode,
+        }
     }
 }
 
@@ -778,6 +798,49 @@ mod tests {
                 assert_eq!(next_player, PlayerId::new(0));
             }
             _ => panic!("Game should be ongoing"),
+        }
+    }
+    #[test]
+    fn test_why_Not_winning_condition() {
+        // Initialize the game in Why_Not (Reverse) mode
+        let mut game = GameY::new_with_mode(3, GameMode::Why_Not);
+
+        // The exact same moves as the classic mode test.
+        // After these moves, Player 0 connects all 3 sides.
+        let moves = vec![
+            Movement::Placement {
+                player: PlayerId::new(0),
+                coords: Coordinates::new(0, 2, 0),
+            },
+            Movement::Placement {
+                player: PlayerId::new(1),
+                coords: Coordinates::new(2, 0, 0),
+            },
+            Movement::Placement {
+                player: PlayerId::new(0),
+                coords: Coordinates::new(0, 1, 1),
+            },
+            Movement::Placement {
+                player: PlayerId::new(1),
+                coords: Coordinates::new(1, 1, 0),
+            },
+            Movement::Placement {
+                player: PlayerId::new(0),
+                coords: Coordinates::new(0, 0, 2), // Player 0 connects 3 sides with this move
+            },
+        ];
+
+        for mv in moves {
+            game.add_move(mv).unwrap();
+        }
+
+        // Since we are in Why_Not mode, the player who connects 3 sides (Player 0) MUST LOSE.
+        // Therefore, the winner should be Player 1.
+        match game.status {
+            GameStatus::Finished { winner } => {
+                assert_eq!(winner, PlayerId::new(1), "In Why_Not mode, the opponent should win!");
+            }
+            _ => panic!("Game should be finished with a winner"),
         }
     }
 }

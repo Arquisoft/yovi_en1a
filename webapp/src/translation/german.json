@@ -76,5 +76,10 @@
   "th_mode": "Modus",
   "badge_win": "Sieg",
   "badge_lose": "Niederlage",
-  "mode_pvc_short": "Spieler vs Computer"
+  "mode_pvc_short": "Spieler vs Computer",
+  "lbl_rule": "Regel",
+  "rule_classic": "Klassisch",
+  "rule_whynot": "Why Not (Ränder vermeiden!)",
+  "lbl_game_rule": "Spielregel",
+  "rule_whynot_name": "Why Not"
 }

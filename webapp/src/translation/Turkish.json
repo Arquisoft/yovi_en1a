@@ -76,6 +76,11 @@
   "th_mode": "Mod",
   "badge_win": "Kazan",
   "badge_lose": "Kaybet",
-  "mode_pvc_short": "Oyuncu Bilgisayara Karşı"
+  "mode_pvc_short": "Oyuncu Bilgisayara Karşı",
+  "lbl_rule": "Kural",
+  "rule_classic": "Klasik",
+  "rule_whynot": "Why Not (Kenarlardan Kaç!)",
+  "lbl_game_rule": "Oyun Kuralı",
+  "rule_whynot_name": "Why Not"
 
 }

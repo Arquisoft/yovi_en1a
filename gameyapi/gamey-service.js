@@ -15,6 +15,25 @@ const __dirname = path.dirname(__filename);
 
 const gameyService = express();
 
+gameyService.use(cors({
+  origin: process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+    : [
+        'http://localhost:3000', 
+        'http://localhost:5173', 
+        'http://20.199.137.85',      
+        'http://20.199.137.85:3000' 
+      ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+gameyService.options('*', cors());
+
+gameyService.use(express.json()); 
+gameyService.use(bodyParser.json());
+
 const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8'));
 gameyService.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 const PORT = process.env.PORT || 3001;
@@ -26,10 +45,10 @@ const HOST = process.env.HOST || '0.0.0.0';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const API_VERSION = 'v1';
 
-// REMOVED: const { ObjectId } = require('mongodb'); <--- This was the crash cause
-
-gameyService.use(cors());
-gameyService.use(bodyParser.json());
+// Prometheus setup
+import promBundle from 'express-prom-bundle';
+const metricsMiddleware = promBundle({ includeMethod: true });
+gameyService.use(metricsMiddleware);
 
 // ─── MongoDB connection ─────────────────────────────────────────────────────────
 let db;
@@ -67,6 +86,10 @@ function getUserIdFromRequest(req) {
 
 async function saveGameResult(session) {
   if (!db) return;
+  if (session.rule !== 'classic') {
+    console.log(`[DB] Game ${session.id} skipped (Rule: ${session.rule})`);
+    return;
+  }
   try {
     await db.collection('games').insertOne({
       gameId: session.id,
@@ -211,7 +234,7 @@ function updateWinStatus(s) {
     const result = checkWin(s.moves, s.boardSize, p);
     if (result.win) {
       s.status = 'finished';
-      s.winner = p;
+      s.winner = (s.rule === 'whynot') ? (1 - p) : p;
       s.winningPath = result.path;
       return true;
     }
@@ -265,7 +288,25 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.message ?? `Rust engine error ${res.status}`);
 
+  if (data.action) {
+    console.log('[BOT] Received action:', data.action);
+    return { action: data.action };
+  }
+
+  if (!data.coords) {
+    console.warn('[BOT] No coords in response, using random fallback');
+    return randomFreeCell(moves, boardSize);
+  }
+
+  console.log('[Rust response]', data);
+
   const { x, y, z } = data.coords;
+  
+  if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') {
+    console.warn('[BOT] Invalid coordinate types from Rust:', data.coords);
+    return randomFreeCell(moves, boardSize);
+  }
+
   const coords = barycentricToRowCol(x, y, z, boardSize);
 
   if (!coords || moves.some(m => m.x === coords.x && m.y === coords.y)) {
@@ -276,9 +317,10 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
 
 // ─── Session Helpers ──────────────────────────────────────────────────────────
 
-function newSession(id, mode, boardSize, userId, difficulty) {
+function newSession(id, mode, boardSize, userId, difficulty, rule) {
   return { 
     id, mode, boardSize, difficulty: difficulty || 'medium', 
+    rule: rule || 'classic',
     moves: [], status: 'ongoing', currentPlayer: 0, 
     winner: null, userId: userId || null, createdAt: new Date() 
   };
@@ -287,6 +329,7 @@ function newSession(id, mode, boardSize, userId, difficulty) {
 function sessionView(s) {
   return {
     gameId: s.id, mode: s.mode, boardSize: s.boardSize,
+    rule: s.rule,
     moves: s.moves, status: s.status, currentPlayer: s.currentPlayer,
     winner: s.winner, winningPath: s.winningPath || [],
     layout: buildLayout(s.moves, s.boardSize),
@@ -328,18 +371,30 @@ gameyService.get('/play', async (req, res) => {
 
   const moves = yenLayoutToMoves(layout, boardSize);
   try {
-    const coords = await getBotMove(moves, boardSize, nextPlayer, difficulty);
-    return res.json({ coords: rowColToBarycentric(coords.y, coords.x, boardSize) });
+    const result = await getBotMove(moves, boardSize, nextPlayer, difficulty);
+    if (!result)
+      return res.status(422).json({ error: 'No legal moves available' });
+
+    if (result.action) {
+      return res.json({ action: result.action });
+    }
+
+    if (result.x === undefined || result.y === undefined || result.x === null || result.y === null) {
+      return res.status(422).json({ error: 'Invalid coordinates returned' });
+    }
+
+    const bary = rowColToBarycentric(result.y, result.x, boardSize);
+    return res.json({ coords: bary });
   } catch (err) {
     return res.status(502).json({ error: 'Engine error' });
   }
 });
 
 gameyService.post('/play/create', (req, res) => {
-  const { mode, boardSize = 11, difficulty } = req.body;
+  const { mode, boardSize = 11, difficulty, rule } = req.body;
   const userId = getUserIdFromRequest(req);
   const id = uuidv4();
-  sessions.set(id, newSession(id, mode, boardSize, userId, difficulty));
+  sessions.set(id, newSession(id, mode, boardSize, userId, difficulty, rule));
   return res.status(201).json(sessionView(sessions.get(id)));
 });
 
@@ -435,6 +490,7 @@ gameyService.get('/profile', async (req, res) => {
       mode: g.mode,
     }));
 
+
     return res.json({
       winRate,
       bestScore,
@@ -453,7 +509,7 @@ gameyService.post('/play/:gameId/rematch', (req, res) => {
   const old = sessions.get(req.params.gameId);
   if (!old) return res.status(404).json({ error: 'Game not found' });
   const id = uuidv4();
-  sessions.set(id, newSession(id, old.mode, old.boardSize, old.userId, old.difficulty));
+  sessions.set(id, newSession(id, old.mode, old.boardSize, old.userId, old.difficulty, old.rule));
   sessions.delete(old.id);
   return res.status(201).json(sessionView(sessions.get(id)));
 });

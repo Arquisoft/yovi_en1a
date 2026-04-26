@@ -19,7 +19,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'];
-
+app.options('/{*path}', cors());
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no Origin header (same-origin, curl, Postman, server-to-server)
@@ -29,9 +29,14 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   }
-}));
+}));//
+
+// Prometheus setup
 
 app.use(express.json());
+const promBundle = require('express-prom-bundle');
+const metricsMiddleware = promBundle({ includeMethod: true });
+app.use(metricsMiddleware);
 
 // -------------------- MongoDB Connection --------------------
 let client;
@@ -103,6 +108,7 @@ app.use(async (req, res, next) => {
     next();
   }
 });
+
 
 
 
