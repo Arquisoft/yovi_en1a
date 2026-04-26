@@ -4,6 +4,48 @@ import RegisterForm from '../RegisterForm'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import '@testing-library/jest-dom'
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      
+      const dict: Record<string, string> = {
+        'err_required': 'Please fill in all required fields.',
+        'err_email': 'Please provide an email address.',
+        'err_server': 'Server error occurred',
+        'err_network': 'Network error.',
+        'lbl_email': 'E-Mail',
+        'ph_email': 'Enter e-mail',
+        'lbl_username_or_email': 'Username or Email',
+        'lbl_username': 'Username',
+        'ph_username_or_email': 'Enter username or email',
+        'ph_choose_username': 'Choose a username',
+        'lbl_password': 'Password',
+        'ph_password': 'Enter password',
+        'ph_create_password': 'Create password',
+        'btn_waiting': 'WAITING...',
+        'btn_login': 'LOGIN',
+        'btn_register': 'REGISTER',
+        'link_register': "Don't have an account? Register here",
+        'link_login': "Already have an account? Login here",
+        'lbl_language': 'Language'
+      };
+      
+      if (dict[key]) return dict[key];
+
+    
+      const lowerKey = key.toLowerCase();
+      if (lowerKey.includes('username') || lowerKey.includes('user')) return 'Username';
+      if (lowerKey.includes('password') || lowerKey.includes('pass')) return 'Password';
+      if (lowerKey.includes('email') || lowerKey.includes('mail')) return 'E-mail';
+      if (lowerKey.includes('login')) return 'Login';
+      if (lowerKey.includes('register')) return 'Register';
+
+      return key;
+    },
+    i18n: { changeLanguage: vi.fn(), language: 'en' }
+  })
+}));
+
 describe('RegisterForm', () => {
   afterEach(() => {
     vi.restoreAllMocks()

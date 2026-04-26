@@ -3,8 +3,15 @@ const { MongoClient } = require('mongodb');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const yaml = require('js-yaml');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
+
+const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
 // -------------------- CORS Configuration --------------------
 // In production set ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
@@ -12,7 +19,7 @@ const app = express();
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'];
-
+app.options('/{*path}', cors());
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no Origin header (same-origin, curl, Postman, server-to-server)
@@ -22,9 +29,14 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   }
-}));
+}));//
+
+// Prometheus setup
 
 app.use(express.json());
+const promBundle = require('express-prom-bundle');
+const metricsMiddleware = promBundle({ includeMethod: true });
+app.use(metricsMiddleware);
 
 // -------------------- MongoDB Connection --------------------
 let client;
@@ -99,11 +111,10 @@ app.use(async (req, res, next) => {
 
 
 
+
 // -------------------- Routes --------------------
-
 app.post('/createuser', async (req, res) => {
-
-  const { username, email, password } = req.body;
+  const { username, email, password, avatarUrl } = req.body;
 
   if (!username || !email || !password) {
     return res.status(400).json({
@@ -111,7 +122,6 @@ app.post('/createuser', async (req, res) => {
     });
   }
 
-  // Validation of email format with regex (abc@abc.com)
   const emailRegex = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{1,64}$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ error: 'Invalid email format' });
@@ -119,51 +129,43 @@ app.post('/createuser', async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await db.collection('users').insertOne({
+    
+    const newUser = {
       username,
       email,
       password: hashedPassword,
+      avatarUrl: avatarUrl || 'default.png',
       createdAt: new Date()
-    });
+    };
+
+    const result = await db.collection('users').insertOne(newUser);
+
+    // GENERATE TOKEN IMMEDIATELY AFTER REGISTRATION
+    const token = jwt.sign(
+      { userId: result.insertedId, username: newUser.username, email: newUser.email },
+      JWT_SECRET,
+      { expiresIn: '2h' }
+    );
 
     res.status(200).json({
       message: `Hello ${username}! Welcome to the course!`,
-      userId: result.insertedId
+      token, // Now included so the frontend can save it
+      userId: result.insertedId,
+      avatarUrl: newUser.avatarUrl,
+      username: newUser.username
     });
   } catch (error) {
     if (error.code === 11000) {
       const field = error.keyPattern?.email ? 'email' : 'username';
       return res.status(409).json({ error: `An account with this ${field} already exists` });
     }
-
-    if (error.name === 'MongoNotConnectedError' || error.message.includes('not connected')) {
-      console.error('MongoDB not connected, attempting to reconnect...');
-      try {
-        await client.connect();
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const result = await db.collection('users').insertOne({
-          username,
-          email,
-          password: hashedPassword,
-          createdAt: new Date()
-        });
-        return res.status(200).json({
-          message: `Hello ${username}! Welcome to the course!`,
-          userId: result.insertedId
-        });
-      } catch (retryError) {
-        console.error('Retry failed:', retryError.message);
-        return res.status(503).json({ error: 'Database temporarily unavailable, please try again' });
-      }
-    }
-
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-app.post('/login', async (req, res) => {
 
+app.post('/login', async (req, res) => {
   const { usernameOrEmail, password } = req.body;
 
   if (!usernameOrEmail || !password) {
@@ -173,7 +175,6 @@ app.post('/login', async (req, res) => {
   }
 
   try {
-    // Look up user by username OR email
     const user = await db.collection('users').findOne({
       $or: [
         { username: usernameOrEmail },
@@ -185,13 +186,12 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Verify password
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Generate JWT token
+    // GENERATE JWT TOKEN
     const token = jwt.sign(
       { userId: user._id, username: user.username, email: user.email },
       JWT_SECRET,

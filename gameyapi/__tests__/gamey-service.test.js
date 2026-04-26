@@ -435,7 +435,7 @@ describe('GameY API Service', () => {
                 expect(response.body.boardSize).toBe(11);
             });
 
-            it('should return layout string in created game', async () => {
+           it('should return layout string in created game', async () => {
                 const response = await request(gameyService)
                     .post('/play/create')
                     .send({ mode: 'hvh', boardSize: 5 })
@@ -443,6 +443,24 @@ describe('GameY API Service', () => {
 
                 expect(response.body.layout).toBeDefined();
                 expect(typeof response.body.layout).toBe('string');
+            });
+
+            it('should use default rule "classic" when not specified', async () => {
+                const response = await request(gameyService)
+                    .post('/play/create')
+                    .send({ mode: 'hvh' })
+                    .expect(201);
+
+                expect(response.body.rule).toBe('classic');
+            });
+
+            it('should create game with "whynot" rule when specified', async () => {
+                const response = await request(gameyService)
+                    .post('/play/create')
+                    .send({ mode: 'hvh', rule: 'whynot' })
+                    .expect(201);
+
+                expect(response.body.rule).toBe('whynot');
             });
         });
 
@@ -745,6 +763,18 @@ describe('GameY API Service', () => {
                     .get(`/play/${gameId}`)
                     .expect(404);
             });
+            it('should preserve "whynot" rule in rematch', async () => {
+                const createResponse = await request(gameyService)
+                    .post('/play/create')
+                    .send({ mode: 'hvb', boardSize: 5, rule: 'whynot' });
+                const gameId = createResponse.body.gameId;
+
+                const rematchResponse = await request(gameyService)
+                    .post(`/play/${gameId}/rematch`)
+                    .expect(201);
+
+                expect(rematchResponse.body.rule).toBe('whynot');
+            });
         });
 
         // ─── DELETE /play/:gameId - extended ──────────────────────────────────────
@@ -821,6 +851,31 @@ describe('GameY API Service', () => {
                     .expect(400);
 
                 expect(afterWin.body.error).toContain('Game already finished');
+            });
+            it('should declare opponent as winner in "whynot" mode if player connects 3 sides', async () => {
+              
+                const createResponse = await request(gameyService)
+                    .post('/play/create')
+                    .send({ mode: 'hvh', boardSize: 5, rule: 'whynot' });
+                const gameId = createResponse.body.gameId;
+
+                
+                await request(gameyService).post(`/play/${gameId}/move`).send({ player: 0, x: 0, y: 0 });
+                await request(gameyService).post(`/play/${gameId}/move`).send({ player: 1, x: 1, y: 1 });
+                await request(gameyService).post(`/play/${gameId}/move`).send({ player: 0, x: 0, y: 1 });
+                await request(gameyService).post(`/play/${gameId}/move`).send({ player: 1, x: 2, y: 2 });
+                await request(gameyService).post(`/play/${gameId}/move`).send({ player: 0, x: 0, y: 2 });
+                await request(gameyService).post(`/play/${gameId}/move`).send({ player: 1, x: 3, y: 3 });
+                await request(gameyService).post(`/play/${gameId}/move`).send({ player: 0, x: 0, y: 3 });
+                await request(gameyService).post(`/play/${gameId}/move`).send({ player: 1, x: 2, y: 3 });
+
+                
+                const finalResponse = await request(gameyService)
+                    .post(`/play/${gameId}/move`)
+                    .send({ player: 0, x: 0, y: 4 });
+
+                expect(finalResponse.body.status).toBe('finished');
+                expect(finalResponse.body.winner).toBe(1); 
             });
         });
     });

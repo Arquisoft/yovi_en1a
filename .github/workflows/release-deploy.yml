@@ -264,8 +264,20 @@ jobs:
   deploy:
     name: Deploy over SSH
     runs-on: ubuntu-latest
-    needs: [docker-push-users, docker-push-webapp, docker-push-gamey, docker-push-gameyapi]
+    needs: [ docker-push-users, docker-push-webapp, docker-push-gamey, docker-push-gameyapi ]
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy monitoring config to VM
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          source: "monitoring/"
+          target: "~/"
+
       - name: Deploy over SSH
         uses: fifsky/ssh-action@master
         with:
@@ -274,8 +286,6 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           command: |
             echo "JWT_SECRET=${{ secrets.DEPLOY_JWT_SECRET }}" > .env
-
             wget https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/master/docker-compose.yml -O docker-compose.yml
             docker compose down
             docker compose up -d --pull always
-

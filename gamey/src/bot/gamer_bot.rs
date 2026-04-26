@@ -1,4 +1,4 @@
-use crate::{Coordinates, GameY, YBot, YEN, GameStatus, Movement, PlayerId};
+use crate::{Coordinates, GameY, YBot, YEN, GameStatus, Movement, PlayerId,GameMode};
 
 pub struct GamerBot;
 
@@ -40,9 +40,12 @@ impl GamerBot {
         // If someone won, return a near-infinite score
         // This ensures the bot always picks a winning move over a "good" positional move
         if let GameStatus::Finished { winner } = board.status() {
-            // Winning is everything
-            return if winner.id() == bot_id { 1000000 } else { -1000000 };
-        }
+    let mut score = if winner.id() == bot_id { 1000000 } else { -1000000 };
+    if board.mode == GameMode::Why_Not { 
+        score = -score; 
+    }
+    return score;
+}
 
         // DEPTH LIMIT: Stops at depth 0 to keep computation time reasonable
         if depth == 0 {
@@ -85,8 +88,8 @@ impl GamerBot {
         let yen: YEN = board.into();
         let layout: Vec<char> = yen.layout().replace("/", "").chars().collect();
         
-        let my_char = if bot_id == 0 { 'R' } else { 'B' };
-        let _opp_char = if bot_id == 0 { 'B' } else { 'R' };
+       let my_char = if bot_id == 0 { 'B' } else { 'R' };
+        let _opp_char = if bot_id == 0 { 'R' } else { 'B' };
 
         let mut score = 0;
 
@@ -128,6 +131,9 @@ impl GamerBot {
                 score -= (val as f32 * 1.2) as i32; // Value blocking the opponent slightly more
             }
         }
+        if board.mode == GameMode::Why_Not {
+            score = -score;
+        }
         score
     }
 }
@@ -137,7 +143,7 @@ impl GamerBot {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Movement, PlayerId};
+    use crate::{Movement, PlayerId,GameMode};
 
     #[test]
     fn test_gamer_bot_name() {
@@ -231,5 +237,36 @@ mod tests {
             assert!(index < 28);
             assert!(game.available_cells().contains(&index));
         }
+    }
+    #[test]
+    fn test_gamer_bot_mode_differences() {
+        let bot = GamerBot;
+
+        // Setup: Player 0 connecting (0, 0, 2) connects all 3 sides
+        let moves = vec![
+            Movement::Placement { player: PlayerId::new(0), coords: Coordinates::new(0, 2, 0) },
+            Movement::Placement { player: PlayerId::new(1), coords: Coordinates::new(2, 0, 0) },
+            Movement::Placement { player: PlayerId::new(0), coords: Coordinates::new(0, 1, 1) },
+            Movement::Placement { player: PlayerId::new(1), coords: Coordinates::new(1, 1, 0) },
+        ];
+
+        // Classic Mode: Bot MUST pick the winning move
+        let mut classic_game = GameY::new_with_mode(3, GameMode::Classic);
+        for mv in &moves {
+            classic_game.add_move(mv.clone()).unwrap();
+        }
+       let classic_move = bot.choose_move(&classic_game).unwrap();
+assert!(
+    classic_move == Coordinates::new(0, 0, 2) || classic_move == Coordinates::new(1, 0, 1),
+    "Bot should pick a winning move in Classic mode"
+);
+
+        // Why Not Mode: Bot MUST AVOID the winning (now losing) move
+        let mut why_not_game = GameY::new_with_mode(3, GameMode::Why_Not);
+        for mv in &moves {
+            why_not_game.add_move(mv.clone()).unwrap();
+        }
+        let why_not_move = bot.choose_move(&why_not_game).unwrap();
+        assert_ne!(why_not_move, Coordinates::new(0, 0, 2), "Bot should avoid the losing move in Why Not mode");
     }
 }

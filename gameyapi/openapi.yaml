@@ -195,6 +195,12 @@ paths:
       tags: [Game]
       summary: Undo last move(s)
       description: Reverts 1 move in hvh, or 2 moves (bot + human) in hvb.
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: State reverted
@@ -202,6 +208,61 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameSession'
+        '400':
+          description: No moves to undo
+        '404':
+          description: Game not found
+
+  /play/{gameId}/bot-move:
+    post:
+      tags: [Game]
+      summary: Trigger bot move manually
+      description: Manually triggers a bot move in hvb mode. Used for testing or external bot integration.
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bot move executed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/GameSession'
+                  - type: object
+                    properties:
+                      lastMove:
+                        $ref: '#/components/schemas/Coords'
+        '400':
+          description: Invalid request (not hvb mode, not bot's turn, or game finished)
+        '404':
+          description: Game not found
+        '502':
+          description: Game engine unavailable
+
+  /play/{gameId}/rematch:
+    post:
+      tags: [Game]
+      summary: Start a rematch
+      description: Creates a new game with the same settings as the original, deletes the old game.
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: New game session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameSession'
+        '404':
+          description: Game not found
 
   /profile:
     get:
@@ -239,6 +300,9 @@ components:
           type: string
         mode:
           type: string
+          enum: [hvh, hvb]
+        boardSize:
+          type: integer
         status:
           type: string
           enum: [ongoing, finished]
@@ -254,13 +318,30 @@ components:
         layout:
           type: string
           description: "YEN format layout string"
+        moves:
+          type: array
+          items:
+            type: object
+            properties:
+              player:
+                type: integer
+              x:
+                type: integer
+              y:
+                type: integer
 
     Coords:
       type: object
+      required:
+        - x
+        - y
+        - z
       properties:
         x:
           type: integer
         y:
+          type: integer
+        z:
           type: integer
 
     Error:
