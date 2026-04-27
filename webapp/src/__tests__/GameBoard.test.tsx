@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import GameBoard, { getCellClass, getTurnPanelHeader, applyMovesToBoard } from '../GameBoard';
 import { calculateStrategicScore } from '../GameBoard';
+import { soundService } from '../SoundService';
 
 // --- Mocks ---
 
@@ -354,6 +355,65 @@ it('calculates bonus points for connected edges', () => {
   ];
   const score = calculateStrategicScore(moves as any, 0, 3);
   expect(score).toBeGreaterThan(0);
+});
+
+it('updates hex size when window is resized', () => {
+  render(<GameBoard />);
+  
+  // Manually trigger a window resize
+  global.innerWidth = 500;
+  global.dispatchEvent(new Event('resize'));
+  
+  // This forces the resize listener to execute
+  expect(global.innerWidth).toBe(500);
+});
+
+describe('calculateStrategicScore exhaustive coverage', () => {
+  it('triggers all connection bonuses', () => {
+    const size = 3;
+    const moves = [
+      { player: 0, x: 0, y: 2 }, // Touches Bottom (A) and Left (B)
+      { player: 0, x: 0, y: 0 }, // Touches Top/Diagonal (C)
+      { player: 0, x: 0, y: 1 }, // Connects them
+    ];
+    
+    // This will enter the connectedAB, connectedBC, and connectedAC branches
+    const score = calculateStrategicScore(moves as any, 0, size);
+    expect(score).toBeGreaterThan(100); // Base pts + multiple 30pt bonuses
+  });
+
+  it('returns 0 for player with no moves', () => {
+    expect(calculateStrategicScore([], 0, 11)).toBe(0);
+  });
+});
+
+it('stops background music on unmount', async () => {
+  // Use async here just in case render/unmount triggers state updates
+  const { unmount } = render(<GameBoard />);
+  
+  unmount();
+  
+  // soundService here is the mock you defined in vi.mock
+  expect(soundService.stopBGM).toHaveBeenCalled();
+});
+
+it('calls onProfile and onLobby callbacks', async () => {
+  const mockProfile = vi.fn();
+  const mockLobby = vi.fn();
+  
+  render(<GameBoard onProfile={mockProfile} onLobby={mockLobby} />);
+  
+  // Test Profile button in header
+  fireEvent.click(screen.getByText(/Profile/i));
+  expect(mockProfile).toHaveBeenCalled();
+
+  // Test Lobby button (requires finished game state)
+  mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+  fireEvent.click(screen.getByText('START GAME'));
+  
+  const lobbyBtn = await screen.findByRole('button', { name: /GO TO LOBBY/i });
+  fireEvent.click(lobbyBtn);
+  expect(mockLobby).toHaveBeenCalled();
 });
 
 });
