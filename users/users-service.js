@@ -30,13 +30,16 @@ app.use(cors({
   }
 }));//
 
-// Prometheus setup
 
 app.use(express.json());
+// -------------------- Prometheus Setup --------------------
 const promBundle = require('express-prom-bundle');
-const metricsMiddleware = promBundle({ includeMethod: true });
-app.use(metricsMiddleware);
 
+if (process.env.NODE_ENV !== 'test') {
+  const metricsMiddleware = promBundle({ includeMethod: true });
+  app.use(metricsMiddleware);
+}
+// Swagger
 const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 
