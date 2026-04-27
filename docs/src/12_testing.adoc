@@ -1,0 +1,97 @@
+[[section-testing]]
+== Testing
+
+This section describes the testing strategy, the technologies utilized, and the improvements made to the application based on the results obtained during the development lifecycle.
+
+
+=== Unit and Integration Testing
+
+Our testing strategy focuses on verifying the reliability of both the internal logic and the interaction between microservices. We employ a "bottom-up" approach, moving from isolated utility functions to full API endpoint validation.
+
+* **Technologies:**
+** **Vitest:** Used as the modern, high-performance test runner for both the React frontend and the Node.js microservices.
+** **React Testing Library & user-event:** Employed to validate UI components by simulating authentic user behavior and ensuring accessibility through ARIA role-based queries.
+** **Supertest:** Utilized for black-box testing of REST API endpoints, verifying HTTP response codes and JSON payloads.
+** **MongoDB Memory Server:** Used to provide isolated, ephemeral database instances for every test suite, ensuring zero side effects between test runs.
+
+* **Results and Verification:**
+** **Core Game Mechanics:** We maintained high coverage of the hexagonal grid logic, specifically verifying cell state transitions, coordinate mapping, and winning path calculations.
+** **Infrastructure Resiliency:** Tests verify the "Health Guard" middleware, ensuring the system can handle database disconnects and execute automatic retries for `MongoNotConnectedError` without impacting the user experience.
+** **Identity & Security:** The authentication lifecycle was rigorously tested, covering `bcrypt` password hashing, JWT issuance, and strict CORS origin filtering to prevent unauthorized cross-site requests.
+** **Personalization & Localization:** Verified the integration of `react-i18next` for multilingual support and the secure handling of user profile updates (e.g., avatar selection) via authenticated API calls.
+
+[NOTE]
+====
+By prioritizing critical paths—such as move validation, session security, and database connectivity—we maintained a code coverage target of **>80%**, ensuring that core functionalities remain stable as the architecture scales.
+====
+
+
+=== Acceptance Testing (E2E)
+Acceptance testing ensures the application fulfills the business requirements by simulating real user behavior across different environments.
+
+* **Technologies:**
+** **Cucumber.js:** For defining test scenarios in Gherkin syntax, providing a bridge between technical implementation and functional requirements.
+** **Playwright:** Chosen for its superior speed and native support for modern web features.
+** **Cross-Browser:** Tests are executed across **Chromium, Firefox, and WebKit** to ensure UI consistency.
+
+* **Results:**
+** **3-Games E2E Macro:** We successfully automated the complete user journey: Registration -> Playing 3 matches on varying difficulties -> Verifying the "WINS!" UI popup -> Validating Profile Statistics updates -> Logout.
+** **CI/CD Integration:** Automated checks are now triggered on every Pull Request and prior to each release, ensuring zero regressions in core features.
+
+
+=== Usability Testing
+
+To evaluate if the application is intuitive and identify visual or flow weaknesses, we conducted a moderated usability test with external users.
+
+==== Methodology
+The test was conducted as an "at-home" experience. Users were given specific tasks without any guidance to observe natural interaction. We utilized the **"Think Aloud"** protocol, where participants narrated their thoughts and frustrations in real-time.
+
+* **Privacy:** No personal data (names, IDs) was recorded to ensure complete anonymity.
+* **Participant Profiles:** A single batch of 5 users was selected with varying ages, genders, and **Computer Knowledge (CK)** on a scale of 0-10.
+* **The Ideal Scenario (Benchmark):** Within the batch, one user was assigned a **CK of 10** (Software Student/Professional). This user serves as the **ideal scenario**, representing the best possible interaction time and providing a reference point for the maximum efficiency of the current UI.
+* **Tasks Performed:**
+  1. Register a new account or Log In.
+  2. Complete a game session on **Medium Difficulty**.
+  3. Locate and review personal statistics in the Profile section.
+
+==== Test Results (Batch Report)
+The following metrics were captured during the session with 5 participants:
+
+[cols="1,1,1,1,1,1"]
+|===
+| Age | Gender | CK (0-10) | Time (sec) | Completed? | Grade (0-10)
+| 21 | M | 10 (Ref) | 73 | Yes | 8
+| 63 | M | 3 | 245 | Yes | 8
+| 58 | F | 8 | 110 | Yes | 9
+| 31 | F | 7 | 95 | Yes | 8
+| 34 | M | 5 | 142 | Yes | 9
+|===
+
+* **Average Age:** 41.4 years.
+* **Gender Ratio:** 60% Male / 40% Female.
+* **Average Time by Gender:** Male: 153.3s | Female: 102.5s.
+* **Average Time by Age Group:** 
+** [20-30]: 73s
+** [30-40]: 118.5s
+** [50-65]: 177.5s
+* **Overall Application Grade:** **8.4 / 10**
+
+==== Conclusions and Observations
+* **Benchmark Comparison:** By comparing the 'normal' users against our **CK 10 (Ideal Scenario)**, we identified that the primary time difference occurred during the registration phase and navigation to the statistics page. The ideal scenario took only 73 seconds, while the average user took approximately double that time.
+* **Demographic Patterns:** While our oldest user (63) successfully completed the test and gave a high grade, their completion time (245s) was significantly higher than the benchmark. This confirms that navigation flow needs to be more explicit for those with lower CK, as users in higher age brackets are more prone to hesitation or frustration when UI cues are purely iconographic.
+* **Efficiency vs. Satisfaction:** Interestingly, despite the variations in time taken, the grades remained consistently high (8-9). This suggests that the core game is engaging, but the friction lies in the secondary interface elements (Lobby and Profile navigation).
+* **Direct Observations:** During the "Think Aloud" sessions, we observed users hovering over the navbar looking for the "How to Play" section and hesitating at the Lobby screen because the "Start Game" button did not visually stand out as the primary action.
+
+==== Proposed Changes (Future Versions)
+Based on the feedback and observations from our test batch, the following improvements are proposed for future releases to enhance clarity and streamline the user flow:
+
+* **Lobby Logic Optimization:** Currently, game difficulty settings remain visible in the lobby regardless of the selected mode. We propose hiding these settings unless the **PvC (Player vs Computer)** mode is active, as they do not apply to other modes and cause confusion for new users.
+* **Explicit Help Navigation:** The "How to Play" section is currently represented only by a `?` icon in the navbar. To improve discoverability for users with lower computer dexterity, we propose adding an explicit **"How to Play" label** next to the icon or implementing a "First-time user" guided tour.
+* **Game Start Visibility:** Users noted that the "Start Game" button is too visually similar to other interface elements, leading to delays in beginning the match. We propose two possible solutions:
+    ** **Option A:** Redesign the button with a high-contrast "Call to Action" (CTA) style to make it stand out.
+    ** **Option B:** Implement an **automatic start** sequence once all parameters are selected, removing the extra click entirely.
+* **Accessibility:** Increase font sizes and improve color contrast to better accommodate users in higher age brackets who struggled with small text.
+
+
+=== Load Testing
+`TODO`

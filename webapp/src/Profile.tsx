@@ -11,7 +11,8 @@ interface MatchEntry {
     id: number;
     result: MatchResult;
     pts: number;
-    mode: string; 
+    mode: string;
+    rule: string;
 }
 
 interface ProfileProps {
@@ -21,6 +22,7 @@ interface ProfileProps {
     matchHistory?: MatchEntry[];
     onPlayClick?: () => void;
     onLogout?: () => void;
+    onBack?: () => void;
 }
 
 // ── Constants & Configuration ──────────────────────────────────────────────────
@@ -29,6 +31,12 @@ const getModeLabel = (t: any, mode: string) => {
     if (key === 'hvh') return t('mode_pvp');
     if (key === 'hvb') return t('mode_pvc_short'); 
     return mode;
+};
+
+const getRuleLabel = (t: any, rule: string) => {
+    const key = rule?.toLowerCase();
+    if (key === 'whynot') return t('rule_whynot');
+    return t('rule_classic'); // Default to Classic
 };
 
 const API_URL = import.meta.env.VITE_GAMEY_API_URL || 'http://localhost:3001';
@@ -98,7 +106,7 @@ function useProfileStats() {
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, onLogout }) => {
+const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, onLogout, onBack }) => {
     const { t } = useTranslation();
     const { stats, loading } = useProfileStats();
     const [localSelectedAvatar, setLocalSelectedAvatar] = useState<string | null>(null);
@@ -137,7 +145,14 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
     return (
         <div className="profile-page-container">
             <nav className="profile-navbar">
-                <div className="profile-nav-logo">GAME Y</div>
+                <div className="profile-nav-logo">
+                    {onBack && (
+                        <button className="profile-back-btn" onClick={onBack} type="button">
+                            ← {t('btn_back')}
+                        </button>
+                    )}
+                    GAME Y
+                </div>
                 <div className="profile-nav-right">
                     <button className="profile-nav-play-btn" onClick={onPlayClick} type="button">{t('nav_play')}</button>
                     <button className="profile-nav-logout-btn" onClick={onLogout} type="button">{t('nav_logout')}</button>
@@ -205,6 +220,7 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
                                         <th scope="col">{t('th_win_lose')}</th>
                                         <th scope="col">{t('th_points')}</th>
                                         <th scope="col">{t('th_mode')}</th>
+                                        <th scope="col">{t('th_rule')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -216,7 +232,8 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
                                             </span>
                                         </td>
                                         <td><span className="pts-value">{match.pts}</span></td>
-                                        <td>{getModeLabel(t,match.mode)}</td>
+                                        <td>{getModeLabel(t, match.mode)}</td>
+                                        <td>{getRuleLabel(t, match.rule)}</td> {/* Added Data Cell */}
                                     </tr>
                                 ))}
                                 </tbody>
