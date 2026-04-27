@@ -27,6 +27,20 @@ const localStorageMock = (() => {
 })();
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
+// Mock the Sound Service to prevent Audio undefined errors
+vi.mock('../SoundService', () => ({
+  soundService: {
+    playMove: vi.fn(),
+    playBotMove: vi.fn(),
+    playWin: vi.fn(),
+    playLoss: vi.fn(),
+    startBGM: vi.fn(),
+    stopBGM: vi.fn(),
+    updateSettings: vi.fn(),
+    settings: { muteMove: false, muteBGM: false }
+  },
+}));
+
 describe('GameBoard Pure Helpers', () => {
   it('getCellClass returns correct classes', () => {
     expect(getCellClass('B', false)).toBe('hex-cell hex-p1');
@@ -168,16 +182,16 @@ describe('GameBoard Component', () => {
   it('should toggle global mute state via top bar button', () => {
     render(<GameBoard />);
     
-    // Initially unmuted (Mute button visible)
+    // 1. Check initial state
     const muteBtn = screen.getByTitle('Mute');
-    expect(muteBtn).toBeInTheDocument();
+    expect(muteBtn).toBeDefined(); // Changed from toBeInTheDocument
     
-    // Click to mute
+    // 2. Click to mute
     fireEvent.click(muteBtn);
-    expect(screen.getByTitle('Unmute')).toBeInTheDocument();
+    expect(screen.getByTitle('Unmute')).toBeDefined(); // Changed from toBeInTheDocument
     
-    // Click to unmute
+    // 3. Click to unmute
     fireEvent.click(screen.getByTitle('Unmute'));
-    expect(screen.getByTitle('Mute')).toBeInTheDocument();
+    expect(screen.getByTitle('Mute')).toBeDefined(); // Changed from toBeInTheDocument
   });
 });
