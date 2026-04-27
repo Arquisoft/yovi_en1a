@@ -439,15 +439,17 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
   }
 
   s.moves.push({ player, x, y });
-  s.currentPlayer = player === 0 ? 1 : 0;
-  updateWinStatus(s);
 
-  let response = sessionView(s);
+  if (s.rule !== 'fortuney') {
+    s.currentPlayer = player === 0 ? 1 : 0;
+  }
+  updateWinStatus(s);
 
   if (s.rule !== 'fortuney' && s.mode === 'hvb' && s.status === 'ongoing') {
     let safety = 10;
     while (s.currentPlayer === 1 && s.status === 'ongoing' && safety-- > 0) {
       try {
+        // İlk conflict çözümü: s.rule başarıyla eklendi
         const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty, s.rule);
         if (!botCoords || botCoords.action) break;
 
@@ -457,6 +459,53 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
       } catch { break; }
     }
   }
+
+  const response = sessionView(s);
+  if (s.status === 'finished') saveGameResult(s);
+  return res.json(response);
+});
+
+// İkinci conflict çözümü: Silinmek üzere olan flip (para atma) route'u kurtarıldı
+gameyService.post('/play/:gameId/flip', async (req, res) => {
+  const s = sessions.get(req.params.gameId);
+  if (!s || s.status === 'finished' || s.rule !== 'fortuney' || !s.needsFlip) {
+    return res.status(400).json({ error: 'Cannot flip now' });
+  }
+
+  const heads = Math.random() < 0.5;
+  const flipResult = heads ? 'heads' : 'tails'; 
+  s.coinFlip = flipResult;
+  s.needsFlip = false; 
+
+  if (heads) {
+    s.currentPlayer = 0; 
+  } else {
+    s.currentPlayer = 1; 
+    if (s.mode === 'hvb') {
+      try {
+        const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty);
+        
+        let moveCoords = botCoords;
+        if (botCoords && botCoords.action) {
+          moveCoords = randomFreeCell(s.moves, s.boardSize);
+        }
+
+        if (moveCoords) {
+          s.moves.push({ player: 1, x: moveCoords.x, y: moveCoords.y });
+          updateWinStatus(s); 
+          s.coinFlip = flipResult; 
+        } else {
+          s.currentPlayer = 0;
+          s.needsFlip = false;
+        }
+      } catch {
+        s.currentPlayer = 0;
+        s.needsFlip = false;
+      }
+    }
+  }
+
+  const response = sessionView(s);
   if (s.status === 'finished') saveGameResult(s);
   return res.json(response);
 });
