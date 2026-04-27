@@ -136,7 +136,7 @@ app.post('/createuser', async (req, res) => {
 
     res.status(200).json({
       message: `Hello ${username}! Welcome to the course!`,
-      token, // Now included so the frontend can save it
+      token,
       userId: result.insertedId,
       avatarUrl: newUser.avatarUrl,
       username: newUser.username
@@ -146,6 +146,7 @@ app.post('/createuser', async (req, res) => {
       const field = error.keyPattern?.email ? 'email' : 'username';
       return res.status(409).json({ error: `An account with this ${field} already exists` });
     }
+
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -195,6 +196,8 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
 
 // -------------------- Server Startup --------------------
 
