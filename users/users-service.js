@@ -246,4 +246,12 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-module.exports = { app, connectToMongo, closeMongoConnection, JWT_SECRET, startServer };
+module.exports = {
+  app,
+  connectToMongo,
+  closeMongoConnection,
+  JWT_SECRET,
+  startServer,
+  get db() { return db; },
+  get client() { return client; },
+};
