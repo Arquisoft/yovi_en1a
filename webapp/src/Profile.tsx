@@ -11,7 +11,8 @@ interface MatchEntry {
     id: number;
     result: MatchResult;
     pts: number;
-    mode: string; 
+    mode: string;
+    rule: string;
 }
 
 interface ProfileProps {
@@ -30,6 +31,12 @@ const getModeLabel = (t: any, mode: string) => {
     if (key === 'hvh') return t('mode_pvp');
     if (key === 'hvb') return t('mode_pvc_short'); 
     return mode;
+};
+
+const getRuleLabel = (t: any, rule: string) => {
+    const key = rule?.toLowerCase();
+    if (key === 'whynot') return t('rule_whynot');
+    return t('rule_classic'); // Default to Classic
 };
 
 const API_URL = import.meta.env.VITE_GAMEY_API_URL || 'http://localhost:3001';
@@ -213,6 +220,7 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
                                         <th scope="col">{t('th_win_lose')}</th>
                                         <th scope="col">{t('th_points')}</th>
                                         <th scope="col">{t('th_mode')}</th>
+                                        <th scope="col">{t('th_rule')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -224,7 +232,8 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
                                             </span>
                                         </td>
                                         <td><span className="pts-value">{match.pts}</span></td>
-                                        <td>{getModeLabel(t,match.mode)}</td>
+                                        <td>{getModeLabel(t, match.mode)}</td>
+                                        <td>{getRuleLabel(t, match.rule)}</td> {/* Added Data Cell */}
                                     </tr>
                                 ))}
                                 </tbody>

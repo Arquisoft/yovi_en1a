@@ -74,6 +74,7 @@
   "th_win_lose": "Victorias / Derrotas",
   "th_points": "Puntos",
   "th_mode": "Modo",
+  "th_rule": "Modo de Juego",
   "badge_win": "Victoria",
   "badge_lose": "Derrota",
   "mode_pvc_short": "Jugador vs Ordenador",
