@@ -396,6 +396,7 @@ gameyService.post('/play/create', (req, res) => {
     
     const id = uuidv4();
     const session = newSession(id, mode, boardSize, userId, difficulty, rule);
+
     if (rule === 'fortuney') {
       session.needsFlip = true;
     }
