@@ -449,7 +449,6 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
     let safety = 10;
     while (s.currentPlayer === 1 && s.status === 'ongoing' && safety-- > 0) {
       try {
-        // İlk conflict çözümü: s.rule başarıyla eklendi
         const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty, s.rule);
         if (!botCoords || botCoords.action) break;
 
@@ -465,7 +464,6 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
   return res.json(response);
 });
 
-// İkinci conflict çözümü: Silinmek üzere olan flip (para atma) route'u kurtarıldı
 gameyService.post('/play/:gameId/flip', async (req, res) => {
   const s = sessions.get(req.params.gameId);
   if (!s || s.status === 'finished' || s.rule !== 'fortuney' || !s.needsFlip) {
@@ -509,7 +507,6 @@ gameyService.post('/play/:gameId/flip', async (req, res) => {
   if (s.status === 'finished') saveGameResult(s);
   return res.json(response);
 });
-
 // ─── Profile Routes ───────────────────────────────────────────────────────────
 
 gameyService.post('/profile/avatar', async (req, res) => {
