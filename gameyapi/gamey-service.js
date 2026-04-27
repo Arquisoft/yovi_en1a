@@ -104,7 +104,7 @@ function getUserIdFromRequest(req) {
 
 // ─── Save game result to MongoDB ────────────────────────────────────────────────
 
-async function saveGameResult(session) {
+async function saveGameResult(session, finalScore) { // Add finalScore parameter
   if (!db) return;
 
   try {
@@ -116,10 +116,11 @@ async function saveGameResult(session) {
       boardSize: session.boardSize,
       winner: session.winner,
       totalMoves: session.moves.length,
+      points: finalScore || (session.moves.length * 10),
       finishedAt: new Date(),
       createdAt: session.createdAt,
     });
-    console.log(`[DB] Game ${session.id} saved (Rule: ${session.rule})`);
+    console.log(`[DB] Game ${session.id} saved with ${finalScore} points`);
   } catch (err) {
     console.error('[DB] Failed to save game:', err.message);
   }

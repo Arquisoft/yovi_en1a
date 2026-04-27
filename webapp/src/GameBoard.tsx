@@ -195,10 +195,74 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
       setSession(s);
       const actualSize = s.boardSize || boardSize;
       const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
-      
-      setBoard(applyMovesToBoard(s.moves, actualTotalCells));
+      const newBoard = applyMovesToBoard(s.moves, actualTotalCells);
+      setBoard(newBoard);
       setCurrentTurn(s.currentPlayer === 0 ? 'P1' : 'P2');
       setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
+
+      // --- Strategic Scoring Logic ---
+      const calculateScore = (player: number) => {
+        const playerMoves = s.moves.filter(m => m.player === player);
+        if (playerMoves.length === 0) return 0;
+
+        // 1. Base Points: 10 pts per piece (Updated from 1)
+        let totalScore = playerMoves.length * 10;
+
+        // 2. Identify Groups and Side Bonuses
+        const moveSet = new Set(playerMoves.map(m => `${m.x},${m.y}`));
+        const visited = new Set<string>();
+        
+        const getNeighbors = (x: number, y: number) => [
+          {x: x-1, y: y-1}, {x: x, y: y-1},
+          {x: x-1, y: y},   {x: x+1, y: y},
+          {x: x, y: y+1},   {x: x+1, y: y+1}
+        ];
+
+        for (const move of playerMoves) {
+          const key = `${move.x},${move.y}`;
+          if (!visited.has(key)) {
+            const queue = [move];
+            visited.add(key);
+            
+            let groupTouchesA = false;
+            let groupTouchesB = false;
+            let groupTouchesC = false;
+
+            let head = 0;
+            while(head < queue.length) {
+              const curr = queue[head++];
+              
+              if (curr.y === actualSize - 1) groupTouchesA = true;
+              if (curr.x === 0) groupTouchesB = true;
+              if (curr.x === curr.y) groupTouchesC = true;
+
+              for (const n of getNeighbors(curr.x, curr.y)) {
+                const nKey = `${n.x},${n.y}`;
+                if (moveSet.has(nKey) && !visited.has(nKey)) {
+                  visited.add(nKey);
+                  queue.push({player, x: n.x, y: n.y});
+                }
+              }
+            }
+
+            // 3. Award 30 pts per side connection (Updated from 3)
+            const sidesTouched = [groupTouchesA, groupTouchesB, groupTouchesC].filter(Boolean).length;
+            if (sidesTouched >= 2) {
+              // We award 30 points for each additional side bridged beyond the first one
+              totalScore += (sidesTouched - 1) * 30;
+            }
+          }
+        }
+
+        return totalScore;
+      };
+
+      setP1Score(calculateScore(0));
+      setP2Score(calculateScore(1));
+
+      setP1Score(calculateScore(0));
+      setP2Score(calculateScore(1));
+      // -------------------------------
 
       if (s.winningPath) {
         const indices = new Set(s.winningPath.map(p => coordsToIndex(p.x, p.y)));
@@ -207,19 +271,9 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
 
       if (s.status === 'finished') {
         setWinner(s.winner === 0 ? 'P1' : 'P2');
-        
-        // Use functional update to check 'hasScored' safely
-        setHasScored((prev) => {
-          if (!prev) {
-            if (s.winner === 0) setP1Score(count => count + 1);
-            if (s.winner === 1) setP2Score(count => count + 1);
-            return true; // Mark as scored for this specific game session
-          }
-          return prev;
-        });
       }
     },
-    [boardSize] 
+    [boardSize]
   );
 
   // ── Start a new game
