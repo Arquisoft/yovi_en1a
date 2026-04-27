@@ -554,8 +554,57 @@ describe('startServer', () => {
         expect(spyListen).toHaveBeenCalled();
         expect(server).toBeDefined();
         expect(typeof server.close).toBe('function');
-        
-        // Re-establish testing connection just in case
+
         await connectToMongo(mongoUri);
+    });
+});
+describe('Returns errors when invalid state', () => {
+    afterEach(() => vi.restoreAllMocks());
+
+    it('returns 400 for an invalid email format', async () => {
+        const res = await request(app)
+            .post('/createuser')
+            .send({ username: 'BadEmail', email: 'not-an-email', password: 'secret' });
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toMatch(/invalid email format/i);
+    });
+
+    it('returns 503 when ping fails and reconnect also fails', async () => {
+        const { MongoClient } = await import('mongodb');
+        const probe = new MongoClient(mongoUri);
+        await probe.connect();
+        const dbProto = probe.db('test_db').constructor.prototype;
+        const clientProto = probe.constructor.prototype;
+
+        vi.spyOn(dbProto, 'command').mockRejectedValue(new Error('ping timeout'));
+        vi.spyOn(clientProto, 'connect').mockRejectedValue(new Error('cannot reconnect'));
+
+        const res = await request(app)
+            .post('/login')
+            .send({ usernameOrEmail: 'anyone', password: 'pass' });
+
+        await probe.close();
+
+        expect(res.status).toBe(503);
+        expect(res.body.error).toMatch(/temporarily unavailable/i);
+    });
+
+    it('returns 500 when findOne throws an unexpected error during login', async () => {
+        const { MongoClient } = await import('mongodb');
+        const probe = new MongoClient(mongoUri);
+        await probe.connect();
+        const colProto = probe.db('test_db').collection('users').constructor.prototype;
+
+        vi.spyOn(colProto, 'findOne').mockRejectedValueOnce(new Error('unexpected db error'));
+
+        const res = await request(app)
+            .post('/login')
+            .send({ usernameOrEmail: 'anyone', password: 'pass' });
+
+        await probe.close();
+
+        expect(res.status).toBe(500);
+        expect(res.body.error).toMatch(/internal server error/i);
     });
 });
