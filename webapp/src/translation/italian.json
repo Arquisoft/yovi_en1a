@@ -81,5 +81,18 @@
   "rule_classic": "Classico",
   "rule_whynot": "Why Not (Evita i Bordi!)",
   "lbl_game_rule": "Regole",
-  "rule_whynot_name": "Why Not"
+  "rule_whynot_name": "Why Not",
+  "rule_fortuney": "Fortunato (Fortuney)",
+  "tooltip_view_profile": "Vedi profilo",
+  "lbl_chance_time": "Ora della Fortuna!",
+  "desc_flip_coin": "Lancia una moneta per decidere chi gioca per primo.",
+  "btn_flip_coin": "LANCIA LA MONETA",
+  "msg_playing": "{{name}} gioca!",
+  "btn_close_and_play": "CHIUDI E GIOCA",
+  "err_failed_create": "Impossibile creare la partita: {{msg}}",
+  "err_move_failed": "Mossa fallita: {{msg}}",
+  "err_undo_failed": "Annullamento fallito: {{msg}}",
+  "err_flip_failed": "Lancio fallito: {{msg}}",
+  "err_rematch_failed": "Rivincita fallita: {{msg}}",
+  "msg_determining_turn": "Determinazione del turno..."
 }

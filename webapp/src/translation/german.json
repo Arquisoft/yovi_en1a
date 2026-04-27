@@ -82,5 +82,18 @@
   "rule_classic": "Klassisch",
   "rule_whynot": "Why Not (Ränder vermeiden!)",
   "lbl_game_rule": "Spielregel",
-  "rule_whynot_name": "Why Not"
+  "rule_whynot_name": "Why Not",
+  "rule_fortuney": "Glücksspiel (Fortuney)",
+  "tooltip_view_profile": "Profil anzeigen",
+  "lbl_chance_time": "Glücksmoment!",
+  "desc_flip_coin": "Münze werfen um zu entscheiden, wer anfängt.",
+  "btn_flip_coin": "MÜNZE WERFEN",
+  "msg_playing": "{{name}} spielt!",
+  "btn_close_and_play": "SCHLIESSEN UND SPIELEN",
+  "err_failed_create": "Spiel konnte nicht erstellt werden: {{msg}}",
+  "err_move_failed": "Zug fehlgeschlagen: {{msg}}",
+  "err_undo_failed": "Rückgängig fehlgeschlagen: {{msg}}",
+  "err_flip_failed": "Münzwurf fehlgeschlagen: {{msg}}",
+  "err_rematch_failed": "Wiederholung fehlgeschlagen: {{msg}}",
+  "msg_determining_turn": "Nächsten Zug bestimmen..."
 }

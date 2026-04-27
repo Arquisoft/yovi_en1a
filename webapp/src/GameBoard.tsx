@@ -20,6 +20,8 @@ interface GameSession {
   status: 'ongoing' | 'finished';
   currentPlayer: number;
   winner: number | null;
+    coinFlip?: 'heads' | 'tails' | null; 
+      needsFlip?: boolean;
 }
 
 interface GameBoardProps {
@@ -114,20 +116,23 @@ export function getTurnPanelHeader(
     winner: PlayerTurn | null,
     isBotThinking: boolean,
     currentTurn: PlayerTurn,
-    username: string
+    username: string,
+    isFlippingPhase?: boolean
 ): string {
   if (gameStatus === 'idle') return t('btn_start_game');
   if (gameStatus === 'finished') {
     const winnerName = winner === 'P1' ? username : 'P2';
     return t('msg_winner', { name: winnerName }); 
   }
+  if (isFlippingPhase) return t('lbl_chance_time');
   if (isBotThinking) return t('msg_bot_thinking');
   if (currentTurn === 'P1') return t('msg_turn', { name: username });
   return t('msg_p2_turn');
 }
 
-export function getTurnPanelSubtext(t:any,gameStatus: GameStatus, currentTurn: PlayerTurn): string {
-  if (gameStatus === 'idle') return t('msg_choose_mode');
+export function getTurnPanelSubtext(t:any,gameStatus: GameStatus, currentTurn: PlayerTurn,isFlippingPhase?: boolean): string {
+if (gameStatus === 'idle') return t('msg_choose_mode');
+  if (isFlippingPhase) return t('msg_determining_turn'); 
   return currentTurn === 'P1' ? t('color_blue') : t('color_red');
 }
 
@@ -175,6 +180,8 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [winningPathIndices, setWinningPathIndices] = useState<Set<number>>(new Set());
+  const [coinFlip, setCoinFlip] = useState<'heads' | 'tails' | null>(null);
+const [showCoinAnim, setShowCoinAnim] = useState(false);
 
   // ── Session Scores (in-memory only, resets on reload)
   const [p1Score, setP1Score] = useState(0);
@@ -321,33 +328,34 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   );
 
   // ── Start a new game
-  const handleStartGame = async () => {
-    setErrorMsg(null);
-    setWinner(null);
-    setWinningPathIndices(new Set());
-    setHasScored(false);
-    setBoard(new Array(totalCells).fill('.'));
-    setCurrentTurn('P1');
-    try {
-      const data = await apiPost<GameSession>('/play/create', {
-        mode: selectedMode,
-        difficulty: selectedDifficulty,
-        boardSize: boardSize,
-        rule: selectedRule,
-      });
-      syncFromSession(data);
-    } catch (e: unknown) {
-      setErrorMsg(`Failed to create game: ${(e as Error).message}`);
-      setGameStatus('error');
-    }
-  };
-
+const handleStartGame = async () => {
+  setErrorMsg(null);
+  setWinner(null);
+  setWinningPathIndices(new Set());
+  setHasScored(false);
+  setBoard(new Array(totalCells).fill('.'));
+  setCurrentTurn('P1');
+  try {
+    const data = await apiPost<GameSession>('/play/create', {
+      mode: selectedMode,
+      difficulty: selectedDifficulty,
+      boardSize: boardSize,
+      rule: selectedRule,
+    });
+    syncFromSession(data);
+    
+  } catch (e: unknown) {
+   setErrorMsg(t('err_failed_create', { msg: (e as Error).message }));
+    setGameStatus('error');
+  }
+};
   // ── Human places a piece
   const handleCellClick = async (index: number) => {
     if (!session || gameStatus !== 'ongoing') return;
     if (board[index] !== '.') return;
     if (session.mode === 'hvb' && session.currentPlayer === 1) return;
     if (isBotThinking) return;
+    setIsBotThinking(true);
 
     const { x, y } = indexToCoords(index);
     const playerNum = session.currentPlayer;
@@ -356,8 +364,9 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
     optimistic[index] = playerNum === 0 ? 'B' : 'R';
     setBoard(optimistic);
     soundService.playMove();
-
-    if (session.mode === 'hvb') setIsBotThinking(true);
+   if (session.mode === 'hvb' && session.rule !== 'fortuney') {
+    setIsBotThinking(true);
+}
 
     try {
       const data = await apiPost<GameSession & { botMove?: { x: number; y: number } | null }>(
@@ -373,7 +382,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
       }
     } catch (e: unknown) {
       setBoard(prev => prev.map((v, i) => (i === index ? '.' : v)));
-      setErrorMsg(`Move failed: ${(e as Error).message}`);
+      setErrorMsg(t('err_move_failed', { msg: (e as Error).message }));
     } finally {
       setIsBotThinking(false);
     }
@@ -389,9 +398,31 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
       setWinner(null);
       setWinningPathIndices(new Set());
     } catch (e: unknown) {
-      setErrorMsg(`Undo failed: ${(e as Error).message}`);
+    setErrorMsg(t('err_undo_failed', { msg: (e as Error).message }));
     }
   };
+
+  const handleFlip = async () => {
+  if (!session || !session.needsFlip) return;
+  setIsBotThinking(true);
+  try {
+   const data = await apiPost<GameSession>(`/play/${sanitizeGameId(session.gameId)}/flip`, {});
+      syncFromSession(data);
+    
+    
+    if (data.coinFlip) {
+      setCoinFlip(data.coinFlip);
+      setShowCoinAnim(true);
+      setIsBotThinking(true); 
+    } else {
+      setIsBotThinking(false);
+    }
+  } catch (e: unknown) {
+    setErrorMsg(t('err_flip_failed', { msg: (e as Error).message }));
+    setIsBotThinking(false);
+  }
+};
+
 
   // ── Rematch
   const handleRematch = async () => {
@@ -407,7 +438,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
       setErrorMsg(null);
       syncFromSession(data);
     } catch (e: unknown) {
-      setErrorMsg(`Rematch failed: ${(e as Error).message}`);
+     setErrorMsg(t('err_rematch_failed', { msg: (e as Error).message }));
     }
   };
 
@@ -452,7 +483,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   const renderBoard = () => {
     const currentBoardSize = session?.boardSize || boardSize;
     const hexWidth = calculateDynamicHexSize(currentBoardSize, screenSize.width, screenSize.height);
-    const isInteractive = gameStatus === 'ongoing' && !isBotThinking;
+    const isInteractive = gameStatus === 'ongoing' && !isBotThinking && !session?.needsFlip;
     const rows = [];
     let currentIndex = 0;
     for (let row = 0; row < currentBoardSize; row++) {
@@ -462,9 +493,11 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
     return rows;
   };
 
-  const activeTurn = isBotThinking ? 'P2' : currentTurn;
-  const turnPanelHeader = getTurnPanelHeader(t,gameStatus, winner, isBotThinking, currentTurn, username);
-  const turnPanelSubtext = getTurnPanelSubtext(t, gameStatus, activeTurn);
+ const isFlippingPhase = Boolean((session?.rule === 'fortuney' && session?.needsFlip) || showCoinAnim);
+  const activeTurn = (isBotThinking && !isFlippingPhase) ? 'P2' : currentTurn;
+  
+  const turnPanelHeader = getTurnPanelHeader(t, gameStatus, winner, isBotThinking, currentTurn, username, isFlippingPhase);
+  const turnPanelSubtext = getTurnPanelSubtext(t, gameStatus, activeTurn, isFlippingPhase);
   const p2Label = selectedMode === 'hvb' ? t('lbl_p2_bot') : t('lbl_p2_user');
   return (
     <>
@@ -516,9 +549,16 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
                 <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
                   {selectedMode === 'hvh' ? t('mode_pvp') : t('mode_pvc', { diff: t(`diff_${selectedDifficulty}`) })}
                 </div>
-                <div style={{ color: selectedRule === 'whynot' ? '#ff4444' : '#44ff44', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase' }}>
-                  {t('lbl_rule')}: {selectedRule === 'whynot' ? t('rule_whynot') : t('rule_classic')}
-                </div>
+               <div style={{ 
+  color: selectedRule === 'whynot' ? '#ff4444' : selectedRule === 'fortuney' ? '#FFD700' : '#44ff44', 
+  fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase' 
+}}>
+  {t('lbl_rule')}: {
+    selectedRule === 'whynot' ? t('rule_whynot') : 
+    selectedRule === 'fortuney' ? t('rule_fortuney') : 
+    t('rule_classic')
+  }
+</div>
               </div>
             )}
 
@@ -533,7 +573,23 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
                 ⚠ {errorMsg}
               </div>
             )}
-
+           {gameStatus === 'ongoing' && session?.rule === 'fortuney' && session?.needsFlip && (
+  <div className="game-panel" style={{ border: '2px solid #FFD700', backgroundColor: '#2a2a24', textAlign: 'center' }}>
+    
+    <div className="game-panel-header" style={{ color: '#FFD700' }}>{t('lbl_chance_time')}</div>
+    <p style={{ color: '#ddd', fontSize: '13px', margin: '10px 0' }}>{t('desc_flip_coin')}</p>
+    <button
+      onClick={handleFlip}
+      disabled={isBotThinking && !showCoinAnim}
+      style={{
+        width: '100%', padding: '12px', fontSize: '16px', fontWeight: 'bold',
+        backgroundColor: '#FFD700', color: '#000', border: 'none', borderRadius: '4px', cursor: 'pointer'
+      }}
+    >
+      {t('btn_flip_coin')} 
+    </button>
+  </div>
+)}
             <div className="game-panel chat-panel">
               <div className="game-panel-header" style={{ color: '#ccc' }}>{t('lbl_chat')}</div>
               <div className="chat-content">...</div>
@@ -575,6 +631,37 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
                       </div>
                   </div>
                 )}
+               
+
+{showCoinAnim && coinFlip && (
+  <div style={{
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.92)', zIndex: 100, 
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+  }}>
+    <div style={{ fontSize: '150px', filter: 'drop-shadow(0 0 20px rgba(255,215,0,0.6))' }}>
+      {coinFlip === 'heads' ? '🟡' : '⚪'}
+    </div>
+    
+    <h2 style={{ color: '#fff', fontSize: '42px', margin: '20px 0', textAlign: 'center' }}>
+      {coinFlip === 'heads' ? t('msg_playing', { name: username }) : t('msg_playing', { name: 'P2' })}
+    </h2>
+    
+    <button
+      onClick={() => {
+        setShowCoinAnim(false);
+        setIsBotThinking(false); 
+      }}
+      style={{
+        marginTop: '30px', padding: '15px 50px', fontSize: '22px', fontWeight: 'bold',
+        backgroundColor: '#44ff44', color: '#000', border: 'none', borderRadius: '8px', cursor: 'pointer',
+        boxShadow: '0 4px 15px rgba(68, 255, 68, 0.4)'
+      }}
+    >
+      {t('btn_close_and_play')}
+    </button>
+  </div>
+)}
               </div>
             </div>
           </div>

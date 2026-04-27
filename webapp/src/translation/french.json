@@ -82,5 +82,19 @@
   "rule_classic": "Classique",
   "rule_whynot": "Why Not (Évitez les bords!)",
   "lbl_game_rule": "Règle du jeu",
-  "rule_whynot_name": "Why Not"
+  "rule_whynot_name": "Why Not",
+  "rule_fortuney": "Chanceux (Fortuney)",
+  "tooltip_view_profile": "Voir le profil",
+  "lbl_chance_time": "Moment de chance!",
+  "desc_flip_coin": "Lancez une pièce pour décider qui joue en premier.",
+  "btn_flip_coin": "LANCER LA PIÈCE",
+  "msg_playing": "{{name}} joue!",
+  "btn_close_and_play": "FERMER ET JOUER",
+  "err_failed_create": "Impossible de créer la partie: {{msg}}",
+  "err_move_failed": "Coup échoué: {{msg}}",
+  "err_undo_failed": "Annulation échouée: {{msg}}",
+  "err_flip_failed": "Lancer échoué: {{msg}}",
+  "err_rematch_failed": "Revanche échouée: {{msg}}",
+  "msg_determining_turn": "Détermination du prochain tour..."
+
 }

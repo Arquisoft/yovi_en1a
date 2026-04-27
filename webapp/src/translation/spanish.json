@@ -80,7 +80,20 @@
   "mode_pvc_short": "Jugador vs Ordenador",
   "lbl_rule": "Regla",
   "rule_classic": "Clásico",
-  "rule_whynot": "Why Not (Evitar los bordes!)",
+"rule_whynot": "Why Not (¡Evita los bordes!)",
   "lbl_game_rule": "Regla del juego",
-  "rule_whynot_name": "Why Not"
+  "rule_whynot_name": "Why Not",
+  "rule_fortuney": "Suertudo (Fortuney)",
+  "tooltip_view_profile": "Ver Perfil",
+  "lbl_chance_time": "¡Hora de la Suerte!",
+  "desc_flip_coin": "Lanza una moneda para decidir quién juega primero.",
+  "btn_flip_coin": "LANZAR MONEDA",
+  "msg_playing": "¡{{name}} Juega!",
+  "btn_close_and_play": "CERRAR Y JUGAR",
+  "err_failed_create": "No se pudo crear la partida: {{msg}}",
+  "err_move_failed": "Movimiento fallido: {{msg}}",
+  "err_undo_failed": "Deshacer fallido: {{msg}}",
+  "err_flip_failed": "Lanzamiento fallido: {{msg}}",
+  "err_rematch_failed": "Revancha fallida: {{msg}}",
+  "msg_determining_turn": "Determinando turno..."
 }

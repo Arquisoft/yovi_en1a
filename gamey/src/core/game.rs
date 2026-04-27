@@ -10,7 +10,14 @@ use std::path::Path;
 pub enum GameMode {
     Classic,
     Why_Not,
+    Fortuney,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+pub enum CoinSide {
+    Heads, // Heads→ P1 (PlayerId 0)
+    Tails, // Tails→ P2 (PlayerId 1)
+}
+
 /// A Result type alias for game operations that may fail with a `GameYError`.
 pub type Result<T> = std::result::Result<T, crate::GameYError>;
 
@@ -37,6 +44,7 @@ pub struct GameY {
 
     available_cells: Vec<u32>,
     pub mode: GameMode,
+     pub last_coin_flip: Option<CoinSide>,
 }
 
 /// Represents the state of a single cell on the board.
@@ -187,25 +195,31 @@ impl GameY {
     }
 
     /// Updates the game status (Finished vs Ongoing)
-    fn update_status_after_placement(&mut self, player: PlayerId, won: bool) {
-        if self.check_game_over() {
-            tracing::info!("Game was already over. Move ignored for status update.");
-        } else if won {
-            // Check game mode to determine winner
-            let winner = match self.mode {
-                GameMode::Classic => player,
-                GameMode::Why_Not => other_player(player),  // In Why_Not mode, the player who completes the connection loses, so the other player wins.
-            };
-            
-            tracing::debug!("Player {} wins the game!", winner);
-            self.status = GameStatus::Finished { winner };
-        } else {
-            // tracing::debug!("No win yet..."); // Optional debug
-            self.status = GameStatus::Ongoing {
-                next_player: other_player(player),
-            };
-        }
+   fn update_status_after_placement(&mut self, player: PlayerId, won: bool) {
+    if self.check_game_over() {
+        tracing::info!("Game was already over.");
+    } else if won {
+        let winner = match self.mode {
+            GameMode::Classic | GameMode::Fortuney => player,
+            GameMode::Why_Not => other_player(player),
+        };
+        tracing::debug!("Player {} wins!", winner);
+        self.status = GameStatus::Finished { winner };
+    } else {
+        let next = match self.mode {
+            GameMode::Classic | GameMode::Why_Not => other_player(player),
+            GameMode::Fortuney => {
+                use rand::Rng;
+                let heads: bool = rand::rng().random();
+                let side = if heads { CoinSide::Heads } else { CoinSide::Tails };
+                self.last_coin_flip = Some(side);
+                tracing::debug!("Coin flip: {:?}", side);
+                if heads { PlayerId::new(0) } else { PlayerId::new(1) }
+            }
+        };
+        self.status = GameStatus::Ongoing { next_player: next };
     }
+}
 
     /// Handles non-placement actions (Resign, Swap, etc.)
     fn handle_action(&mut self, player: PlayerId, action: &GameAction) {
@@ -459,6 +473,7 @@ impl GameY {
             },
             available_cells: (0..total_cells).collect(),
             mode,
+            last_coin_flip: None, 
         }
     }
 }
