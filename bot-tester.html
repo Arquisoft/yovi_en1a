@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOVI Bot Tester (Prof. Simulation)</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: #1a1a2e;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        select,
+        button {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #16213e;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        button {
+            background: #e94560;
+            border: none;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #d63d56;
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+
+        .log-container {
+            width: 100%;
+            max-width: 600px;
+            background: #0f3460;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            height: 150px;
+            overflow-y: auto;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .log-entry {
+            margin: 4px 0;
+        }
+
+        .log-entry.error {
+            color: #ff6b6b;
+        }
+
+        .log-entry.success {
+            color: #51cf66;
+        }
+
+        .board {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .hex-row {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .hex {
+            width: 40px;
+            height: 40px;
+            background: #2a2a4a;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+        }
+
+        .hex.player-B {
+            background: #4dabf7;
+            color: white;
+        }
+
+        .hex.player-R {
+            background: #ff6b6b;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>YOVI Bot Tester</h1>
+        <p>Simulation: Random Bot vs Our API</p>
+    </div>
+
+    <div class="controls">
+        <div>
+            <label>Board Size: </label>
+            <select id="size-select">
+                <option value="5">5</option>
+                <option value="7">7</option>
+                <option value="11">11</option>
+            </select>
+        </div>
+        <div>
+            <label>Bot 1 (Blue): </label>
+            <select id="bot1-select">
+                <option value="local-random">🧠 Local Random Bot</option>
+                <option value="beginner">🌐 API: Beginner</option>
+                <option value="medium">🌐 API: Medium</option>
+                <option value="advanced">🌐 API: Advanced</option>
+            </select>
+        </div>
+        <div>
+            <label>Bot 2 (Red): </label>
+            <select id="bot2-select">
+                <option value="medium">🌐 API: Medium</option>
+                <option value="beginner">🌐 API: Beginner</option>
+                <option value="advanced">🌐 API: Advanced</option>
+                <option value="local-random">🧠 Local Random Bot</option>
+            </select>
+        </div>
+        <button id="start-btn" onclick="startTest()">START AUTO-MATCH</button>
+    </div>
+
+    <div class="log-container" id="log">
+        <div class="log-entry">Waiting to start...</div>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/play';
+
+        let gameState = {
+            size: 5,
+            turn: 0,
+            players: ["B", "R"],
+            layout: "",
+            isRunning: false
+        };
+
+        function log(message, type = 'normal') {
+            const el = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString();
+            entry.textContent = `[${time}] ${message}`;
+            el.appendChild(entry);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+
+            const rows = gameState.layout.split('/');
+            for (let y = 0; y < gameState.size; y++) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'hex-row';
+
+                for (let x = 0; x <= y; x++) {
+                    const cellValue = rows[y] ? rows[y][x] : '.';
+                    const hex = document.createElement('div');
+                    hex.className = `hex ${cellValue !== '.' ? 'player-' + cellValue : ''}`;
+                    hex.textContent = `${x},${y}`;
+                    rowEl.appendChild(hex);
+                }
+                boardEl.appendChild(rowEl);
+            }
+        }
+
+        function updateLayout(col, row, playerChar) {
+            let rows = gameState.layout.split('/');
+            let chars = rows[row].split('');
+            chars[col] = playerChar;
+            rows[row] = chars.join('');
+            gameState.layout = rows.join('/');
+        }
+
+        function generateEmptyLayout(size) {
+            const rows = [];
+            for (let y = 0; y < size; y++) {
+                rows.push('.'.repeat(y + 1));
+            }
+            return rows.join('/');
+        }
+
+        // --- WIN DETECTION LOGIC ---
+        function getNeighbors(row, col, boardSize) {
+            const candidates = [
+                [row - 1, col - 1], [row - 1, col],
+                [row, col - 1], [row, col + 1],
+                [row + 1, col], [row + 1, col + 1],
+            ];
+            return candidates.filter(([r, c]) => r >= 0 && r < boardSize && c >= 0 && c <= r);
+        }
+
+        function checkWin(layout, boardSize, playerChar) {
+            const playerCells = new Map();
+            const rows = layout.split('/');
+
+            for (let y = 0; y < rows.length; y++) {
+                for (let x = 0; x < rows[y].length; x++) {
+                    if (rows[y][x] === playerChar) {
+                        playerCells.set(`${x},${y}`, { x, y });
+                    }
+                }
+            }
+
+            if (playerCells.size === 0) return false;
+
+            const parent = new Map();
+            const sideA = new Map();
+            const sideB = new Map();
+            const sideC = new Map();
+
+            function find(k) {
+                if (parent.get(k) !== k) parent.set(k, find(parent.get(k)));
+                return parent.get(k);
+            }
+
+            function union(a, b) {
+                const ra = find(a), rb = find(b);
+                if (ra === rb) return;
+                parent.set(ra, rb);
+                sideA.set(rb, sideA.get(rb) || sideA.get(ra));
+                sideB.set(rb, sideB.get(rb) || sideB.get(ra));
+                sideC.set(rb, sideC.get(rb) || sideC.get(ra));
+            }
+
+            for (const key of playerCells.keys()) {
+                parent.set(key, key);
+                const cell = playerCells.get(key);
+                sideA.set(key, cell.y === boardSize - 1);
+                sideB.set(key, cell.x === 0);
+                sideC.set(key, cell.x === cell.y);
+            }
+
+            for (const [key, { x, y }] of playerCells) {
+                for (const [nr, nc] of getNeighbors(y, x, boardSize)) {
+                    const nk = `${nc},${nr}`;
+                    if (playerCells.has(nk)) union(key, nk);
+                }
+            }
+
+            for (const key of playerCells.keys()) {
+                const root = find(key);
+                if (sideA.get(root) && sideB.get(root) && sideC.get(root)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        // ---------------------------
+
+        function getEmptyCells() {
+            const rows = gameState.layout.split('/');
+            const empty = [];
+            for (let y = 0; y < rows.length; y++) {
+                for (let x = 0; x < rows[y].length; x++) {
+                    if (rows[y][x] === '.') empty.push({ x, y });
+                }
+            }
+            return empty;
+        }
+
+        async function playTurn(bot1, bot2) {
+            if (!gameState.isRunning) return;
+
+            const currentBot = gameState.turn === 0 ? bot1 : bot2;
+            const playerChar = gameState.players[gameState.turn];
+
+            // --- PROFESSOR SIMULATION: LOCAL RANDOM BOT ---
+            if (currentBot === 'local-random') {
+                log(`Local Random Bot (Player ${playerChar}) is thinking...`);
+                await new Promise(r => setTimeout(r, 500)); // fake delay
+
+                const emptyCells = getEmptyCells();
+                if (emptyCells.length === 0) {
+                    log('Board is full! Game Over.', 'success');
+                    gameState.isRunning = false;
+                    document.getElementById('start-btn').disabled = false;
+                    return;
+                }
+
+                const choice = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                log(`Local Random Bot played at col:${choice.x}, row:${choice.y}`, 'success');
+
+                updateLayout(choice.x, choice.y, playerChar);
+                renderBoard();
+
+                if (checkWin(gameState.layout, gameState.size, playerChar)) {
+                    log(`WINNER! ${currentBot} (Player ${playerChar}) connected the 3 sides!`, 'success');
+                    gameState.isRunning = false;
+                    document.getElementById('start-btn').disabled = false;
+                    return;
+                }
+
+                gameState.turn = gameState.turn === 0 ? 1 : 0;
+
+                if (!gameState.layout.includes('.')) {
+                    log('Board is full! Game Over.', 'success');
+                    gameState.isRunning = false;
+                    document.getElementById('start-btn').disabled = false;
+                    return;
+                }
+
+                setTimeout(() => playTurn(bot1, bot2), 800);
+                return;
+            }
+
+            // --- OUR API BOT ---
+            const positionStr = JSON.stringify({
+                size: gameState.size,
+                turn: gameState.turn,
+                players: gameState.players,
+                layout: gameState.layout
+            });
+
+            log(`Requesting move from ${currentBot} (Player ${playerChar}) via API...`);
+
+            try {
+                const url = new URL(API_URL);
+                url.searchParams.append('position', positionStr);
+                url.searchParams.append('bot_id', currentBot);
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (!res.ok) {
+                    if (res.status === 422) {
+                        log(`Game Over: ${data.error || 'No legal moves available'}`, 'success');
+                        gameState.isRunning = false;
+                        document.getElementById('start-btn').disabled = false;
+                        return;
+                    }
+                    throw new Error(data.message || data.error || `HTTP ${res.status}`);
+                }
+
+                if (data.action) {
+                    if (data.action === 'resign') {
+                        log(`${currentBot} (Player ${playerChar}) RESIGNED! Game Over.`, 'success');
+                        gameState.isRunning = false;
+                        document.getElementById('start-btn').disabled = false;
+                        return;
+                    }
+                    if (data.action === 'swap') {
+                        log(`${currentBot} (Player ${playerChar}) chose to SWAP!`, 'success');
+                        // In game Y, swap means colors change. For the simulation, we'll swap the bots.
+                        const temp = document.getElementById('bot1-select').value;
+                        document.getElementById('bot1-select').value = document.getElementById('bot2-select').value;
+                        document.getElementById('bot2-select').value = temp;
+
+                        // Pass the turn to the other bot
+                        gameState.turn = gameState.turn === 0 ? 1 : 0;
+                        setTimeout(() => playTurn(bot2, bot1), 800);
+                        return;
+                    }
+
+                    // Fallback for unknown actions
+                    log(`${currentBot} chose unknown action: ${data.action}`, 'error');
+                    gameState.isRunning = false;
+                    document.getElementById('start-btn').disabled = false;
+                    return;
+                }
+
+                if (data.coords) {
+                    const { x, y } = data.coords;
+
+                    const rows = gameState.layout.split('/');
+                    if (rows[y] === undefined || rows[y][x] === undefined) {
+                        throw new Error(`ILLEGAL MOVE: Bot returned out-of-bounds coordinates (x=${x}, y=${y}). Disqualified!`);
+                    }
+                    if (rows[y][x] !== '.') {
+                        throw new Error(`ILLEGAL MOVE: Bot tried to play on an already occupied cell (col ${x}, row ${y}). Disqualified!`);
+                    }
+
+                    log(`API Bot played at col:${x}, row:${y}`, 'success');
+                    updateLayout(x, y, playerChar);
+                    renderBoard();
+
+                    if (checkWin(gameState.layout, gameState.size, playerChar)) {
+                        log(`WINNER! ${currentBot} (Player ${playerChar}) connected the 3 sides!`, 'success');
+                        gameState.isRunning = false;
+                        document.getElementById('start-btn').disabled = false;
+                        return;
+                    }
+
+                    gameState.turn = gameState.turn === 0 ? 1 : 0;
+
+                    if (!gameState.layout.includes('.')) {
+                        log('Board is full! Game Over.', 'success');
+                        gameState.isRunning = false;
+                        document.getElementById('start-btn').disabled = false;
+                        return;
+                    }
+
+                    setTimeout(() => playTurn(bot1, bot2), 800);
+                }
+
+            } catch (err) {
+                log(`API Error: ${err.message}`, 'error');
+                gameState.isRunning = false;
+                document.getElementById('start-btn').disabled = false;
+            }
+        }
+
+        function startTest() {
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('log').innerHTML = '';
+
+            const size = parseInt(document.getElementById('size-select').value);
+            const bot1 = document.getElementById('bot1-select').value;
+            const bot2 = document.getElementById('bot2-select').value;
+
+            gameState = {
+                size: size,
+                turn: 0,
+                players: ["B", "R"],
+                layout: generateEmptyLayout(size),
+                isRunning: true
+            };
+
+            log(`Starting match on Size ${size}`);
+            renderBoard();
+
+            playTurn(bot1, bot2);
+        }
+
+        renderBoard();
+    </script>
+</body>
+
+</html>
