@@ -101,8 +101,7 @@ app.use(async (req, res, next) => {
     return next();
   } catch (pingErr) {
     console.warn('Ping failed, attempting reconnect...');
-  }
-    try {
+    try {                     // ← move inside the catch
       await client.connect();
       db = client.db(DB_NAME);
       console.log('Reconnected successfully');
