@@ -20,8 +20,8 @@ interface GameSession {
   status: 'ongoing' | 'finished';
   currentPlayer: number;
   winner: number | null;
-    coinFlip?: 'heads' | 'tails' | null; 
-      needsFlip?: boolean;
+  coinFlip?: 'heads' | 'tails' | null;
+  needsFlip?: boolean;
 }
 
 interface GameBoardProps {
@@ -36,20 +36,14 @@ const API_URL = import.meta.env.VITE_GAMEY_API_URL || 'http://localhost:3001';
 
 function calculateDynamicHexSize(boardSize: number, screenWidth: number, screenHeight: number): string {
   const isMobile = screenWidth <= 768;
-  
-  // On desktop, subtract sidebars (500px). On mobile, use almost full width (minus 40px padding).
-  const sidebarsWidth = isMobile ? 40 : 500; 
+  const sidebarsWidth = isMobile ? 40 : 500;
   const availableWidth = Math.max(screenWidth - sidebarsWidth, screenWidth * 0.85);
-  
-  // On mobile, the board has more vertical freedom since the layout stacks.
   const availableHeight = isMobile ? screenHeight * 0.5 : screenHeight * 0.65;
-  
+
   const maxHexWidthByWidth = availableWidth / (boardSize * 1.05);
   const maxHexWidthByHeight = availableHeight / (boardSize * 0.85);
-  
+
   const maxHexWidth = Math.min(maxHexWidthByWidth, maxHexWidthByHeight);
-  
-  // Increase the lower bound from 10 to 15-20 so it stays readable on mobile
   const hexWidth = Math.min(Math.max(maxHexWidth, 15), 80);
   return `${hexWidth}px`;
 }
@@ -102,7 +96,7 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
   return data as T;
 }
 
-// ─── Pure helper functions (exported for testing) ─────────────────────────────
+// ─── Pure helper functions ────────────────────────────────────────────────────
 
 export function getCellClass(cellValue: CellValue, isWinning: boolean): string {
   if (cellValue === 'B') return isWinning ? 'hex-cell hex-p1 hex-winning' : 'hex-cell hex-p1';
@@ -111,18 +105,18 @@ export function getCellClass(cellValue: CellValue, isWinning: boolean): string {
 }
 
 export function getTurnPanelHeader(
-    t: any,
-    gameStatus: GameStatus,
-    winner: PlayerTurn | null,
-    isBotThinking: boolean,
-    currentTurn: PlayerTurn,
-    username: string,
-    isFlippingPhase?: boolean
+  t: any,
+  gameStatus: GameStatus,
+  winner: PlayerTurn | null,
+  isBotThinking: boolean,
+  currentTurn: PlayerTurn,
+  username: string,
+  isFlippingPhase?: boolean
 ): string {
   if (gameStatus === 'idle') return t('btn_start_game');
   if (gameStatus === 'finished') {
     const winnerName = winner === 'P1' ? username : 'P2';
-    return t('msg_winner', { name: winnerName }); 
+    return t('msg_winner', { name: winnerName });
   }
   if (isFlippingPhase) return t('lbl_chance_time');
   if (isBotThinking) return t('msg_bot_thinking');
@@ -130,9 +124,9 @@ export function getTurnPanelHeader(
   return t('msg_p2_turn');
 }
 
-export function getTurnPanelSubtext(t:any,gameStatus: GameStatus, currentTurn: PlayerTurn,isFlippingPhase?: boolean): string {
-if (gameStatus === 'idle') return t('msg_choose_mode');
-  if (isFlippingPhase) return t('msg_determining_turn'); 
+export function getTurnPanelSubtext(t: any, gameStatus: GameStatus, currentTurn: PlayerTurn, isFlippingPhase?: boolean): string {
+  if (gameStatus === 'idle') return t('msg_choose_mode');
+  if (isFlippingPhase) return t('msg_determining_turn');
   return currentTurn === 'P1' ? t('color_blue') : t('color_red');
 }
 
@@ -152,7 +146,7 @@ export function calculateStrategicScore(moves: GameSession['moves'], player: num
   let totalScore = playerMoves.length * 10;
   const moveSet = new Set(playerMoves.map(m => `${m.x},${m.y}`));
   const visited = new Set<string>();
-  
+
   let connectedAB = false, connectedBC = false, connectedAC = false;
 
   for (const move of playerMoves) {
@@ -163,7 +157,6 @@ export function calculateStrategicScore(moves: GameSession['moves'], player: num
     visited.add(key);
     let touchesA = false, touchesB = false, touchesC = false;
 
-    // BFS to find connected groups
     let head = 0;
     while (head < queue.length) {
       const curr = queue[head++];
@@ -172,9 +165,9 @@ export function calculateStrategicScore(moves: GameSession['moves'], player: num
       if (curr.x === curr.y) touchesC = true;
 
       const neighbors = [
-        {x: curr.x-1, y: curr.y-1}, {x: curr.x, y: curr.y-1},
-        {x: curr.x-1, y: curr.y},   {x: curr.x+1, y: curr.y},
-        {x: curr.x, y: curr.y+1},   {x: curr.x+1, y: curr.y+1}
+        { x: curr.x - 1, y: curr.y - 1 }, { x: curr.x, y: curr.y - 1 },
+        { x: curr.x - 1, y: curr.y }, { x: curr.x + 1, y: curr.y },
+        { x: curr.x, y: curr.y + 1 }, { x: curr.x + 1, y: curr.y + 1 }
       ];
 
       for (const n of neighbors) {
@@ -201,19 +194,15 @@ export function calculateStrategicScore(moves: GameSession['moves'], player: num
 
 export default function GameBoard({ username = "Guest User", onProfile, onLobby }: GameBoardProps) {
   const { t } = useTranslation();
-  // ── Determine initial mode and difficulty from URL parameters
+
   const getInitialParams = () => {
-    if (globalThis.window === undefined) return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11 };
-    const params = new URLSearchParams(globalThis.window.location.search);
-    const modeParam = params.get('mode');
-    const diffParam = params.get('difficulty');
-    const sizeParam = params.get('size');
-    const ruleParam = params.get('rule');
+    if (typeof window === 'undefined') return { mode: 'hvb' as GameMode, diff: 'beginner', size: 11, rule: 'classic' };
+    const params = new URLSearchParams(window.location.search);
     return {
-      mode: modeParam === 'pvp' ? ('hvh' as GameMode) : ('hvb' as GameMode),
-      diff: diffParam || 'beginner',
-      size: sizeParam ? Number.parseInt(sizeParam, 10) : 11,
-      rule: ruleParam || 'classic',
+      mode: params.get('mode') === 'pvp' ? ('hvh' as GameMode) : ('hvb' as GameMode),
+      diff: params.get('difficulty') || 'beginner',
+      size: params.get('size') ? Number.parseInt(params.get('size')!, 10) : 11,
+      rule: params.get('rule') || 'classic',
     };
   };
 
@@ -233,23 +222,12 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [winningPathIndices, setWinningPathIndices] = useState<Set<number>>(new Set());
   const [coinFlip, setCoinFlip] = useState<'heads' | 'tails' | null>(null);
-const [showCoinAnim, setShowCoinAnim] = useState(false);
-
-  // ── Session Scores (in-memory only, resets on reload)
+  const [showCoinAnim, setShowCoinAnim] = useState(false);
   const [p1Score, setP1Score] = useState(0);
   const [p2Score, setP2Score] = useState(0);
   const [hasScored, setHasScored] = useState(false);
 
-  // ── Global Mute Toggle
   const [muted, setMuted] = useState(() => soundService.settings.muteMove && soundService.settings.muteBGM);
-  const toggleMute = () => {
-    const newMuted = !muted;
-    setMuted(newMuted);
-    soundService.updateSettings({ muteMove: newMuted, muteWin: newMuted, muteLoss: newMuted, muteBGM: newMuted });
-    if (!newMuted && gameStatus === 'ongoing') soundService.startBGM();
-  };
-
-  // ── Screen size for dynamic board sizing
   const [screenSize, setScreenSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
   useEffect(() => {
@@ -258,211 +236,139 @@ const [showCoinAnim, setShowCoinAnim] = useState(false);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // ── Background Music Control
   useEffect(() => {
-    if (gameStatus === 'ongoing') {
-      soundService.startBGM();
-    } else {
-      soundService.stopBGM();
-    }
-    // Cleanup BGM on unmount
+    if (gameStatus === 'ongoing') soundService.startBGM();
+    else soundService.stopBGM();
     return () => soundService.stopBGM();
   }, [gameStatus]);
 
-  const handleGameFinished = useCallback((winner: number | null, mode: string) => {
-    if (hasScored || winner === null) return;
-
-    if (winner === 0) {
-      setP1Score((prev) => prev + 1);
+  const handleGameFinished = useCallback((winnerNum: number | null, mode: string) => {
+    if (hasScored || winnerNum === null) return;
+    if (winnerNum === 0) {
+      setP1Score(prev => prev + 1);
       soundService.playWin();
-    } else if (winner === 1) {
-      setP2Score((prev) => prev + 1);
-      if (mode === 'hvb') {
-         soundService.playLoss();
-      } else {
-         soundService.playWin();
-      }
+    } else {
+      setP2Score(prev => prev + 1);
+      mode === 'hvb' ? soundService.playLoss() : soundService.playWin();
     }
     setHasScored(true);
   }, [hasScored]);
 
-  // ── Sync local state from a server response
-  const syncFromSession = useCallback(
-  (s: GameSession & { winningPath?: { x: number; y: number }[] }) => {
+  const syncFromSession = useCallback((s: GameSession & { winningPath?: { x: number; y: number }[] }) => {
     setSession(s);
     const actualSize = s.boardSize || boardSize;
-    const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
-    
-    setBoard(applyMovesToBoard(s.moves, actualTotalCells));
+    setBoard(applyMovesToBoard(s.moves, (actualSize * (actualSize + 1)) / 2));
     setCurrentTurn(s.currentPlayer === 0 ? 'P1' : 'P2');
     setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
-
-    // Clean, low-complexity scoring calls
     setP1Score(calculateStrategicScore(s.moves, 0, actualSize));
     setP2Score(calculateStrategicScore(s.moves, 1, actualSize));
 
     if (s.winningPath) {
       setWinningPathIndices(new Set(s.winningPath.map(p => coordsToIndex(p.x, p.y))));
     }
-
     if (s.status === 'finished') {
       setWinner(s.winner === 0 ? 'P1' : 'P2');
       handleGameFinished(s.winner, s.mode);
     }
-  },
-  [boardSize, handleGameFinished]
-);
+  }, [boardSize, handleGameFinished]);
 
-  // ── Start a new game
-const handleStartGame = async () => {
-  setErrorMsg(null);
-  setWinner(null);
-  setWinningPathIndices(new Set());
-  setHasScored(false);
-  setBoard(new Array(totalCells).fill('.'));
-  setCurrentTurn('P1');
-  try {
-    const data = await apiPost<GameSession>('/play/create', {
-      mode: selectedMode,
-      difficulty: selectedDifficulty,
-      boardSize: boardSize,
-      rule: selectedRule,
-    });
-    syncFromSession(data);
-    
-  } catch (e: unknown) {
-   setErrorMsg(t('err_failed_create', { msg: (e as Error).message }));
-    setGameStatus('error');
-  }
-};
-  // ── Human places a piece
+  const handleStartGame = async () => {
+    setErrorMsg(null); setWinner(null); setWinningPathIndices(new Set()); setHasScored(false);
+    setBoard(new Array(totalCells).fill('.')); setCurrentTurn('P1');
+    try {
+      const data = await apiPost<GameSession>('/play/create', {
+        mode: selectedMode, difficulty: selectedDifficulty, boardSize, rule: selectedRule,
+      });
+      syncFromSession(data);
+    } catch (e: any) {
+      setErrorMsg(t('err_failed_create', { msg: e.message }));
+      setGameStatus('error');
+    }
+  };
+
   const handleCellClick = async (index: number) => {
-    if (!session || gameStatus !== 'ongoing') return;
-    if (board[index] !== '.') return;
+    if (!session || gameStatus !== 'ongoing' || board[index] !== '.' || isBotThinking) return;
     if (session.mode === 'hvb' && session.currentPlayer === 1) return;
-    if (isBotThinking) return;
+
     setIsBotThinking(true);
-
     const { x, y } = indexToCoords(index);
-    const playerNum = session.currentPlayer;
-
     const optimistic = [...board];
-    optimistic[index] = playerNum === 0 ? 'B' : 'R';
+    optimistic[index] = session.currentPlayer === 0 ? 'B' : 'R';
     setBoard(optimistic);
     soundService.playMove();
-   if (session.mode === 'hvb' && session.rule !== 'fortuney') {
-    setIsBotThinking(true);
-}
 
     try {
-      const data = await apiPost<GameSession & { botMove?: { x: number; y: number } | null }>(
-        `/play/${sanitizeGameId(session.gameId)}/move`,
-          { player: playerNum, x, y }
-      );
+      const data = await apiPost<GameSession>(`/play/${sanitizeGameId(session.gameId)}/move`, { 
+        player: session.currentPlayer, x, y 
+      });
       syncFromSession(data);
-      
-      // If playing against bot, and the game didn't just end from human move, bot made a move
-      if (session.mode === 'hvb' && data.moves.length > session.moves.length + 1) {
-          // Add a tiny delay so it feels like bot thinking
-          setTimeout(() => soundService.playBotMove(), 50);
-      }
-    } catch (e: unknown) {
+    } catch (e: any) {
       setBoard(prev => prev.map((v, i) => (i === index ? '.' : v)));
-      setErrorMsg(t('err_move_failed', { msg: (e as Error).message }));
+      setErrorMsg(t('err_move_failed', { msg: e.message }));
     } finally {
       setIsBotThinking(false);
     }
   };
 
-  // ── Undo
   const handleUndo = async () => {
-    if (!session || session.moves.length === 0) return;
+    if (!session) return;
     try {
       const data = await apiPost<GameSession>(`/play/${sanitizeGameId(session.gameId)}/undo`, {});
       syncFromSession(data);
-      setErrorMsg(null);
-      setWinner(null);
-      setWinningPathIndices(new Set());
-    } catch (e: unknown) {
-    setErrorMsg(t('err_undo_failed', { msg: (e as Error).message }));
-    }
+      setWinner(null); setWinningPathIndices(new Set());
+    } catch (e: any) { setErrorMsg(e.message); }
   };
 
   const handleFlip = async () => {
-  if (!session || !session.needsFlip) return;
-  setIsBotThinking(true);
-  try {
-   const data = await apiPost<GameSession>(`/play/${sanitizeGameId(session.gameId)}/flip`, {});
+    if (!session?.needsFlip) return;
+    setIsBotThinking(true);
+    try {
+      const data = await apiPost<GameSession>(`/play/${sanitizeGameId(session.gameId)}/flip`, {});
       syncFromSession(data);
-    
-    
-    if (data.coinFlip) {
-      setCoinFlip(data.coinFlip);
-      setShowCoinAnim(true);
-      setIsBotThinking(true); 
-    } else {
-      setIsBotThinking(false);
-    }
-  } catch (e: unknown) {
-    setErrorMsg(t('err_flip_failed', { msg: (e as Error).message }));
-    setIsBotThinking(false);
-  }
-};
+      if (data.coinFlip) { setCoinFlip(data.coinFlip); setShowCoinAnim(true); }
+    } catch (e: any) { setErrorMsg(e.message); setIsBotThinking(false); }
+  };
 
-
-  // ── Rematch
   const handleRematch = async () => {
     if (!session) return handleStartGame();
     try {
       const data = await apiPost<GameSession>(`/play/${sanitizeGameId(session.gameId)}/rematch`, {});
-      const actualSize = data.boardSize || boardSize;
-      const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
-      setBoard(new Array(actualTotalCells).fill('.'));
-      setWinner(null);
-      setWinningPathIndices(new Set());
-      setHasScored(false);
-      setErrorMsg(null);
+      setWinner(null); setWinningPathIndices(new Set()); setHasScored(false);
       syncFromSession(data);
-    } catch (e: unknown) {
-     setErrorMsg(t('err_rematch_failed', { msg: (e as Error).message }));
-    }
+    } catch (e: any) { setErrorMsg(e.message); }
   };
 
-  // ─── Render helpers ───────────────────────────────────────────────────────────
+  const toggleMute = () => {
+    const newMuted = !muted;
+    setMuted(newMuted);
+    soundService.updateSettings({ muteMove: newMuted, muteWin: newMuted, muteLoss: newMuted, muteBGM: newMuted });
+  };
 
-  const renderCell = (cellIndex: number, cellValue: CellValue, hexWidth: string, isInteractive: boolean) => {
-    const isWinning = winningPathIndices.has(cellIndex);
+  const renderWinnerPopup = () => {
+    if (gameStatus !== 'finished' || !winner) return null;
     return (
-        <button
-            key={cellIndex}
-            className={getCellClass(cellValue, isWinning)}
-            style={{
-              width: hexWidth,
-              opacity: isInteractive ? 1 : 0.6,
-              cursor: isInteractive && cellValue === '.' ? 'pointer' : 'default',
-            }}
-            onClick={() => handleCellClick(cellIndex)}
-            disabled={!isInteractive}
-        >
-          {cellValue === '.' ? '' : cellValue}
-        </button>
+      <div className="winner-popup-overlay">
+        <div className="winner-popup-content">
+          <h2 style={{ color: '#fff' }}>{t('msg_winner', { name: winner === 'P1' ? username : 'P2' })}</h2>
+          <div className="winner-popup-buttons">
+            <button className="winner-btn btn-rematch" onClick={handleRematch}>{t('btn_rematch')}</button>
+            <button className="winner-btn btn-lobby" onClick={onLobby}>{t('btn_go_lobby')}</button>
+          </div>
+        </div>
+      </div>
     );
   };
 
-  const renderBoardRow = (row: number, startIndex: number, hexWidth: string, isInteractive: boolean) => {
-    const rowCells = [];
-    for (let i = 0; i <= row; i++) {
-      const cellIndex = startIndex + i;
-      rowCells.push(renderCell(cellIndex, board[cellIndex], hexWidth, isInteractive));
-    }
+  const renderCoinAnimation = () => {
+    if (!showCoinAnim || !coinFlip) return null;
     return (
-        <div
-            key={row}
-            className="hex-row"
-            style={{ marginTop: row === 0 ? '0' : `calc(${hexWidth} * -0.208 + 2px)` }}
-        >
-          {rowCells}
-        </div>
+      <div className="coin-anim-popup-full" style={{ position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.92)', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '150px' }}>{coinFlip === 'heads' ? '🟡' : '⚪'}</div>
+        <h2 style={{ color: '#fff', fontSize: '42px' }}>{coinFlip === 'heads' ? t('msg_playing', { name: username }) : t('msg_playing', { name: 'P2' })}</h2>
+        <button className="close-coin-btn" onClick={() => { setShowCoinAnim(false); setIsBotThinking(false); }} style={{ marginTop: '30px', padding: '15px 50px', backgroundColor: '#44ff44', borderRadius: '8px', cursor: 'pointer' }}>
+          {t('btn_close_and_play')}
+        </button>
+      </div>
     );
   };
 
@@ -472,42 +378,54 @@ const handleStartGame = async () => {
     const isInteractive = gameStatus === 'ongoing' && !isBotThinking && !session?.needsFlip;
     const rows = [];
     let currentIndex = 0;
+
     for (let row = 0; row < currentBoardSize; row++) {
-      rows.push(renderBoardRow(row, currentIndex, hexWidth, isInteractive));
+      const rowCells = [];
+      for (let i = 0; i <= row; i++) {
+        const cellIdx = currentIndex + i;
+        const cellVal = board[cellIdx];
+        const isWinning = winningPathIndices.has(cellIdx);
+        rowCells.push(
+          <button
+            key={cellIdx}
+            className={getCellClass(cellVal, isWinning)}
+            style={{ width: hexWidth, opacity: isInteractive ? 1 : 0.6 }}
+            onClick={() => handleCellClick(cellIdx)}
+            disabled={!isInteractive}
+          >
+            {cellVal === '.' ? '' : cellVal}
+          </button>
+        );
+      }
+      rows.push(<div key={row} className="hex-row" style={{ marginTop: row === 0 ? '0' : `calc(${hexWidth} * -0.208 + 2px)` }}>{rowCells}</div>);
       currentIndex += row + 1;
     }
     return rows;
   };
 
- const isFlippingPhase = Boolean((session?.rule === 'fortuney' && session?.needsFlip) || showCoinAnim);
+  const isFlippingPhase = Boolean((session?.rule === 'fortuney' && session?.needsFlip) || showCoinAnim);
   const activeTurn = (isBotThinking && !isFlippingPhase) ? 'P2' : currentTurn;
-  
-  const turnPanelHeader = getTurnPanelHeader(t, gameStatus, winner, isBotThinking, currentTurn, username, isFlippingPhase);
-  const turnPanelSubtext = getTurnPanelSubtext(t, gameStatus, activeTurn, isFlippingPhase);
+  const turnHeader = getTurnPanelHeader(t, gameStatus, winner, isBotThinking, currentTurn, username, isFlippingPhase);
+  const turnSubtext = getTurnPanelSubtext(t, gameStatus, activeTurn, isFlippingPhase);
   const p2Label = selectedMode === 'hvb' ? t('lbl_p2_bot') : t('lbl_p2_user');
+
   return (
     <>
-      {/* TOP BAR - Ahora fuera del contenedor principal */}
-      <nav className="game-top-bar" style={{ padding: '10px 20px' }}>
+      <nav className="game-top-bar" style={{ padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="game-title">GAME Y</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button
-            onClick={toggleMute}
-            title={muted ? 'Unmute' : 'Mute'}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: muted ? '#555' : '#aaa', padding: '4px', display: 'flex', alignItems: 'center' }}
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            onClick={toggleMute} 
+            title={muted ? 'Unmute' : 'Mute'} 
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center' }}
           >
             {muted ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+              <span role="img" aria-label="muted">🔇</span>
             ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+              <span role="img" aria-label="unmuted">🔊</span>
             )}
           </button>
-          <button
-            className="game-profile-btn"
-            title="View Profile"
-            onClick={onProfile}
-            style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-          >
+          <button onClick={onProfile} className="game-profile-btn" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff' }}>
             {t('nav_profile')}
           </button>
         </div>
@@ -515,170 +433,57 @@ const handleStartGame = async () => {
 
       <div className="game-container">
         <div className="game-main-layout">
-
-          {/* LEFT SIDEBAR */}
           <div className="game-sidebar">
             {gameStatus !== 'idle' && (
               <div className={`game-panel ${activeTurn === 'P1' ? 'turn-p1' : 'turn-p2'}`}>
-                <div className={`game-panel-header ${activeTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>
-                  {turnPanelHeader}
-                </div>
-                <div style={{ fontSize: 'clamp(12px, 1vw, 16px)', color: '#aaa' }}>
-                  {turnPanelSubtext}
-                </div>
+                <div className={`game-panel-header ${activeTurn === 'P1' ? 'text-p1' : 'text-p2'}`}>{turnHeader}</div>
+                <div style={{ color: '#e0e0e0' }}>{turnSubtext}</div>
               </div>
             )}
 
             {gameStatus === 'idle' && (
-              <div className="game-panel" style={{ gap: 6, display: 'flex', flexDirection: 'column' }}>
-                <div className="game-panel-header" style={{ color: '#ccc' }}>{t('lbl_selected_mode')}</div>
-                <div style={{ color: '#aaa', fontSize: 13, textTransform: 'uppercase' }}>
-                  {selectedMode === 'hvh' ? t('mode_pvp') : t('mode_pvc', { diff: t(`diff_${selectedDifficulty}`) })}
-                </div>
-               <div style={{ 
-  color: selectedRule === 'whynot' ? '#ff4444' : selectedRule === 'fortuney' ? '#FFD700' : '#44ff44', 
-  fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase' 
-}}>
-  {t('lbl_rule')}: {
-    selectedRule === 'whynot' ? t('rule_whynot') : 
-    selectedRule === 'fortuney' ? t('rule_fortuney') : 
-    t('rule_classic')
-  }
-</div>
+              <div className="game-panel">
+                <div className="game-panel-header">{t('lbl_selected_mode')}</div>
+                <div style={{ color: '#e0e0e0' }}>{selectedMode === 'hvh' ? t('mode_pvp') : t('mode_pvc', { diff: t(`diff_${selectedDifficulty}`) })}</div>
+                <div style={{ color: selectedRule === 'fortuney' ? '#FFD700' : '#44ff44', fontWeight: 'bold' }}>{t('lbl_rule')}: {selectedRule}</div>
+                <button className="game-action-btn btn-end" style={{ marginTop: '10px' }} onClick={handleStartGame}>{t('btn_start_game')}</button>
               </div>
             )}
 
-            {gameStatus === 'idle' && (
-              <button className="game-action-btn btn-end" onClick={handleStartGame}>
-                {t('btn_start_game')}
-              </button>
-            )}
+            {errorMsg && <div style={{ color: '#ff6666' }}>⚠ {errorMsg}</div>}
 
-            {errorMsg && (
-              <div style={{ color: '#ff4444', fontSize: 12, padding: '4px 8px', wordBreak: 'break-word' }}>
-                ⚠ {errorMsg}
+            {gameStatus === 'ongoing' && session?.rule === 'fortuney' && session?.needsFlip && (
+              <div className="game-panel" style={{ border: '2px solid #FFD700' }}>
+                <div className="game-panel-header" style={{ color: '#FFD700' }}>{t('lbl_chance_time')}</div>
+                <button className="game-action-btn" style={{ backgroundColor: '#FFD700', color: '#000' }} onClick={handleFlip}>{t('btn_flip_coin')}</button>
               </div>
             )}
-           {gameStatus === 'ongoing' && session?.rule === 'fortuney' && session?.needsFlip && (
-  <div className="game-panel" style={{ border: '2px solid #FFD700', backgroundColor: '#2a2a24', textAlign: 'center' }}>
-    
-    <div className="game-panel-header" style={{ color: '#FFD700' }}>{t('lbl_chance_time')}</div>
-    <p style={{ color: '#ddd', fontSize: '13px', margin: '10px 0' }}>{t('desc_flip_coin')}</p>
-    <button
-      onClick={handleFlip}
-      disabled={isBotThinking && !showCoinAnim}
-      style={{
-        width: '100%', padding: '12px', fontSize: '16px', fontWeight: 'bold',
-        backgroundColor: '#FFD700', color: '#000', border: 'none', borderRadius: '4px', cursor: 'pointer'
-      }}
-    >
-      {t('btn_flip_coin')} 
-    </button>
-  </div>
-)}
-            <div className="game-panel chat-panel">
-              <div className="game-panel-header" style={{ color: '#ccc' }}>{t('lbl_chat')}</div>
-              <div className="chat-content">...</div>
-            </div>
           </div>
 
-          {/* CENTER: Board */}
           <div className="board-column">
             <div className="board-wrapper">
               <div className="board-relative">
-                <svg
-                  className="board-svg-bg"
-                  preserveAspectRatio="none"
-                  viewBox="0 0 100 100"
-                >
-                  <polygon
-                    points="50,4 0,98 100,98"
-                    fill="#0a0a0a"
-                    stroke="#555555"
-                    strokeWidth="0.8"
-                    vectorEffect="nonScalingStroke"
-                  />
+                <svg className="board-svg-bg" preserveAspectRatio="none" viewBox="0 0 100 100">
+                  <polygon points="50,4 0,98 100,98" fill="#0a0a0a" stroke="#555" strokeWidth="0.8" />
                 </svg>
                 <div className="board-grid">{renderBoard()}</div>
-
-                {gameStatus === 'finished' && winner && (
-                    <div className="winner-popup-overlay">
-                      <div className="winner-popup-content">
-                        <h2>{t('msg_winner', { name: winner === 'P1' ? username : 'P2' })}</h2>
-                        <p>{t('msg_great_match')}</p>
-                        <div className="winner-popup-buttons">
-                          <button className="winner-btn btn-rematch" onClick={handleRematch}>
-                            {t('btn_rematch')}
-                          </button>
-                          <button className="winner-btn btn-lobby" onClick={onLobby}>
-                            {t('btn_go_lobby')}
-                          </button>
-                        </div>
-                      </div>
-                  </div>
-                )}
-               
-
-{showCoinAnim && coinFlip && (
-  <div style={{
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.92)', zIndex: 100, 
-    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
-  }}>
-    <div style={{ fontSize: '150px', filter: 'drop-shadow(0 0 20px rgba(255,215,0,0.6))' }}>
-      {coinFlip === 'heads' ? '🟡' : '⚪'}
-    </div>
-    
-    <h2 style={{ color: '#fff', fontSize: '42px', margin: '20px 0', textAlign: 'center' }}>
-      {coinFlip === 'heads' ? t('msg_playing', { name: username }) : t('msg_playing', { name: 'P2' })}
-    </h2>
-    
-    <button
-      onClick={() => {
-        setShowCoinAnim(false);
-        setIsBotThinking(false); 
-      }}
-      style={{
-        marginTop: '30px', padding: '15px 50px', fontSize: '22px', fontWeight: 'bold',
-        backgroundColor: '#44ff44', color: '#000', border: 'none', borderRadius: '8px', cursor: 'pointer',
-        boxShadow: '0 4px 15px rgba(68, 255, 68, 0.4)'
-      }}
-    >
-      {t('btn_close_and_play')}
-    </button>
-  </div>
-)}
+                {renderWinnerPopup()}
+                {renderCoinAnimation()}
               </div>
             </div>
           </div>
 
-          {/* RIGHT SIDEBAR */}
           <div className="game-sidebar">
             <div className="game-panel p1-card">
-              <div className="game-panel-header text-p1">P1: {username}</div>
-              <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>{t('lbl_pts', { score: p1Score })}</div>
+              <div className="text-p1">P1: {username}</div>
+              <div style={{ color: '#e0e0e0' }}>{t('lbl_pts', { score: p1Score })}</div>
             </div>
-
-            <button
-              className="game-action-btn btn-undo"
-              onClick={handleUndo}
-              disabled={!session || session.moves.length === 0 || gameStatus !== 'ongoing' || isBotThinking}
-            >
-              {t('btn_undo')}
-            </button>
-
-            <button className="game-action-btn btn-end" disabled>
-              {t('btn_end_turn')}
-            </button>
-
+            <button className="game-action-btn btn-undo" onClick={handleUndo} disabled={!session || gameStatus !== 'ongoing'}>{t('btn_undo')}</button>
             <div className="game-panel p2-card">
-              <div className="game-panel-header text-p2">{p2Label}</div>
-              <div style={{ fontSize: 'clamp(12px, 1vw, 18px)', color: '#aaa' }}>
-                {isBotThinking ? t('status_thinking') : t('lbl_pts', { score: p2Score })}
-              </div>
+              <div className="text-p2">{p2Label}</div>
+              <div style={{ color: '#e0e0e0' }}>{isBotThinking ? t('status_thinking') : t('lbl_pts', { score: p2Score })}</div>
             </div>
           </div>
-
         </div>
       </div>
     </>
