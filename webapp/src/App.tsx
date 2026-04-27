@@ -24,12 +24,16 @@ function App() {
     globalThis.location.href = globalThis.location.pathname + '?view=lobby';
   };
 
-  const handleGoToGame = (mode: string, difficulty: string, boardSize: number = 11) => {
-    globalThis.location.href = globalThis.location.pathname + `?view=game&mode=${mode}&difficulty=${difficulty}&size=${boardSize}`;
+  const handleGoToGame = (mode: string, difficulty: string, boardSize: number = 11, rule: string = 'classic') => {
+    globalThis.location.href = globalThis.location.pathname + `?view=game&mode=${mode}&difficulty=${difficulty}&size=${boardSize}&rule=${rule}`;
   };
 
   const handleGoToProfile = () => {
     globalThis.location.href = globalThis.location.pathname + '?view=profile';
+  };
+
+  const handleBackFromProfile = () => {
+    globalThis.history.back();
   };
 
   const handleLogout = () => {
@@ -54,6 +58,7 @@ function App() {
             username={storedUsername}
             onPlayClick={() => globalThis.location.href = globalThis.location.pathname + '?view=lobby'}
             onLogout={handleLogout}
+            onBack={handleBackFromProfile}
         />
     );
   }

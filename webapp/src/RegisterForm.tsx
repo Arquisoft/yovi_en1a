@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import './RegisterForm.css';
+import LanguageSelector from './LanguageSelector';
+
 
 interface RegisterFormProps {
   onRegisterSuccess: (username: string) => void;
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
+  const { t} = useTranslation();
   const [mode, setMode] = useState<'login' | 'register'>('login');
 
   // States for the forms
@@ -22,12 +26,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
     setError(null);
 
     if (!username.trim() || !password) {
-      setError('Please fill in all required fields.');
+      setError(t('err_required'));
       return;
     }
 
     if (mode === 'register' && !email.trim()) {
-      setError('Please provide an email address.');
+      setError(t('err_email'));
       return;
     }
 
@@ -54,11 +58,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
         }
         onRegisterSuccess(data.username || username);
       } else {
-        setError(data.error || 'Server error occurred');
+       setError(data.error || t('err_server'));
       }
     } catch (err) {
       console.error("Authentication request failed:", err);
-      setError('Network error.');
+     setError(t('err_network'));
     } finally {
       setLoading(false);
     }
@@ -71,56 +75,58 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
     setEmail('');
     setError(null);
   };
+  
 
   return (
     <div className="start-page-container">
+   
+   <LanguageSelector />
       <h1 className="game-title-large">GAME Y</h1>
 
       <form onSubmit={handleSubmit} className="auth-form" noValidate>
         {mode === 'register' && (
           <div className="form-group">
-            <label htmlFor="email">E-Mail</label>
+            <label htmlFor="email">{t('lbl_email')}</label>
             <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="form-input"
-              placeholder="Enter e-mail"
+              placeholder={t('ph_email')}
             />
           </div>
         )}
 
         <div className="form-group">
-          <label htmlFor="username">{mode === 'login' ? 'Username or Email' : 'Username'}</label>
+         <label htmlFor="username">{mode === 'login' ? t('lbl_username_or_email') : t('lbl_username')}</label>
           <input
             type="text"
             id="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="form-input"
-            placeholder={mode === 'login' ? "Enter username or email" : "Choose a username"}
-            required
+            placeholder={mode === 'login' ? t('ph_username_or_email') : t('ph_choose_username')}
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="password">Password</label>
+          <label htmlFor="password">{t('lbl_password')}</label>
           <input
             type="password"
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="form-input"
-            placeholder={mode === 'login' ? "Enter password" : "Create password"}
+            placeholder={mode === 'login' ? t('ph_password') : t('ph_create_password')}
             required
           />
         </div>
 
         <button type="submit" className="submit-button" disabled={loading}>
-          {loading && 'WAITING...'}
-          {!loading && mode === 'login' && 'LOGIN'}
-          {!loading && mode === 'register' && 'REGISTER'}
+          {loading && t('btn_waiting')}
+          {!loading && mode === 'login' && t('btn_login')}
+          {!loading && mode === 'register' && t('btn_register')}
         </button>
 
         <div className="error-message-container">
@@ -131,24 +137,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess }) => {
           <button
             type="button"
             onClick={toggleMode}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              color: '#aaa',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              textDecoration: 'underline',
-              transition: 'color 0.2s',
-              fontFamily: 'inherit'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.color = '#fff'}
-            onMouseOut={(e) => e.currentTarget.style.color = '#aaa'}
-            onFocus={(e) => e.currentTarget.style.color = '#fff'}
-            onBlur={(e) => e.currentTarget.style.color = '#aaa'}
+            className="mode-toggle-link"
           >
-            {mode === 'login' && "Don't have an account? Register here"}
-            {mode === 'register' && "Already have an account? Login here"}
+            {mode === 'login' ? t('link_register') : t('link_login')}
           </button>
         </div>
       </form>
