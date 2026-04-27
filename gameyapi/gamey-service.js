@@ -389,26 +389,25 @@ gameyService.get('/play', async (req, res) => {
   }
 });
 
-try {
-      const { mode, boardSize = 11, difficulty, rule } = req.body;
-      const userId = getUserIdFromRequest(req);
-      
-      const id = uuidv4();
-      const session = newSession(id, mode, boardSize, userId, difficulty, rule);
-
+gameyService.post('/play/create', (req, res) => {
+  try {
+    const { mode, boardSize = 11, difficulty, rule } = req.body;
+    const userId = getUserIdFromRequest(req);
     
-      if (rule === 'fortuney') {
-        session.needsFlip = true;
-      }
-
-      sessions.set(id, session);
-      return res.status(201).json(sessionView(session));
-      
-    } catch (err) {
-     
-      console.error("Error in /play/create:", err);
-      res.status(500).json({ error: "Failed to create session" });
+    const id = uuidv4();
+    const session = newSession(id, mode, boardSize, userId, difficulty, rule);
+    if (rule === 'fortuney') {
+      session.needsFlip = true;
     }
+
+    sessions.set(id, session);
+    return res.status(201).json(sessionView(session));
+    
+  } catch (err) {
+    console.error("Error in /play/create:", err);
+    res.status(500).json({ error: "Failed to create session" });
+  }
+});
 gameyService.get('/play/:gameId', (req, res) => {
   const s = sessions.get(req.params.gameId);
   if (!s) return res.status(404).json({ error: 'Game not found' });
