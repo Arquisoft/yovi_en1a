@@ -444,21 +444,19 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
 
   let response = sessionView(s);
 
-  if (s.mode === 'hvb' && s.status === 'ongoing') {
-    try {
-      const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty, s.rule);
-      if (botCoords) {
+  if (s.rule !== 'fortuney' && s.mode === 'hvb' && s.status === 'ongoing') {
+    let safety = 10;
+    while (s.currentPlayer === 1 && s.status === 'ongoing' && safety-- > 0) {
+      try {
+        const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty, s.rule);
+        if (!botCoords || botCoords.action) break;
+
         s.moves.push({ player: 1, ...botCoords });
         s.currentPlayer = 0;
         updateWinStatus(s);
-        response = sessionView(s);
-        response.botMove = botCoords;
-      }
-    } catch (err) {
-      response.error = 'Bot failed';
+      } catch { break; }
     }
   }
-
   if (s.status === 'finished') saveGameResult(s);
   return res.json(response);
 });
