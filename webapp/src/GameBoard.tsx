@@ -178,7 +178,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   // ── Session Scores (in-memory only, resets on reload)
   const [p1Score, setP1Score] = useState(0);
   const [p2Score, setP2Score] = useState(0);
-  const [hasScored, setHasScored] = useState(false);
+  const [, setHasScored] = useState(false);
 
   // ── Screen size for dynamic board sizing
   const [screenSize, setScreenSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -191,29 +191,35 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
 
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
-      (s: GameSession & { layout?: string; botMove?: { x: number; y: number } | null; winningPath?: { x: number; y: number }[] }) => {
-        setSession(s);
-        const actualSize = s.boardSize || boardSize;
-        const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
-        setBoard(applyMovesToBoard(s.moves, actualTotalCells));
-        setCurrentTurn(s.currentPlayer === 0 ? 'P1' : 'P2');
-        setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
+    (s: GameSession & { winningPath?: { x: number; y: number }[] }) => {
+      setSession(s);
+      const actualSize = s.boardSize || boardSize;
+      const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
+      
+      setBoard(applyMovesToBoard(s.moves, actualTotalCells));
+      setCurrentTurn(s.currentPlayer === 0 ? 'P1' : 'P2');
+      setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
 
-        if (s.winningPath) {
-          const indices = new Set(s.winningPath.map(p => coordsToIndex(p.x, p.y)));
-          setWinningPathIndices(indices);
-        }
+      if (s.winningPath) {
+        const indices = new Set(s.winningPath.map(p => coordsToIndex(p.x, p.y)));
+        setWinningPathIndices(indices);
+      }
 
-        if (s.status === 'finished') {
-          setWinner(s.winner === 0 ? 'P1' : 'P2');
-          if (!hasScored) {
-            if (s.winner === 0) setP1Score((prev) => prev + 1);
-            if (s.winner === 1) setP2Score((prev) => prev + 1);
-            setHasScored(true);
+      if (s.status === 'finished') {
+        setWinner(s.winner === 0 ? 'P1' : 'P2');
+        
+        // Use functional update to check 'hasScored' safely
+        setHasScored((prev) => {
+          if (!prev) {
+            if (s.winner === 0) setP1Score(count => count + 1);
+            if (s.winner === 1) setP2Score(count => count + 1);
+            return true; // Mark as scored for this specific game session
           }
-        }
-      },
-      [hasScored, boardSize]
+          return prev;
+        });
+      }
+    },
+    [boardSize] 
   );
 
   // ── Start a new game

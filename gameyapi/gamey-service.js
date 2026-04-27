@@ -531,6 +531,33 @@ gameyService.get('/profile', async (req, res, next) => {
   }
 });
 
+gameyService.post('/play/:gameId/undo', (req, res) => {
+  const s = sessions.get(req.params.gameId);
+  if (!s) return res.status(404).json({ error: 'Game not found' });
+
+  if (s.status === 'finished') {
+    return res.status(400).json({ error: 'Cannot undo a finished game' });
+  }
+
+  if (s.moves.length === 0) return res.status(400).json({ error: 'No moves to undo' });
+
+  let undoCount = 1;
+  if (s.mode === 'hvb' && s.currentPlayer === 0 && s.moves.length >= 2) {
+    undoCount = 2;
+  }
+  
+  const undoCount_safe = Math.min(undoCount, s.moves.length);
+  s.moves.splice(-undoCount_safe, undoCount_safe);
+
+  // Recalculate game state
+  s.currentPlayer = s.moves.length % 2 === 0 ? 0 : 1;
+  s.status = 'ongoing';
+  s.winner = null;
+  s.winningPath = undefined;
+
+  return res.json(sessionView(s));
+});
+
 // ─── Control Routes ──────────────────────────────────────────────────────────
 
 gameyService.post('/play/:gameId/rematch', (req, res) => {
