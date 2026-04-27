@@ -8,6 +8,7 @@ import translationTR from './translation/Turkish.json';
 import translationDE from './translation/german.json';
 import translationFR from './translation/french.json';
 import translationES from './translation/spanish.json';
+import translationIT from './translation/italian.json';
 
 
 const resources = {
@@ -15,7 +16,8 @@ const resources = {
   tr: { translation: translationTR },
   de: { translation: translationDE },
   fr: { translation: translationFR },
-  es: { translation: translationES }
+  es: { translation: translationES },
+  it: { translation: translationIT }
 };
 
 i18n
