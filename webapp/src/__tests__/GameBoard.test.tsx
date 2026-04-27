@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import GameBoard, { getCellClass, getTurnPanelHeader, applyMovesToBoard } from '../GameBoard';
 
 // 1. Fixed Mock: Handles both simple keys and interpolated strings (e.g., P1: Tester)

@@ -179,7 +179,7 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
   // ── Session Scores (in-memory only, resets on reload)
   const [p1Score, setP1Score] = useState(0);
   const [p2Score, setP2Score] = useState(0);
-  const [, setHasScored] = useState(false);
+  const [hasScored, setHasScored] = useState(false);
 
   // ── Global Mute Toggle
   const [muted, setMuted] = useState(() => soundService.settings.muteMove && soundService.settings.muteBGM);
@@ -314,8 +314,10 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
       if (s.status === 'finished') {
         setWinner(s.winner === 0 ? 'P1' : 'P2');
       }
+
+      handleGameFinished(s.winner, s.mode);
     },
-    [boardSize]
+    [boardSize, handleGameFinished]
   );
 
   // ── Start a new game
