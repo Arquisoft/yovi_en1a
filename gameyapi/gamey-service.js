@@ -2,38 +2,69 @@ import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
-import { MongoClient, ObjectId } from 'mongodb'; // Corrected: ObjectId imported here
+import { MongoClient, ObjectId } from 'mongodb';
 import jwt from 'jsonwebtoken';
 import swaggerUi from 'swagger-ui-express';
 import yaml from 'js-yaml';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import promBundle from 'express-prom-bundle';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const gameyService = express();
 
-const openApiSpec = yaml.load(fs.readFileSync(path.join(__dirname, 'openapi.yaml'), 'utf8'));
-gameyService.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+// --- 1. THE CORS FIX ---
+const whitelist = [
+  'http://localhost',       
+  'http://localhost:3000',  
+  'http://localhost:80',   
+  'http://127.0.0.1',
+  'http://20.199.137.85'   
+];
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || whitelist.some(domain => origin.startsWith(domain))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200 
+};
+
+gameyService.use(cors(corsOptions));
+gameyService.options('*', cors(corsOptions)); 
+
+// --- 2. MIDDLEWARE ---
+gameyService.use(express.json());
+gameyService.use(promBundle({ includeMethod: true, includePath: true }));
+
+// --- 3. THE SWAGGER FIX ---
+try {
+    const yamlPath = path.join(__dirname, 'openapi.yaml');
+    if (fs.existsSync(yamlPath)) {
+        const openApiSpec = yaml.load(fs.readFileSync(yamlPath, 'utf8'));
+        gameyService.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+    }
+} catch (e) {
+    console.error("⚠️ Swagger documentation failed to load:", e.message);
+}
+
+// --- 4. CONFIGURATION ---
 const PORT = process.env.PORT || 3001;
 const GAMEY_RUST_URL = process.env.GAMEY_RUST_URL || 'http://localhost:4000';
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const DB_NAME = process.env.NODE_ENV === 'test' ? 'test_db' : 'yovi';
 const HOST = process.env.HOST || '0.0.0.0';
-
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const API_VERSION = 'v1';
 
-
-gameyService.use(cors());
-gameyService.use(bodyParser.json());
-
-// Prometheus setup
-import promBundle from 'express-prom-bundle';
-const metricsMiddleware = promBundle({ includeMethod: true });
-gameyService.use(metricsMiddleware);
 
 // ─── MongoDB connection ─────────────────────────────────────────────────────────
 let db;
@@ -56,13 +87,17 @@ async function closeMongoConnection() {
 // ─── JWT helper ─────────────────────────────────────────────────────────────────
 
 function getUserIdFromRequest(req) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
   try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+
     const token = authHeader.split(' ')[1];
+    if (!token || token === 'null' || token === 'undefined') return null;
+
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded.userId || null;
-  } catch {
+  } catch (err) {
+    console.error("JWT Verification failed:", err.message);
     return null;
   }
 }
@@ -71,22 +106,20 @@ function getUserIdFromRequest(req) {
 
 async function saveGameResult(session) {
   if (!db) return;
-  if (session.rule !== 'classic') {
-    console.log(`[DB] Game ${session.id} skipped (Rule: ${session.rule})`);
-    return;
-  }
+
   try {
     await db.collection('games').insertOne({
       gameId: session.id,
       userId: session.userId || null,
       mode: session.mode,
+      rule: session.rule || 'classic',
       boardSize: session.boardSize,
       winner: session.winner,
       totalMoves: session.moves.length,
       finishedAt: new Date(),
       createdAt: session.createdAt,
     });
-    console.log(`[DB] Game ${session.id} saved`);
+    console.log(`[DB] Game ${session.id} saved (Rule: ${session.rule})`);
   } catch (err) {
     console.error('[DB] Failed to save game:', err.message);
   }
@@ -375,13 +408,21 @@ gameyService.get('/play', async (req, res) => {
 });
 
 gameyService.post('/play/create', (req, res) => {
-  const { mode, boardSize = 11, difficulty, rule } = req.body;
-  const userId = getUserIdFromRequest(req);
-  const id = uuidv4();
-  sessions.set(id, newSession(id, mode, boardSize, userId, difficulty, rule));
-  return res.status(201).json(sessionView(sessions.get(id)));
-});
+  try {
+    const { mode, boardSize = 11, difficulty, rule } = req.body;
+    
+    const userId = getUserIdFromRequest(req); 
 
+    const id = uuidv4();
+    const session = newSession(id, mode, boardSize, userId, difficulty, rule);
+    sessions.set(id, session);
+    
+    return res.status(201).json(sessionView(session));
+  } catch (err) {
+    console.error("Error in /play/create:", err);
+    res.status(500).json({ error: "Failed to create session" });
+  }
+});
 gameyService.get('/play/:gameId', (req, res) => {
   const s = sessions.get(req.params.gameId);
   if (!s) return res.status(404).json({ error: 'Game not found' });
@@ -448,42 +489,44 @@ gameyService.post('/profile/avatar', async (req, res) => {
   }
 });
 
-gameyService.get('/profile', async (req, res) => {
-  if (!db) return res.status(503).json({ error: 'Database unavailable' });
+gameyService.get('/profile', async (req, res, next) => {
   const userId = getUserIdFromRequest(req);
-  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  if (!userId || userId === 'undefined' || userId === 'null') {
+    return res.status(401).json({ error: 'Valid User ID required' });
+  }
 
   try {
+    if (!ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Invalid ID format' });
+    }
+
+    if (!db) return res.status(503).json({ error: 'Database unavailable' });
+
     const games = await db.collection('games')
       .find({ userId: userId.toString() })
       .sort({ finishedAt: -1 })
       .toArray();
 
-    // Use ObjectId for userDoc
     const userDoc = await db.collection('users').findOne({ _id: new ObjectId(userId) });
 
-    const total = games.length;
-    const wins = games.filter(g => g.winner === 0).length;
-    const winRate = total > 0 ? Math.round((wins / total) * 100) : 0;
-    const bestScore = total > 0 ? Math.max(...games.map(g => (g.totalMoves || 0) * 10)) : 0;
-
-    const matchHistory = games.slice(0, 10).map((g, i) => ({
+    const matchHistory = (games || []).slice(0, 10).map((g, i) => ({
       id: g.gameId ?? i,
       result: g.winner === 0 ? 'win' : 'lose',
       pts: (g.totalMoves || 0) * 10,
-      mode: g.mode,
+      mode: g.mode || 'hvb',
+      rule: g.rule || 'classic', 
     }));
 
-
     return res.json({
-      winRate,
-      bestScore,
+      winRate: games.length > 0 ? Math.round((games.filter(g => g.winner === 0).length / games.length) * 100) : 0,
+      bestScore: games.length > 0 ? Math.max(...games.map(g => (g.totalMoves || 0) * 10)) : 0,
       matchHistory,
-      totalGames: total,
+      totalGames: games.length,
       avatarUrl: userDoc?.avatarUrl ?? 'default.png' 
     });
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to load profile' });
+    next(err);
   }
 });
 
@@ -512,17 +555,33 @@ gameyService.get('/health', async (req, res) => {
   return res.json({ api: 'ok', rustEngine: rustOk ? 'ok' : 'unreachable', activeSessions: sessions.size });
 });
 
+gameyService.use((err, req, res, next) => {
+  console.error('[Fatal Error]:', err.stack);
+  
+  // Force CORS headers even on crash so the frontend can read the error
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.header("Access-Control-Allow-Credentials", "true");
+  
+  res.status(500).json({ 
+    error: 'Internal Server Error', 
+    message: err.message 
+  });
+});
+
 if (process.argv[1] && (process.argv[1].endsWith('gamey-service.js') || process.argv[1].endsWith('index.js'))) {
   (async () => {
-    try {
-      await connectToMongo();
-    } catch (err) {
-      console.warn('[DB] MongoDB not available');
-    }
+  try {
+    await connectToMongo();
     gameyService.listen(PORT, HOST, () => {
-      console.log(`Game API → http://${HOST}:${PORT}`);
+      console.log(`🚀 Game API ready at http://${HOST}:${PORT}`);
     });
-  })();
+  } catch (err) {
+    console.error('[FATAL] MongoDB connection failed:', err);
+    gameyService.listen(PORT, HOST, () => {
+      console.log(`🚀 API started without DB at http://${HOST}:${PORT}`);
+    });
+  }
+})();
 }
 
 export default gameyService;
