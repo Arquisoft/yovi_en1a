@@ -3,47 +3,74 @@ ifndef::imagesdir[:imagesdir: ../images]
 [[section-design-decisions]]
 == Architecture Decisions
 
-This section contains the most important architectural decisions made during the development of the Yovi (Game Y) application. The decisions are documented as lightweight Architecture Decision Records (ADR).
+This section contains the most important architectural decisions made during the development of the Yovi (Game Y) application. The decisions are documented as lightweight Architecture Decision Records (ADR). Each decision outlines the context, the chosen solution, considered alternatives, and the resulting consequences.
 
-=== ADR 1: Microservices Architecture
-* **Status:** Accepted
-* **Context:** The application needs to handle various distinct domains: user management (registration, auth, profiles), game state management, and core game logic (especially AI and complex win-condition evaluations).
-* **Decision:** We opted for a Microservices Architecture instead of a Monolith. The system is split into multiple independent services (`users`, `gamey-service`, and `gamey`).
-* **Consequences:** 
-  ** *Pros:* Loose coupling, independent scalability (e.g., the computationally heavy Rust game engine can be scaled separately), and technology heterogeneity.
-  ** *Cons:* High operational overhead, complexities in inter-service communication, and necessity of orchestration tools like Docker Compose.
+=== ADR: MongoDB as DBMS
 
-=== ADR 2: Polyglot Technology Stack
-* **Status:** Accepted
-* **Context:** We needed a fast and responsive frontend, a reliable and rapid API layer, and an incredibly fast backend for game rule calculations and AI.
-* **Decision:** We selected a polyglot stack:
-  ** Frontend: **React with Vite and TypeScript** for high performance and type safety.
-  ** API Services: **Node.js with Express** for `users` and `gamey-service` to allow rapid REST API development heavily reliant on asynchronous I/O.
-  ** Game Core: **Rust** for the `gamey` engine to guarantee extreme performance and memory safety when calculating paths and generating bot moves.
-* **Consequences:** Excellent performance characteristics for each domain, but developers must be familiar with both TypeScript/JavaScript and Rust.
+We need a database for the game backend to store player data, game sessions, and other game-related entities. The data model is expected to evolve during development. 
 
-=== ADR 3: Data Persistence with MongoDB
-* **Status:** Accepted
-* **Context:** We need a persistence layer to store user profiles, credentials, match history, and active game sessions.
-* **Decision:** We selected **MongoDB**, a NoSQL document database.
-* **Consequences:** The document paradigm perfectly fits our JSON-heavy communication and enables rapid iterations on the schema (e.g., adding user avatars or changing session structures) without complex migrations.
+We decided to use MongoDB as our primary Database Management System (DBMS). Unlike relational databases such as MySQL, MongoDB uses a document model based on BSON/JSON-like structures. It integrates well with web applications and is suited for self-contained entities like players and game sessions. 
 
-=== ADR 4: Containerization with Docker
-* **Status:** Accepted
-* **Context:** Deploying a polyglot microservice application directly to host operating systems is error-prone due to varying dependencies.
-* **Decision:** We use **Docker** and **Docker Compose** for containerization and orchestration.
-* **Consequences:** Standardized environments across development, testing, and production. Developers can quickly spin up the entire ecosystem, including the database and monitoring tools, with a single command (`docker compose up`).
+The flexible schema of MongoDB makes it easier to adapt the data model and acts as a natural fit for our JSON-based web backends. The primary alternative, MySQL, was considered due to the team's familiarity with it, but MongoDB's schema flexibility was deemed more important. As a consequence, the team requires some time to learn MongoDB, and the system is less suited for complex relational queries compared to SQL databases.
 
-=== ADR 5: Local Storage for Ephemeral Preferences
-* **Status:** Accepted
-* **Context:** We implemented persistent game audio with mutable settings (volume, mute toggles, themes), which needed to be remembered between sessions.
-* **Decision:** Instead of saving sound settings in the MongoDB user profile, we use browser **localStorage**. (User Avatars, however, are explicitly synchronized with the database).
-* **Consequences:** 
-  ** *Pros:* Zero latency on startup, no unnecessary backend API calls, reduces database load.
-  ** *Cons:* Settings are tied to the browser/device and do not sync across a user's cross-platform logins.
+=== ADR: Microsoft Azure as VM Host
 
-=== ADR 6: Infrastructure Monitoring
-* **Status:** Accepted
-* **Context:** Monitoring system health, API response times, and traffic is crucial for a microservice environment.
-* **Decision:** We integrated **Prometheus** for time-series metric scraping and **Grafana** for dashboarding and visualization.
-* **Consequences:** Deep insights into the Node.js and Rust services. Requires exposing `/metrics` endpoints on all APIs, slightly increasing the implementation burden for new services.
+The project requires a reliable and scalable environment to host the application and its associated services, primarily our Docker containers and Node.js instances. The chosen cloud provider needs to offer robust Virtual Machine management, global availability, and integration with DevOps workflows.
+
+We selected Microsoft Azure (Azure Virtual Machines) to host our infrastructure. Azure provides seamless integration with GitHub Actions for our CI/CD pipelines and offers "Azure for Students" credits, which fits the constraints of our academic project. It also provides a web portal for monitoring VM health.
+
+While alternatives like AWS (Amazon Web Services) and Google Cloud Platform (GCP) are prominent in the cloud landscape, standardizing on Azure simplifies our deployment pipeline without introducing a steeper learning curve regarding billing or disconnecting us from existing academic subscriptions. Using Azure still requires us to monitor credit usage and accept specific Azure CLI tools.
+
+=== ADR: JWT Authentication
+
+The application uses a microservices architecture (`users-service` and `gameyapi`). We need a secure, stateless method to share user identity across these boundaries without querying a central database for session validation on every API call.
+
+We chose JSON Web Tokens (JWT) for authentication. Upon a successful login, the `users-service` generates a signed token containing the user's ID and username. Secret management uses `.env` files locally and GitHub Secrets in production to protect the `JWT_SECRET`. Consumer services like `gameyapi` verify the token locally using this shared secret.
+
+Session-based authentication was discarded because it requires centralized stores like Redis, which increases latency. Opaque tokens were bypassed because they require resource servers to constantly contact the authentication service. JWTs improve performance through localized verification and allow horizontal scalability. However, this introduces security risks if the secret is compromised, and prevents instantly revoking specific active sessions.
+
+=== ADR: Gatling as Load Testing Tool
+
+The game services must handle concurrent players without performance degradation. We require load tests that simulate realistic user flows crossing multiple microservices.
+
+We selected Gatling for load testing. Gatling simulations are written in a Scala/Java Domain-Specific Language (DSL) and execute against our staging environment during CI pipelines. Pipelines fail automatically if p95 response times or error rates exceed agreed thresholds. Gatling generates HTML reports after execution.
+
+While other tools like JMeter use an XML-heavy format that is difficult to version-control, and options like k6 do not leverage our team's existing JVM expertise, choosing Gatling ensures simulations live directly in version control and robustly handle stateful user flows. The primary downside is the needed Scala ramp-up time for developers lacking JVM experience.
+
+=== ADR: Behavior and End-to-End Testing with Cucumber
+
+To validate that backend and API logics execute according to defined business rules, we required a testing framework capable of matching behavioral specifications to executable code. 
+
+We integrated Cucumber for our API-level and functional End-To-End (E2E) tests. Cucumber allows us to write tests using natural language formats (Given/When/Then), directly bridging specifications and code assertions. This ensures our APIs behave exactly as requested by stakeholders.
+
+=== ADR: Playwright for Browser Automation and UI Testing
+
+The application provides a web frontend managing registration, authentication, and gameplay. To ensure user interface flows behave correctly across varied browsers, we need an automated browser testing setup to complement our Cucumber scenarios.
+
+We implemented Playwright as our frontend UI testing framework. Tests run in TypeScript against Chromium, Firefox, and WebKit to catch browser-specific rendering flaws. In scenarios where login is not tested, the JWT is injected directly to maintain execution speed.
+
+Compared to tools like Selenium, which can be slower with excessive setup boilerplate, or Cypress, which is often tightly bound to Chromium and challenges cross-browser testing needs, Playwright effectively centralizes our test suite. It reduces flakiness through built-in auto-waiting mechanisms. The trade-off is the inherent fragility of UI tests and the extended CI execution times required for multiple browser engines.
+
+=== ADR: bcrypt as Password Hashing Library
+
+The `users-service` handles player registration and login. Passwords must be hashed securely to prevent raw credentials from being exposed in case of a database breach.
+
+We standardized on bcrypt as the main library to hash and verify passwords. Passwords are hashed with salt and never persist as plain text. Upon login, bcrypt evaluates the injected password against the stored hash before issuing a JWT.
+
+Fast hashing algorithms like MD5 or SHA-256 without key stretching were disqualified because they are easily cracked by modern hardware. Argon2 was considered but passed over due to its smaller ecosystem in Node.js compared to bcrypt. While bcrypt's scalable workload provides strong security, developers must use its asynchronous methods to prevent blocking the Node.js event loop.
+
+=== ADR: i18n for Internationalization
+
+The game aims to reach players across multiple language regions. Hardcoding strings into React components requires expensive refactoring later.
+
+We integrated `react-i18next` as our internationalization framework early in development. All user-facing strings are extracted into locale-specific JSON files, allowing frontend code to reference descriptive translation keys. English acts as the fallback locale when a token is missing. 
+
+By avoiding hardcoded layouts, we uncoupled the translation process from the codebase. Translators can manage the JSON files independently. This requires strict discipline from the frontend team to extract new strings immediately and maintain organized key naming conventions.
+
+=== ADR: gameyapi as Node.js REST API Service
+
+The application needs a backend orchestration service to manage game sessions, route player moves to the bot engine, and store match results in the database.
+
+We built the `gameyapi` as a Node.js REST API utilizing the Express framework. It communicates via JSON and trusts authenticated JWTs. The service stores ongoing game sessions in memory and only persists completed classic-mode games to MongoDB.
+
+Python with FastAPI was considered for its async capabilities, but the team opted for Node.js to reuse JavaScript tooling and knowledge. A pure Rust solution was discarded because routing API traffic is faster to iterate on in JavaScript, while calculation burdens remain delegated to the Rust service. This design capitalizes on Node's async I/O strengths, but risks losing active in-memory games if the Node process restarts unexpectedly.
