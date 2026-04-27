@@ -203,6 +203,7 @@ public class YoviEn1aLoadTest extends Simulation {
                 .check(status().is(200))
         );
     {
+
         setUp(
             scn.injectOpen(
                 rampUsersPerSec(0).to(0.5).during(Duration.ofSeconds(10)).randomized(),
