@@ -104,7 +104,7 @@ function getUserIdFromRequest(req) {
 
 // ─── Save game result to MongoDB ────────────────────────────────────────────────
 
-async function saveGameResult(session) {
+async function saveGameResult(session, finalScore) { // Add finalScore parameter
   if (!db) return;
 
   try {
@@ -116,10 +116,11 @@ async function saveGameResult(session) {
       boardSize: session.boardSize,
       winner: session.winner,
       totalMoves: session.moves.length,
+      points: finalScore || (session.moves.length * 10),
       finishedAt: new Date(),
       createdAt: session.createdAt,
     });
-    console.log(`[DB] Game ${session.id} saved (Rule: ${session.rule})`);
+    console.log(`[DB] Game ${session.id} saved with ${finalScore} points`);
   } catch (err) {
     console.error('[DB] Failed to save game:', err.message);
   }
@@ -663,6 +664,33 @@ gameyService.get('/profile', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+gameyService.post('/play/:gameId/undo', (req, res) => {
+  const s = sessions.get(req.params.gameId);
+  if (!s) return res.status(404).json({ error: 'Game not found' });
+
+  if (s.status === 'finished') {
+    return res.status(400).json({ error: 'Cannot undo a finished game' });
+  }
+
+  if (s.moves.length === 0) return res.status(400).json({ error: 'No moves to undo' });
+
+  let undoCount = 1;
+  if (s.mode === 'hvb' && s.currentPlayer === 0 && s.moves.length >= 2) {
+    undoCount = 2;
+  }
+  
+  const undoCount_safe = Math.min(undoCount, s.moves.length);
+  s.moves.splice(-undoCount_safe, undoCount_safe);
+
+  // Recalculate game state
+  s.currentPlayer = s.moves.length % 2 === 0 ? 0 : 1;
+  s.status = 'ongoing';
+  s.winner = null;
+  s.winningPath = undefined;
+
+  return res.json(sessionView(s));
 });
 
 // ─── Control Routes ──────────────────────────────────────────────────────────

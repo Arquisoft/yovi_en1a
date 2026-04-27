@@ -413,6 +413,34 @@
 /* ─── Responsive ────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
+    .profile-navbar {
+        height: auto !important;
+        min-height: 50px !important;
+        padding: 8px 15px !important;
+        gap: 10px;
+    }
+
+    .profile-nav-logo {
+        font-size: 1.2rem !important; /* Smaller text */
+        gap: 0.5rem !important;
+    }
+
+    .profile-back-btn, 
+    .profile-nav-logout-btn {
+        padding: 6px 10px !important;
+        font-size: 0.7rem !important; /* Smaller buttons */
+        border-radius: 3px !important;
+    }
+
+    .profile-nav-right {
+        gap: 0.8rem !important;
+    }
+
+    .profile-nav-play-btn {
+        font-size: 0.7rem !important;
+        letter-spacing: 0.5px !important;
+    }
+
     .profile-data-row {
         flex-direction: column;
     }
