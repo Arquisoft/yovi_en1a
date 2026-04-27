@@ -17,11 +17,11 @@ const gameyService = express();
 
 // --- 1. THE CORS FIX ---
 const whitelist = [
-  'http://localhost',       
-  'http://localhost:3000',  
-  'http://localhost:80',   
+  'http://localhost',
+  'http://localhost:3000',
+  'http://localhost:80',
   'http://127.0.0.1',
-  'http://20.199.137.85'   
+  'http://20.199.137.85'
 ];
 
 const corsOptions = {
@@ -35,11 +35,11 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  optionsSuccessStatus: 200 
+  optionsSuccessStatus: 200
 };
 
 gameyService.use(cors(corsOptions));
-gameyService.options('*', cors(corsOptions)); 
+gameyService.options('*', cors(corsOptions));
 
 // --- 2. MIDDLEWARE ---
 gameyService.use(express.json());
@@ -47,13 +47,13 @@ gameyService.use(promBundle({ includeMethod: true, includePath: true }));
 
 // --- 3. THE SWAGGER FIX ---
 try {
-    const yamlPath = path.join(__dirname, 'openapi.yaml');
-    if (fs.existsSync(yamlPath)) {
-        const openApiSpec = yaml.load(fs.readFileSync(yamlPath, 'utf8'));
-        gameyService.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
-    }
+  const yamlPath = path.join(__dirname, 'openapi.yaml');
+  if (fs.existsSync(yamlPath)) {
+    const openApiSpec = yaml.load(fs.readFileSync(yamlPath, 'utf8'));
+    gameyService.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
+  }
 } catch (e) {
-    console.error("⚠️ Swagger documentation failed to load:", e.message);
+  console.error("⚠️ Swagger documentation failed to load:", e.message);
 }
 
 // --- 4. CONFIGURATION ---
@@ -166,8 +166,8 @@ function getNeighbors(row, col, boardSize) {
   const candidates = [
     [row - 1, col - 1],
     [row - 1, col],
-    [row,     col - 1],
-    [row,     col + 1],
+    [row, col - 1],
+    [row, col + 1],
     [row + 1, col],
     [row + 1, col + 1],
   ];
@@ -179,15 +179,15 @@ function getNeighbors(row, col, boardSize) {
   return neighbors;
 }
 
-function touchesSideA(row, boardSize) { return row === boardSize - 1; } 
-function touchesSideB(col)       { return col === 0; }             
-function touchesSideC(row, col)  { return col === row; }       
+function touchesSideA(row, boardSize) { return row === boardSize - 1; }
+function touchesSideB(col) { return col === 0; }
+function touchesSideC(row, col) { return col === row; }
 
 function checkWin(moves, boardSize, player) {
   const playerCells = new Map();
   for (const m of moves) {
     if (m.player === player) {
-      const key = m.y * 1000 + m.x; 
+      const key = m.y * 1000 + m.x;
       playerCells.set(key, { row: m.y, col: m.x });
     }
   }
@@ -196,9 +196,9 @@ function checkWin(moves, boardSize, player) {
 
   const keys = [...playerCells.keys()];
   const parent = new Map(keys.map(k => [k, k]));
-  const sideA  = new Map(keys.map(k => [k, touchesSideA(playerCells.get(k).row, boardSize)]));
-  const sideB  = new Map(keys.map(k => [k, touchesSideB(playerCells.get(k).col)]));
-  const sideC  = new Map(keys.map(k => [k, touchesSideC(playerCells.get(k).row, playerCells.get(k).col)]));
+  const sideA = new Map(keys.map(k => [k, touchesSideA(playerCells.get(k).row, boardSize)]));
+  const sideB = new Map(keys.map(k => [k, touchesSideB(playerCells.get(k).col)]));
+  const sideC = new Map(keys.map(k => [k, touchesSideC(playerCells.get(k).row, playerCells.get(k).col)]));
 
   function find(k) {
     if (parent.get(k) !== k) parent.set(k, find(parent.get(k)));
@@ -240,7 +240,7 @@ function checkWin(moves, boardSize, player) {
     }
     return { win: true, path };
   }
-  
+
   return { win: false, path: [] };
 }
 function updateWinStatus(s) {
@@ -269,7 +269,7 @@ function updateWinStatus(s) {
   s.status = 'ongoing';
 
   if (s.rule === 'fortuney') {
-    s.needsFlip = true;   
+    s.needsFlip = true;
     s.coinFlip = null;
   } else {
     s.coinFlip = null;
@@ -303,10 +303,10 @@ function randomFreeCell(moves, boardSize) {
 async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   const yen = buildYEN(moves, boardSize, nextPlayer);
   let botToCall = 'gamer_bot';
-  
+
   if (difficulty === 'beginner') botToCall = 'easy_level_bot';
   else if (difficulty === 'medium') botToCall = 'gamer_bot';
-  else if (difficulty === 'advanced') botToCall = 'evil_bot'; 
+  else if (difficulty === 'advanced') botToCall = 'evil_bot';
 
   const res = await fetch(`${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}`, {
     method: 'POST',
@@ -330,7 +330,7 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   console.log('[Rust response]', data);
 
   const { x, y, z } = data.coords;
-  
+
   if (typeof x !== 'number' || typeof y !== 'number' || typeof z !== 'number') {
     console.warn('[BOT] Invalid coordinate types from Rust:', data.coords);
     return randomFreeCell(moves, boardSize);
@@ -347,13 +347,13 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
 // ─── Session Helpers ──────────────────────────────────────────────────────────
 
 function newSession(id, mode, boardSize, userId, difficulty, rule) {
-  return { 
-    id, mode, boardSize, difficulty: difficulty || 'medium', 
+  return {
+    id, mode, boardSize, difficulty: difficulty || 'medium',
     rule: rule || 'classic',
-    moves: [], status: 'ongoing', currentPlayer: 0, 
-    winner: null, userId: userId || null, createdAt: new Date() ,
-    coinFlip: null, 
-    needsFlip: false, 
+    moves: [], status: 'ongoing', currentPlayer: 0,
+    winner: null, userId: userId || null, createdAt: new Date(),
+    coinFlip: null,
+    needsFlip: false,
   };
 }
 
@@ -416,8 +416,7 @@ gameyService.get('/play', async (req, res) => {
       return res.status(422).json({ error: 'Invalid coordinates returned' });
     }
 
-    const bary = rowColToBarycentric(result.y, result.x, boardSize);
-    return res.json({ coords: bary });
+    return res.json({ coords: { x: result.x, y: result.y } });
   } catch (err) {
     return res.status(502).json({ error: 'Engine error' });
   }
@@ -427,7 +426,7 @@ gameyService.post('/play/create', (req, res) => {
   try {
     const { mode, boardSize = 11, difficulty, rule } = req.body;
     const userId = getUserIdFromRequest(req);
-    
+
     const id = uuidv4();
     const session = newSession(id, mode, boardSize, userId, difficulty, rule);
 
@@ -511,42 +510,42 @@ gameyService.post('/play/:gameId/flip', async (req, res) => {
   }
 
   const heads = Math.random() < 0.5;
-  const flipResult = heads ? 'heads' : 'tails'; 
+  const flipResult = heads ? 'heads' : 'tails';
   s.coinFlip = flipResult;
-  s.needsFlip = false; 
+  s.needsFlip = false;
 
   if (heads) {
-    s.currentPlayer = 0; 
- 
+    s.currentPlayer = 0;
 
-} else {
-  s.currentPlayer = 1; 
-  if (s.mode === 'hvb') {
-    try {
-      const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty);
-     
-      let moveCoords = botCoords;
-      if (botCoords && botCoords.action) {
-        moveCoords = randomFreeCell(s.moves, s.boardSize);
-      }
 
-    
-      if (moveCoords) {
-        s.moves.push({ player: 1, x: moveCoords.x, y: moveCoords.y });
-        updateWinStatus(s); 
-        s.coinFlip = flipResult; 
-      } else {
-        
+  } else {
+    s.currentPlayer = 1;
+    if (s.mode === 'hvb') {
+      try {
+        const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty);
+
+        let moveCoords = botCoords;
+        if (botCoords && botCoords.action) {
+          moveCoords = randomFreeCell(s.moves, s.boardSize);
+        }
+
+
+        if (moveCoords) {
+          s.moves.push({ player: 1, x: moveCoords.x, y: moveCoords.y });
+          updateWinStatus(s);
+          s.coinFlip = flipResult;
+        } else {
+
+          s.currentPlayer = 0;
+          s.needsFlip = false;
+        }
+      } catch {
+
         s.currentPlayer = 0;
         s.needsFlip = false;
       }
-    } catch {
-      
-      s.currentPlayer = 0;
-      s.needsFlip = false;
     }
   }
-}
 
   const response = sessionView(s);
   if (s.status === 'finished') saveGameResult(s);
@@ -565,14 +564,14 @@ gameyService.post('/profile/avatar', async (req, res) => {
 
   try {
     const result = await db.collection('users').updateOne(
-      { _id: new ObjectId(userId) }, 
+      { _id: new ObjectId(userId) },
       { $set: { avatarUrl: avatarUrl } }
     );
-    
+
     if (result.matchedCount === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
+
     return res.json({ success: true, avatarUrl });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to update avatar' });
@@ -605,7 +604,7 @@ gameyService.get('/profile', async (req, res, next) => {
       result: g.winner === 0 ? 'win' : 'lose',
       pts: (g.totalMoves || 0) * 10,
       mode: g.mode || 'hvb',
-      rule: g.rule || 'classic', 
+      rule: g.rule || 'classic',
     }));
 
     return res.json({
@@ -613,7 +612,7 @@ gameyService.get('/profile', async (req, res, next) => {
       bestScore: games.length > 0 ? Math.max(...games.map(g => (g.totalMoves || 0) * 10)) : 0,
       matchHistory,
       totalGames: games.length,
-      avatarUrl: userDoc?.avatarUrl ?? 'default.png' 
+      avatarUrl: userDoc?.avatarUrl ?? 'default.png'
     });
   } catch (err) {
     next(err);
@@ -647,37 +646,37 @@ gameyService.get('/health', async (req, res) => {
   try {
     const r = await fetch(`${GAMEY_RUST_URL}/status`);
     rustOk = r.ok;
-  } catch (_) {}
+  } catch (_) { }
   return res.json({ api: 'ok', rustEngine: rustOk ? 'ok' : 'unreachable', activeSessions: sessions.size });
 });
 
 gameyService.use((err, req, res, next) => {
   console.error('[Fatal Error]:', err.stack);
-  
+
   // Force CORS headers even on crash so the frontend can read the error
   res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
   res.header("Access-Control-Allow-Credentials", "true");
-  
-  res.status(500).json({ 
-    error: 'Internal Server Error', 
-    message: err.message 
+
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message
   });
 });
 
 if (process.argv[1] && (process.argv[1].endsWith('gamey-service.js') || process.argv[1].endsWith('index.js'))) {
   (async () => {
-  try {
-    await connectToMongo();
-    gameyService.listen(PORT, HOST, () => {
-      console.log(`🚀 Game API ready at http://${HOST}:${PORT}`);
-    });
-  } catch (err) {
-    console.error('[FATAL] MongoDB connection failed:', err);
-    gameyService.listen(PORT, HOST, () => {
-      console.log(`🚀 API started without DB at http://${HOST}:${PORT}`);
-    });
-  }
-})();
+    try {
+      await connectToMongo();
+      gameyService.listen(PORT, HOST, () => {
+        console.log(`🚀 Game API ready at http://${HOST}:${PORT}`);
+      });
+    } catch (err) {
+      console.error('[FATAL] MongoDB connection failed:', err);
+      gameyService.listen(PORT, HOST, () => {
+        console.log(`🚀 API started without DB at http://${HOST}:${PORT}`);
+      });
+    }
+  })();
 }
 
 export default gameyService;
