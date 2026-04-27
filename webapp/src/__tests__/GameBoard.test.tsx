@@ -63,6 +63,20 @@ vi.mock('react-i18next', () => ({
     i18n: { changeLanguage: vi.fn(), language: 'en' }
   })
 }));
+
+vi.mock('../SoundService', () => ({
+  soundService: {
+    settings: { muteMove: false, muteWin: false, muteLoss: false, muteBGM: false, theme: 'ysound' },
+    updateSettings: vi.fn(),
+    playMove: vi.fn(),
+    playBotMove: vi.fn(),
+    playWin: vi.fn(),
+    playLoss: vi.fn(),
+    startBGM: vi.fn(),
+    stopBGM: vi.fn(),
+  },
+  AVAILABLE_PACKS: ['ysound'],
+}));
 // ─── Mock fetch globally ───────────────────────────────────────────────────────
 
 const mockFetch = vi.fn();
@@ -590,7 +604,24 @@ describe('GameBoard Component', () => {
       expect(screen.getByText('Pts: 2')).toBeInTheDocument();
     });
   });
-});
+
+  it('should toggle global mute state via top bar button', () => {
+    render(<GameBoard />);
+    
+    // Initially unmuted (Mute button visible)
+    const muteBtn = screen.getByTitle('Mute');
+    expect(muteBtn).toBeInTheDocument();
+    
+    // Click to mute
+    fireEvent.click(muteBtn);
+    expect(screen.getByTitle('Unmute')).toBeInTheDocument();
+    
+    // Click to unmute
+    fireEvent.click(screen.getByTitle('Unmute'));
+    expect(screen.getByTitle('Mute')).toBeInTheDocument();
+  });
+}); 
+
 
 describe('GameBoard - Fortuney rule', () => {
   it('should not show flip button when rule is classic', async () => {
@@ -681,7 +712,6 @@ describe('GameBoard - Fortuney rule', () => {
   });
 });
 
-// Unit tests for fortuney-specific header/subtext logic
 describe('getTurnPanelHeader - fortuney phase', () => {
   const mockT = (k: any, options?: any) => {
     if (k === 'lbl_chance_time') return 'CHANCE TIME!';

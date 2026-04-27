@@ -19,7 +19,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'];
-
+app.options('/{*path}', cors());
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no Origin header (same-origin, curl, Postman, server-to-server)
@@ -29,7 +29,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   }
-}));
+}));//
 
 // Prometheus setup
 
@@ -149,7 +149,7 @@ app.post('/createuser', async (req, res) => {
 
     res.status(200).json({
       message: `Hello ${username}! Welcome to the course!`,
-      token, // Now included so the frontend can save it
+      token,
       userId: result.insertedId,
       avatarUrl: newUser.avatarUrl,
       username: newUser.username
@@ -159,6 +159,7 @@ app.post('/createuser', async (req, res) => {
       const field = error.keyPattern?.email ? 'email' : 'username';
       return res.status(409).json({ error: `An account with this ${field} already exists` });
     }
+
     console.error('Error creating user:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -208,6 +209,8 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+
 
 // -------------------- Server Startup --------------------
 
