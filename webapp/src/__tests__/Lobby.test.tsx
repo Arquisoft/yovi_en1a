@@ -30,6 +30,20 @@ vi.mock('react-i18next', () => ({
   })
 }));
 
+vi.mock('../SoundService', () => ({
+  soundService: {
+    settings: { muteMove: false, muteWin: false, muteLoss: false, muteBGM: false, theme: 'ysound' },
+    updateSettings: vi.fn(),
+    playMove: vi.fn(),
+    playBotMove: vi.fn(),
+    playWin: vi.fn(),
+    playLoss: vi.fn(),
+    startBGM: vi.fn(),
+    stopBGM: vi.fn(),
+  },
+  AVAILABLE_PACKS: ['ysound'],
+}));
+
 describe('App & Lobby Coverage Booster', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -125,5 +139,28 @@ describe('App & Lobby Coverage Booster', () => {
 
    
     expect(onPlayMock).toHaveBeenLastCalledWith('pvp', 'beginner', 11, 'whynot');
+  });
+
+  it('Lobby: Opens and interacts with the Sound Settings popup', () => {
+    render(<Lobby onPlay={vi.fn()} onLogout={vi.fn()} username="Tester" />);
+    
+    // Open settings
+    const settingsBtn = screen.getByTitle('Settings');
+    fireEvent.click(settingsBtn);
+    expect(screen.getByText('SETTINGS')).toBeInTheDocument();
+    
+    // Toggle a checkbox
+    const moveSoundsCheckbox = screen.getByLabelText(/Move Sounds/i);
+    fireEvent.click(moveSoundsCheckbox);
+    
+    // Change soundpack
+    const select = screen.getByRole('combobox');
+    fireEvent.change(select, { target: { value: 'retro' } });
+    
+    // Close settings
+    const closeBtn = screen.getByText('Save & Close');
+    fireEvent.click(closeBtn);
+    
+    expect(screen.queryByText('SETTINGS')).not.toBeInTheDocument();
   });
 });

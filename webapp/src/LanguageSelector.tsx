@@ -9,7 +9,8 @@ const LanguageSelector: React.FC = () => {
     { code: 'es', label: 'Español' },
     { code: 'de', label: 'Deutsch' },
     { code: 'fr', label: 'Français' },
-    { code: 'tr', label: 'Türkçe' }
+    { code: 'tr', label: 'Türkçe' },
+    { code: 'it', label: 'Italiano' }
   ];
 
   return (

@@ -164,4 +164,20 @@ describe('GameBoard Component', () => {
       expect(screen.getByText((content) => content.includes('Server Crash'))).toBeDefined();
     });
   });
+
+  it('should toggle global mute state via top bar button', () => {
+    render(<GameBoard />);
+    
+    // Initially unmuted (Mute button visible)
+    const muteBtn = screen.getByTitle('Mute');
+    expect(muteBtn).toBeInTheDocument();
+    
+    // Click to mute
+    fireEvent.click(muteBtn);
+    expect(screen.getByTitle('Unmute')).toBeInTheDocument();
+    
+    // Click to unmute
+    fireEvent.click(screen.getByTitle('Unmute'));
+    expect(screen.getByTitle('Mute')).toBeInTheDocument();
+  });
 });
