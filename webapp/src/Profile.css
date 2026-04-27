@@ -32,6 +32,29 @@
     font-weight: bold;
     color: #483dff;
     margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.profile-back-btn {
+    background: transparent;
+    border: 1px solid #555;
+    color: #aaa;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.profile-back-btn:hover {
+    color: #fff;
+    border-color: #fff;
 }
 
 .profile-nav-right {

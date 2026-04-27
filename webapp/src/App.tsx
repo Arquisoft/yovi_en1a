@@ -32,6 +32,10 @@ function App() {
     globalThis.location.href = globalThis.location.pathname + '?view=profile';
   };
 
+  const handleBackFromProfile = () => {
+    globalThis.history.back();
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('username');
     localStorage.removeItem('token');
@@ -54,6 +58,7 @@ function App() {
             username={storedUsername}
             onPlayClick={() => globalThis.location.href = globalThis.location.pathname + '?view=lobby'}
             onLogout={handleLogout}
+            onBack={handleBackFromProfile}
         />
     );
   }
