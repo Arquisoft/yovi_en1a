@@ -99,8 +99,8 @@ app.use(async (req, res, next) => {
     // Ping the database
     await db.command({ ping: 1 });
     return next();
-  } catch (_) {
-    console.warn('Ping failed, attempting reconnect...');
+  } catch (pingErr) {
+    console.warn('Ping failed, attempting reconnect...', pingErr.message);
     try {                     // ← move inside the catch
       await client.connect();
       db = client.db(DB_NAME);
