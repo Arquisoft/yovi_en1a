@@ -389,19 +389,26 @@ gameyService.get('/play', async (req, res) => {
   }
 });
 
-gameyService.post('/play/create', (req, res) => {
-  const { mode, boardSize = 11, difficulty, rule } = req.body;
-  const userId = getUserIdFromRequest(req);
-  const id = uuidv4();
-  const session = newSession(id, mode, boardSize, userId, difficulty, rule);
+try {
+      const { mode, boardSize = 11, difficulty, rule } = req.body;
+      const userId = getUserIdFromRequest(req);
+      
+      const id = uuidv4();
+      const session = newSession(id, mode, boardSize, userId, difficulty, rule);
 
-  if (rule === 'fortuney') {
-    session.needsFlip = true;  
-  }
+    
+      if (rule === 'fortuney') {
+        session.needsFlip = true;
+      }
 
-  sessions.set(id, session);
-  return res.status(201).json(sessionView(session));
-});
+      sessions.set(id, session);
+      return res.status(201).json(sessionView(session));
+      
+    } catch (err) {
+     
+      console.error("Error in /play/create:", err);
+      res.status(500).json({ error: "Failed to create session" });
+    }
 gameyService.get('/play/:gameId', (req, res) => {
   const s = sessions.get(req.params.gameId);
   if (!s) return res.status(404).json({ error: 'Game not found' });
@@ -446,7 +453,6 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
   }
   updateWinStatus(s);
 
-  // Fortuney'de bot flip endpoint'i halleder, burada değil
   if (s.rule !== 'fortuney' && s.mode === 'hvb' && s.status === 'ongoing') {
     let safety = 10;
     while (s.currentPlayer === 1 && s.status === 'ongoing' && safety-- > 0) {
