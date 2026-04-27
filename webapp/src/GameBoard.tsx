@@ -205,18 +205,16 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
         const playerMoves = s.moves.filter(m => m.player === player);
         if (playerMoves.length === 0) return 0;
 
-        // 1. Base Points: 10 pts per piece (Updated from 1)
+        // 1. Base Points: 10 pts per piece
         let totalScore = playerMoves.length * 10;
 
-        // 2. Identify Groups and Side Bonuses
         const moveSet = new Set(playerMoves.map(m => `${m.x},${m.y}`));
         const visited = new Set<string>();
         
-        const getNeighbors = (x: number, y: number) => [
-          {x: x-1, y: y-1}, {x: x, y: y-1},
-          {x: x-1, y: y},   {x: x+1, y: y},
-          {x: x, y: y+1},   {x: x+1, y: y+1}
-        ];
+        // Track which unique side-to-side pairs are connected
+        let connectedAB = false;
+        let connectedBC = false;
+        let connectedAC = false;
 
         for (const move of playerMoves) {
           const key = `${move.x},${move.y}`;
@@ -224,19 +222,24 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
             const queue = [move];
             visited.add(key);
             
-            let groupTouchesA = false;
-            let groupTouchesB = false;
-            let groupTouchesC = false;
+            let touchesA = false;
+            let touchesB = false;
+            let touchesC = false;
 
             let head = 0;
             while(head < queue.length) {
               const curr = queue[head++];
-              
-              if (curr.y === actualSize - 1) groupTouchesA = true;
-              if (curr.x === 0) groupTouchesB = true;
-              if (curr.x === curr.y) groupTouchesC = true;
+              if (curr.y === actualSize - 1) touchesA = true;
+              if (curr.x === 0) touchesB = true;
+              if (curr.x === curr.y) touchesC = true;
 
-              for (const n of getNeighbors(curr.x, curr.y)) {
+              const neighbors = [
+                {x: curr.x-1, y: curr.y-1}, {x: curr.x, y: curr.y-1},
+                {x: curr.x-1, y: curr.y},   {x: curr.x+1, y: curr.y},
+                {x: curr.x, y: curr.y+1},   {x: curr.x+1, y: curr.y+1}
+              ];
+
+              for (const n of neighbors) {
                 const nKey = `${n.x},${n.y}`;
                 if (moveSet.has(nKey) && !visited.has(nKey)) {
                   visited.add(nKey);
@@ -245,14 +248,18 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
               }
             }
 
-            // 3. Award 30 pts per side connection (Updated from 3)
-            const sidesTouched = [groupTouchesA, groupTouchesB, groupTouchesC].filter(Boolean).length;
-            if (sidesTouched >= 2) {
-              // We award 30 points for each additional side bridged beyond the first one
-              totalScore += (sidesTouched - 1) * 30;
-            }
+            // 2. Check for unique side-to-side connections in this group
+            if (touchesA && touchesB) connectedAB = true;
+            if (touchesB && touchesC) connectedBC = true;
+            if (touchesA && touchesC) connectedAC = true;
           }
         }
+
+        // 3. Apply 30 points per UNIQUE connection type
+        // Even if you have 5 different chains connecting A to B, you only get 30 points once.
+        if (connectedAB) totalScore += 30;
+        if (connectedBC) totalScore += 30;
+        if (connectedAC) totalScore += 30;
 
         return totalScore;
       };
