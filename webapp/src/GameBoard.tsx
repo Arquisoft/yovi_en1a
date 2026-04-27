@@ -266,9 +266,6 @@ export default function GameBoard({ username = "Guest User", onProfile, onLobby 
 
       setP1Score(calculateScore(0));
       setP2Score(calculateScore(1));
-
-      setP1Score(calculateScore(0));
-      setP2Score(calculateScore(1));
       // -------------------------------
 
       if (s.winningPath) {
