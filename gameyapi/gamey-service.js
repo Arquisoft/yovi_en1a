@@ -289,7 +289,7 @@ function randomFreeCell(moves, boardSize) {
   return free[Math.floor(Math.random() * free.length)];
 }
 
-async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
+async function getBotMove(moves, boardSize, nextPlayer, difficulty, rule) {
   const yen = buildYEN(moves, boardSize, nextPlayer);
   let botToCall = 'gamer_bot';
   
@@ -297,12 +297,11 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   else if (difficulty === 'medium') botToCall = 'gamer_bot';
   else if (difficulty === 'advanced') botToCall = 'evil_bot'; 
 
-  const res = await fetch(`${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}`, {
+  const res = await fetch(`${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}?rule=${rule || 'classic'}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(yen),
   });
-
   const data = await res.json();
   if (!res.ok) throw new Error(data.message ?? `Rust engine error ${res.status}`);
 
@@ -378,7 +377,7 @@ function rowColToBarycentric(row, col, boardSize) {
 }
 
 gameyService.get('/play', async (req, res) => {
-  const { position, bot_id } = req.query;
+  const { position, bot_id,rule } = req.query;
   if (!position) return res.status(400).json({ error: "'position' query parameter is required" });
 
   let yen;
@@ -389,7 +388,7 @@ gameyService.get('/play', async (req, res) => {
 
   const moves = yenLayoutToMoves(layout, boardSize);
   try {
-    const result = await getBotMove(moves, boardSize, nextPlayer, difficulty);
+    const result = await getBotMove(moves, boardSize, nextPlayer, difficulty,rule);
     if (!result)
       return res.status(422).json({ error: 'No legal moves available' });
 
@@ -447,7 +446,7 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
 
   if (s.mode === 'hvb' && s.status === 'ongoing') {
     try {
-      const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty);
+      const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty, s.rule);
       if (botCoords) {
         s.moves.push({ player: 1, ...botCoords });
         s.currentPlayer = 0;

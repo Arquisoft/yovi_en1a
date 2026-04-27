@@ -1,4 +1,4 @@
-use crate::{Coordinates, GameY, YBot, YEN};
+use crate::{Coordinates, GameY, YBot, YEN, GameMode};
 use std::time::{Duration, Instant};
 
 const ME: u8 = 1;
@@ -109,6 +109,7 @@ impl YBot for EvilBot {
         let my_id = board.next_player()?.id();
         let tot: usize = ((size * (size + 1)) / 2) as usize;
         let topo = Topo::new(size);
+        let is_why_not = board.mode == GameMode::Why_Not;
 
         let yen: YEN = board.into();
         let lay: Vec<char> = yen.layout().replace("/", "").chars().collect();
@@ -191,7 +192,14 @@ impl YBot for EvilBot {
                 pl = 3 - pl;
             }
             
-            let winner = if has_path(&state, my_player, &topo) { my_player } else { opp_player };
+           let my_player_has_path = has_path(&state, my_player, &topo);
+            
+            // Reverse the winner determination if playing in Why Not mode
+            let winner = if is_why_not {
+                if my_player_has_path { opp_player } else { my_player }
+            } else {
+                if my_player_has_path { my_player } else { opp_player }
+            };
 
             // === BACKPROP ===
             let mut bp = Some(cur);
@@ -217,7 +225,7 @@ impl YBot for EvilBot {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Movement, PlayerId};
+    use crate::{Movement, PlayerId,GameMode};
     #[test] fn n() { let bot = EvilBot; assert_eq!(bot.name(), "evil_bot"); }
     #[test] fn m() { let g = GameY::new(4); let bot = EvilBot; assert!(bot.choose_move(&g).is_some()); }
     #[test] fn v() {
@@ -227,5 +235,32 @@ mod tests {
         let c = bot.choose_move(&g).unwrap();
         let idx = c.to_index(3);
         assert!(g.available_cells().contains(&idx));
+    }
+    #[test]
+    fn test_evil_bot_why_not_mode_avoids_loss() {
+        let bot = EvilBot;
+
+       
+        let moves = vec![
+            Movement::Placement { player: PlayerId::new(0), coords: Coordinates::new(0, 2, 0) },
+            Movement::Placement { player: PlayerId::new(1), coords: Coordinates::new(2, 0, 0) },
+            Movement::Placement { player: PlayerId::new(0), coords: Coordinates::new(0, 1, 1) },
+           
+            Movement::Placement { player: PlayerId::new(1), coords: Coordinates::new(1, 0, 1) },
+        ];
+
+        let mut why_not_game = GameY::new_with_mode(3, GameMode::Why_Not);
+        for mv in &moves {
+            why_not_game.add_move(mv.clone()).unwrap();
+        }
+        
+        let why_not_move = bot.choose_move(&why_not_game).unwrap();
+        
+       
+        assert_eq!(
+            why_not_move, 
+            Coordinates::new(1, 1, 0), 
+            "MCTS must avoid the losing move (0,0,2) and pick the safe move (1,1,0)"
+        );
     }
 }

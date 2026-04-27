@@ -182,6 +182,29 @@ describe('GameY API Service', () => {
             expect(response.body.botMove).toBeDefined();
             expect(response.body.currentPlayer).toBe(0);
         });
+        it('should append rule parameter to bot engine URL in whynot mode', async () => {
+           
+            const createResponse = await request(gameyService)
+                .post('/play/create')
+                .send({ mode: 'hvb', boardSize: 5, rule: 'whynot' });
+            const whynotGameId = createResponse.body.gameId;
+
+          
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({ coords: { x: 1, y: 0, z: 3 } })
+            });
+
+          
+            await request(gameyService)
+                .post(`/play/${whynotGameId}/move`)
+                .send({ player: 0, x: 2, y: 2 })
+                .expect(200);
+
+            expect(global.fetch).toHaveBeenCalled();
+            const fetchUrl = global.fetch.mock.calls[0][0];
+            expect(fetchUrl).toContain('?rule=whynot');
+        });
 
         it('should return 400 if human tries to move as bot', async () => {
             const response = await request(gameyService)
@@ -731,6 +754,62 @@ describe('GameY API Service', () => {
                 expect(response.body.error).toContain('Game not found');
             });
         });
+        // ─── GET /play - Stateless Bot Move ───────────────────────────────────────
+
+    describe('GET /play - stateless bot move', () => {
+        it('should pass "whynot" rule to bot engine URL when specified in query', async () => {
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({ coords: { x: 1, y: 0, z: 3 } })
+            });
+
+            const yenPayload = {
+                size: 5,
+                turn: 1,
+                players: ['B', 'R'],
+                layout: 'B/../.../..../.....'
+            };
+
+            await request(gameyService)
+                .get('/play')
+                .query({
+                    position: JSON.stringify(yenPayload),
+                    bot_id: 'gamer_bot',
+                    rule: 'whynot'
+                })
+                .expect(200);
+
+            expect(global.fetch).toHaveBeenCalled();
+            const fetchUrl = global.fetch.mock.calls[0][0];
+            expect(fetchUrl).toContain('?rule=whynot');
+        });
+
+        it('should default to "classic" rule when not specified in query', async () => {
+            global.fetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({ coords: { x: 1, y: 0, z: 3 } })
+            });
+
+            const yenPayload = {
+                size: 5,
+                turn: 1,
+                players: ['B', 'R'],
+                layout: 'B/../.../..../.....'
+            };
+
+            await request(gameyService)
+                .get('/play')
+                .query({
+                    position: JSON.stringify(yenPayload),
+                    bot_id: 'gamer_bot'
+                })
+                .expect(200);
+
+            expect(global.fetch).toHaveBeenCalled();
+            const fetchUrl = global.fetch.mock.calls[0][0];
+            expect(fetchUrl).toContain('?rule=classic');
+        });
+    });
 
         // ─── POST /play/:gameId/rematch - extended ────────────────────────────────
 
