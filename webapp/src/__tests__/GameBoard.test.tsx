@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import GameBoard, { getCellClass, getTurnPanelHeader, applyMovesToBoard } from '../GameBoard';
+import { calculateStrategicScore } from '../GameBoard';
 
 // --- Mocks ---
 
@@ -324,5 +325,35 @@ describe('Turn Panel Helper - Fortuney Logic', () => {
       expect(screen.getByText(/Failed to create game/i)).toBeDefined();
     });
   });
+
+  it('rolls back the board if a move API call fails', async () => {
+  mockApiSuccess(makeMockSession({ boardSize: 3 }));
+  render(<GameBoard />);
+  fireEvent.click(screen.getByText('START GAME'));
+
+  const cells = await screen.findAllByRole('button');
+  const hexCell = cells.find(b => b.className.includes('hex-cell'));
+
+  // Force a failure for the move
+  globalFetch.mockRejectedValueOnce(new Error('Move rejected'));
+
+  if (hexCell) {
+    fireEvent.click(hexCell);
+    await waitFor(() => {
+      // Check that the cell is empty again after the catch block runs
+      expect(hexCell.textContent).toBe('');
+      expect(screen.getByText(/Move failed/i)).toBeDefined();
+    });
+  }
+});
+
+it('calculates bonus points for connected edges', () => {
+  const moves = [
+    { player: 0, x: 0, y: 0 },
+    { player: 0, x: 1, y: 1 }, // This connects diagonal/edges in some configurations
+  ];
+  const score = calculateStrategicScore(moves as any, 0, 3);
+  expect(score).toBeGreaterThan(0);
+});
 
 });
