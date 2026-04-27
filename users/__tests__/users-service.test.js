@@ -490,26 +490,23 @@ describe('DB health middleware — ping failure paths', () => {
     });
 
     it('MW-5: returns 503 when ping fails and reconnect also fails', async () => {
-        const { MongoClient } = await import('mongodb');
-        const probe = new MongoClient(mongoUri);
-        await probe.connect();
-        const dbProto = probe.db('test_db').constructor.prototype;
+        // Mock the app's db.command to fail
+        const { db: appDb } = require('../users-service.js');
+        const commandSpy = vi.spyOn(appDb, 'command').mockRejectedValue(new Error('ping timeout'));
 
-        // Ping fails
-        vi.spyOn(dbProto, 'command').mockRejectedValueOnce(new Error('ping timeout'));
-        // Reconnect also fails
-        vi.spyOn(probe.constructor.prototype, 'connect').mockRejectedValueOnce(
-            new Error('cannot reconnect')
-        );
+        // Mock the app's client.connect to fail
+        const { client: appClient } = require('../users-service.js');
+        const connectSpy = vi.spyOn(appClient, 'connect').mockRejectedValue(new Error('cannot reconnect'));
 
         const res = await request(app)
             .post('/login')
-            .send({ username: 'BothFail' });
-
-        await probe.close();
+            .send({ usernameOrEmail: 'BothFail', password: 'dummy' });
 
         expect(res.status).toBe(503);
         expect(res.body.error).toMatch(/temporarily unavailable/i);
+
+        commandSpy.mockRestore();
+        connectSpy.mockRestore();
     });
 });
 

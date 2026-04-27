@@ -89,11 +89,25 @@ async function closeMongoConnection() {
 
 // -------------------- DB Health Middleware --------------------
 app.use(async (req, res, next) => {
-  if ((req.path === '/createuser' || req.path === '/login') && !db) {
-    return res.status(503).json({ error: 'Database not initialized' });
-  }
+  if (req.path !== '/createuser' && req.path !== '/login') return next();
+  if (!db) return res.status(503).json({ error: 'Database not initialized' });
 
-  next();
+  try {
+    // Ping the database
+    await db.command({ ping: 1 });
+    return next();
+  } catch (pingErr) {
+    console.warn('Ping failed, attempting reconnect...');
+    try {
+      await client.connect();
+      db = client.db(DB_NAME);
+      console.log('Reconnected successfully');
+      return next();
+    } catch (reconnectErr) {
+      console.error('Reconnect failed:', reconnectErr);
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
+  }
 });
 
 
