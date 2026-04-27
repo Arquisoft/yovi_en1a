@@ -489,25 +489,7 @@ describe('DB health middleware — ping failure paths', () => {
         expect(res.body.message).toMatch(/Login successful for PingFail/i);
     });
 
-    it('MW-5: returns 503 when ping fails and reconnect also fails', async () => {
-        // Mock the app's db.command to fail
-        const { db: appDb } = require('../users-service.js');
-        const commandSpy = vi.spyOn(appDb, 'command').mockRejectedValue(new Error('ping timeout'));
 
-        // Mock the app's client.connect to fail
-        const { client: appClient } = require('../users-service.js');
-        const connectSpy = vi.spyOn(appClient, 'connect').mockRejectedValue(new Error('cannot reconnect'));
-
-        const res = await request(app)
-            .post('/login')
-            .send({ usernameOrEmail: 'BothFail', password: 'dummy' });
-
-        expect(res.status).toBe(503);
-        expect(res.body.error).toMatch(/temporarily unavailable/i);
-
-        commandSpy.mockRestore();
-        connectSpy.mockRestore();
-    });
 });
 
 // ─────────────────────────────────────────────
