@@ -104,7 +104,7 @@ function getUserIdFromRequest(req) {
 
 // ─── Save game result to MongoDB ────────────────────────────────────────────────
 
-async function saveGameResult(session) {
+async function saveGameResult(session, finalScore) { // Add finalScore parameter
   if (!db) return;
 
   try {
@@ -116,10 +116,11 @@ async function saveGameResult(session) {
       boardSize: session.boardSize,
       winner: session.winner,
       totalMoves: session.moves.length,
+      points: finalScore || (session.moves.length * 10),
       finishedAt: new Date(),
       createdAt: session.createdAt,
     });
-    console.log(`[DB] Game ${session.id} saved (Rule: ${session.rule})`);
+    console.log(`[DB] Game ${session.id} saved with ${finalScore} points`);
   } catch (err) {
     console.error('[DB] Failed to save game:', err.message);
   }
@@ -300,7 +301,7 @@ function randomFreeCell(moves, boardSize) {
   return free[Math.floor(Math.random() * free.length)];
 }
 
-async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
+async function getBotMove(moves, boardSize, nextPlayer, difficulty, rule) {
   const yen = buildYEN(moves, boardSize, nextPlayer);
   let botToCall = 'gamer_bot';
 
@@ -308,12 +309,11 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   else if (difficulty === 'medium') botToCall = 'gamer_bot';
   else if (difficulty === 'advanced') botToCall = 'evil_bot';
 
-  const res = await fetch(`${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}`, {
+  const res = await fetch(`${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}?rule=${rule || 'classic'}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(yen),
   });
-
   const data = await res.json();
   if (!res.ok) throw new Error(data.message ?? `Rust engine error ${res.status}`);
 
@@ -393,7 +393,7 @@ function rowColToBarycentric(row, col, boardSize) {
 }
 
 gameyService.get('/play', async (req, res) => {
-  const { position, bot_id } = req.query;
+  const { position, bot_id,rule } = req.query;
   if (!position) return res.status(400).json({ error: "'position' query parameter is required" });
 
   let yen;
@@ -404,7 +404,7 @@ gameyService.get('/play', async (req, res) => {
 
   const moves = yenLayoutToMoves(layout, boardSize);
   try {
-    const result = await getBotMove(moves, boardSize, nextPlayer, difficulty);
+    const result = await getBotMove(moves, boardSize, nextPlayer, difficulty,rule);
     if (!result)
       return res.status(422).json({ error: 'No legal moves available' });
 
@@ -489,8 +489,10 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
     let safety = 10;
     while (s.currentPlayer === 1 && s.status === 'ongoing' && safety-- > 0) {
       try {
-        const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty);
+        // hardbot dalındaki s.rule eklentisi burada
+        const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty, s.rule);
         if (!botCoords || botCoords.action) break;
+
         s.moves.push({ player: 1, ...botCoords });
         s.currentPlayer = 0;
         updateWinStatus(s);
@@ -510,37 +512,33 @@ gameyService.post('/play/:gameId/flip', async (req, res) => {
   }
 
   const heads = Math.random() < 0.5;
-  const flipResult = heads ? 'heads' : 'tails';
+  const flipResult = heads ? 'heads' : 'tails'; 
   s.coinFlip = flipResult;
-  s.needsFlip = false;
+  s.needsFlip = false; 
 
   if (heads) {
-    s.currentPlayer = 0;
-
-
+    s.currentPlayer = 0; 
   } else {
-    s.currentPlayer = 1;
+    s.currentPlayer = 1; 
     if (s.mode === 'hvb') {
       try {
-        const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty);
-
+        // Burada da bota s.rule parametresini gönderiyoruz
+        const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty, s.rule);
+        
         let moveCoords = botCoords;
         if (botCoords && botCoords.action) {
           moveCoords = randomFreeCell(s.moves, s.boardSize);
         }
 
-
         if (moveCoords) {
           s.moves.push({ player: 1, x: moveCoords.x, y: moveCoords.y });
-          updateWinStatus(s);
-          s.coinFlip = flipResult;
+          updateWinStatus(s); 
+          s.coinFlip = flipResult; 
         } else {
-
           s.currentPlayer = 0;
           s.needsFlip = false;
         }
       } catch {
-
         s.currentPlayer = 0;
         s.needsFlip = false;
       }
@@ -551,7 +549,6 @@ gameyService.post('/play/:gameId/flip', async (req, res) => {
   if (s.status === 'finished') saveGameResult(s);
   return res.json(response);
 });
-
 // ─── Profile Routes ───────────────────────────────────────────────────────────
 
 gameyService.post('/profile/avatar', async (req, res) => {
@@ -617,6 +614,33 @@ gameyService.get('/profile', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+gameyService.post('/play/:gameId/undo', (req, res) => {
+  const s = sessions.get(req.params.gameId);
+  if (!s) return res.status(404).json({ error: 'Game not found' });
+
+  if (s.status === 'finished') {
+    return res.status(400).json({ error: 'Cannot undo a finished game' });
+  }
+
+  if (s.moves.length === 0) return res.status(400).json({ error: 'No moves to undo' });
+
+  let undoCount = 1;
+  if (s.mode === 'hvb' && s.currentPlayer === 0 && s.moves.length >= 2) {
+    undoCount = 2;
+  }
+  
+  const undoCount_safe = Math.min(undoCount, s.moves.length);
+  s.moves.splice(-undoCount_safe, undoCount_safe);
+
+  // Recalculate game state
+  s.currentPlayer = s.moves.length % 2 === 0 ? 0 : 1;
+  s.status = 'ongoing';
+  s.winner = null;
+  s.winningPath = undefined;
+
+  return res.json(sessionView(s));
 });
 
 // ─── Control Routes ──────────────────────────────────────────────────────────

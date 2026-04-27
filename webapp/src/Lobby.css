@@ -47,7 +47,7 @@ body {
 .nav-logout-btn {
   background: transparent;
   border: 1px solid #555;
-  color: #aaa;
+  color: #f0f0f0;
   padding: 0.5rem 1.5rem;
   border-radius: 4px;
   font-weight: normal;
@@ -261,7 +261,7 @@ body {
 .friend-item:hover {
   background-color: transparent;
   cursor: pointer;
-  color: #fff;
+  color: #b0b0b0;
 }
 
 .friend-item:last-child {
@@ -412,73 +412,7 @@ body {
   to { opacity: 1; transform: scale(1); }
 }
 
-@media (max-width: 768px) {
-  .lobby-layout-container {
-    display: flex;
-    flex-direction: column;
-    padding: 0 5vw;
-    gap: 0;
-  }
-
-  .social-sidebar-column {
-    display: contents;
-  }
-
-  /* FIXED: Merged duplicate .user-profile-button selectors into one block */
-  .user-profile-button {
-    order: 1;
-    padding: 10px 0;
-    margin-bottom: 0; 
-    border-bottom: 1px solid #333;
-  }
-
-  .game-setup-column {
-    order: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .panel-title {
-    margin-top: 15px;
-    margin-bottom: 8px;
-    padding-bottom: 2px;
-    font-size: 0.75rem;
-  }
-
-  .setup-options-row {
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .mode-option-btn {
-    padding: 10px;
-    margin-bottom: 0;
-    font-size: 0.9rem;
-  }
-
-  .primary-play-btn {
-    order: 3;
-    margin: 15px 0;
-    padding: 12px;
-  }
-
-  .profile-avatar {
-    width: 36px;
-    height: 36px;
-  }
-
-  .friends-panel {
-    order: 4;
-    margin-top: 10px;
-    padding-top: 5px !important;
-  }
-
-  .friend-item {
-    padding: 0.5rem 0;
-  }}
-
-  .language-menu-container {
+.language-menu-container {
     position: relative;
     display: inline-block;
 }
@@ -487,7 +421,7 @@ body {
     padding: 8px 12px;
     border-radius: 4px;
     background: transparent;
-    color: #ffffff,
+    color: #ffffff;
     border: 1px solid #777;
     cursor: pointer;
     font-family: inherit;
@@ -508,8 +442,6 @@ body {
     color: #483dff;
     background: rgba(72, 61, 255, 0.05);
 }
-
-
 
 .language-toggle-icon {
     font-size: 0.6rem;
@@ -541,13 +473,12 @@ body {
     cursor: pointer;
     text-align: left;
     font-size: 0.95rem;
-    border-bottom: 1px solid #2a2a2a;
     transition: background 0.2s, color 0.2s;
     background: transparent;
     color: #fff;
     text-transform: none;
     border: none;
-    border-bottom: 1px solid #2a2a2a; /* Zaten vardı, bunu tut */
+    border-bottom: 1px solid #2a2a2a;
     width: 100%;
     display: block;
     font-family: inherit;
@@ -566,4 +497,111 @@ body {
     color: #483dff;
     font-weight: bold;
 }
+
+@media screen and (max-width: 768px) {
+  /* 1. Reset Page Height for Scrolling */
+  .lobby-page-wrapper {
+    height: auto !important;
+    min-height: 100vh;
+    display: block !important;
+    overflow-y: auto;
+  }
+
+  /* 2. Compact Navbar (Matching your Profile page) */
+  .lobby-navbar {
+    height: 7vh !important;
+    min-height: 50px !important;
+    padding: 0 4% !important;
+    gap: 8px;
+  }
+
+  .nav-logo {
+    font-size: 1.2rem !important;
+  }
+
+  .nav-actions {
+    gap: 0.8rem !important;
+  }
+
+  .nav-logout-btn {
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  /* 3. The Layout Order */
+  .lobby-layout-container {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 5vw 40px 5vw !important;
+    gap: 0 !important;
+  }
+
+  /* Flatten columns so we can move the Profile to the top */
+  .social-sidebar-column,
+  .game-setup-column {
+    display: contents !important;
+  }
+
+  /* --- THE STACK ORDER --- */
+
+  /* FIRST: User Profile (Order 1) */
+  .user-profile-button {
+    order: 1 !important;
+    width: 100% !important;
+    padding: 20px 0 !important;
+    margin-bottom: 10px !important;
+    border-bottom: 1px solid #333 !important;
+    background: transparent !important;
+  }
+
+  /* SECOND: Game Settings (Order 2) */
+  .game-setup-column {
+    order: 2 !important;
+  }
+
+  .setup-options-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+
+  /* THIRD: Play Button (Order 3) */
+  .primary-play-btn {
+    order: 3 !important;
+    margin: 25px 0 !important;
+    padding: 16px !important;
+    font-size: 1rem !important;
+  }
+
+  /* FOURTH: Friends List (Order 4) */
+  .friends-panel {
+    order: 4 !important;
+    margin-top: 10px !important;
+  }
+
+  /* 4. Mobile UI Refinements */
+  .panel-title {
+    margin-top: 15px !important;
+    margin-bottom: 8px !important;
+    font-size: 0.75rem !important;
+    padding-bottom: 2px !important;
+  }
+
+  .mode-option-btn {
+    padding: 12px !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 5px !important;
+  }
+
+  .profile-avatar {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .profile-username {
+    font-size: 1.1rem !important;
+  }
 }
+
+

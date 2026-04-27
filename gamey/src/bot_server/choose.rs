@@ -1,8 +1,9 @@
 use crate::{Coordinates, GameY, YEN, check_api_version, error::ErrorResponse, state::AppState};
 use axum::{
     Json,
-    extract::{Path, State},
+    extract::{Path, State,Query},
 };
+use crate::GameMode;
 use serde::{Deserialize, Serialize};
 
 /// Path parameters extracted from the choose endpoint URL.
@@ -42,14 +43,19 @@ pub struct MoveResponse {
 /// # Response
 /// On success, returns a `MoveResponse` with the chosen coordinates.
 /// On failure, returns an `ErrorResponse` with details about what went wrong.
+#[derive(Deserialize)]
+pub struct ChooseQuery {
+    pub rule: Option<String>,
+}
 #[axum::debug_handler]
 pub async fn choose(
     State(state): State<AppState>,
     Path(params): Path<ChooseParams>,
+    Query(query): Query<ChooseQuery>,
     Json(yen): Json<YEN>,
 ) -> Result<Json<MoveResponse>, Json<ErrorResponse>> {
     check_api_version(&params.api_version)?;
-    let game_y = match GameY::try_from(yen) {
+    let mut game_y = match GameY::try_from(yen) {
         Ok(game) => game,
         Err(err) => {
             return Err(Json(ErrorResponse::error(
@@ -58,7 +64,12 @@ pub async fn choose(
                 Some(params.bot_id),
             )));
         }
-    };
+    }; 
+    if let Some(rule) = query.rule {
+        if rule == "whynot" {
+            game_y.mode = GameMode::Why_Not; 
+        }
+    }
     let bot = match state.bots().find(&params.bot_id) {
         Some(bot) => bot,
         None => {
@@ -84,6 +95,7 @@ pub async fn choose(
             )));
         }
     };
+    
     let response = MoveResponse {
         api_version: params.api_version,
         bot_id: params.bot_id,
