@@ -169,6 +169,13 @@ const Lobby: React.FC<LobbyProps> = ({
                 >
                   {t('rule_whynot_name')}
                 </button>
+
+                <button
+      className={`mode-option-btn ${selectedRule === 'fortuney' ? 'active' : ''}`}
+      onClick={() => setSelectedRule('fortuney')}
+    >
+      🪙 {t('rule_fortuney')}
+    </button>
               </div>
             </div>
           </aside>

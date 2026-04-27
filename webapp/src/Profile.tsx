@@ -36,7 +36,8 @@ const getModeLabel = (t: any, mode: string) => {
 const getRuleLabel = (t: any, rule: string) => {
     const key = rule?.toLowerCase();
     if (key === 'whynot') return t('rule_whynot');
-    return t('rule_classic'); // Default to Classic
+    if (key === 'fortuney') return t('rule_fortuney'); 
+    return t('rule_classic');
 };
 
 const API_URL = import.meta.env.VITE_GAMEY_API_URL || 'http://localhost:3001';
