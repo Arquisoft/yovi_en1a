@@ -266,4 +266,63 @@ describe('Turn Panel Helper - Fortuney Logic', () => {
     expect(getTurnPanelSubtext(mockT, 'ongoing', 'P1', true))
       .toBe('Determining next turn...');
   });
+
+  it('handles undo move logic', async () => {
+    // Start game
+    mockApiSuccess(makeMockSession({ moves: [{ player: 0, x: 0, y: 0 }] }));
+    render(<GameBoard />);
+    fireEvent.click(screen.getByText('START GAME'));
+
+    // Mock successful undo response
+    const undoBtn = await screen.findByText('UNDO');
+    mockApiSuccess(makeMockSession({ moves: [] }));
+    
+    fireEvent.click(undoBtn);
+
+    await waitFor(() => {
+      expect(globalFetch).toHaveBeenCalledWith(expect.stringContaining('/undo'), expect.any(Object));
+    });
+  });
+
+  it('handles game finish and rematch logic', async () => {
+    // Start in finished state
+    const finishedSession = makeMockSession({ 
+      status: 'finished', 
+      winner: 0, 
+      winnerName: 'Tester' 
+    });
+    mockApiSuccess(finishedSession);
+    
+    render(<GameBoard username="Tester" />);
+    fireEvent.click(screen.getByText('START GAME'));
+
+    // Fix: use getAllByText because the winner message appears in multiple places
+    await waitFor(() => {
+      const winnerMsgs = screen.getAllByText(/Tester WINS!/i);
+      expect(winnerMsgs.length).toBeGreaterThan(0);
+    });
+
+    // Test Rematch button
+    const rematchBtn = screen.getByRole('button', { name: /REMATCH/i });
+    mockApiSuccess(makeMockSession({ status: 'ongoing' }));
+    fireEvent.click(rematchBtn);
+
+    await waitFor(() => {
+      expect(globalFetch).toHaveBeenCalledWith(expect.stringContaining('/rematch'), expect.any(Object));
+    });
+  });
+
+  it('handles total network failure in catch block', async () => {
+    // This hits the 'catch (err)' block specifically
+    globalFetch.mockRejectedValueOnce(new Error('Network Dead'));
+
+    render(<GameBoard />);
+    fireEvent.click(screen.getByText('START GAME'));
+
+    await waitFor(() => {
+      // Should still show error UI from catch block
+      expect(screen.getByText(/Failed to create game/i)).toBeDefined();
+    });
+  });
+
 });
