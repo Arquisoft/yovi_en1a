@@ -449,6 +449,7 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
     let safety = 10;
     while (s.currentPlayer === 1 && s.status === 'ongoing' && safety-- > 0) {
       try {
+        // hardbot dalındaki s.rule eklentisi burada
         const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty, s.rule);
         if (!botCoords || botCoords.action) break;
 
@@ -481,7 +482,8 @@ gameyService.post('/play/:gameId/flip', async (req, res) => {
     s.currentPlayer = 1; 
     if (s.mode === 'hvb') {
       try {
-        const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty);
+        // Burada da bota s.rule parametresini gönderiyoruz
+        const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty, s.rule);
         
         let moveCoords = botCoords;
         if (botCoords && botCoords.action) {
