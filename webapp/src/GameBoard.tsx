@@ -145,6 +145,58 @@ export function applyMovesToBoard(moves: GameSession['moves'], totalCells: numbe
   return newBoard;
 }
 
+export function calculateStrategicScore(moves: GameSession['moves'], player: number, boardSize: number): number {
+  const playerMoves = moves.filter(m => m.player === player);
+  if (playerMoves.length === 0) return 0;
+
+  let totalScore = playerMoves.length * 10;
+  const moveSet = new Set(playerMoves.map(m => `${m.x},${m.y}`));
+  const visited = new Set<string>();
+  
+  let connectedAB = false, connectedBC = false, connectedAC = false;
+
+  for (const move of playerMoves) {
+    const key = `${move.x},${move.y}`;
+    if (visited.has(key)) continue;
+
+    const queue = [move];
+    visited.add(key);
+    let touchesA = false, touchesB = false, touchesC = false;
+
+    // BFS to find connected groups
+    let head = 0;
+    while (head < queue.length) {
+      const curr = queue[head++];
+      if (curr.y === boardSize - 1) touchesA = true;
+      if (curr.x === 0) touchesB = true;
+      if (curr.x === curr.y) touchesC = true;
+
+      const neighbors = [
+        {x: curr.x-1, y: curr.y-1}, {x: curr.x, y: curr.y-1},
+        {x: curr.x-1, y: curr.y},   {x: curr.x+1, y: curr.y},
+        {x: curr.x, y: curr.y+1},   {x: curr.x+1, y: curr.y+1}
+      ];
+
+      for (const n of neighbors) {
+        const nKey = `${n.x},${n.y}`;
+        if (moveSet.has(nKey) && !visited.has(nKey)) {
+          visited.add(nKey);
+          queue.push({ player, x: n.x, y: n.y });
+        }
+      }
+    }
+    if (touchesA && touchesB) connectedAB = true;
+    if (touchesB && touchesC) connectedBC = true;
+    if (touchesA && touchesC) connectedAC = true;
+  }
+
+  if (connectedAB) totalScore += 30;
+  if (connectedBC) totalScore += 30;
+  if (connectedAC) totalScore += 30;
+
+  return totalScore;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function GameBoard({ username = "Guest User", onProfile, onLobby }: GameBoardProps) {
@@ -236,96 +288,30 @@ const [showCoinAnim, setShowCoinAnim] = useState(false);
 
   // ── Sync local state from a server response
   const syncFromSession = useCallback(
-    (s: GameSession & { winningPath?: { x: number; y: number }[] }) => {
-      setSession(s);
-      const actualSize = s.boardSize || boardSize;
-      const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
-      const newBoard = applyMovesToBoard(s.moves, actualTotalCells);
-      setBoard(newBoard);
-      setCurrentTurn(s.currentPlayer === 0 ? 'P1' : 'P2');
-      setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
+  (s: GameSession & { winningPath?: { x: number; y: number }[] }) => {
+    setSession(s);
+    const actualSize = s.boardSize || boardSize;
+    const actualTotalCells = (actualSize * (actualSize + 1)) / 2;
+    
+    setBoard(applyMovesToBoard(s.moves, actualTotalCells));
+    setCurrentTurn(s.currentPlayer === 0 ? 'P1' : 'P2');
+    setGameStatus(s.status === 'finished' ? 'finished' : 'ongoing');
 
-      // --- Strategic Scoring Logic ---
-      const calculateScore = (player: number) => {
-        const playerMoves = s.moves.filter(m => m.player === player);
-        if (playerMoves.length === 0) return 0;
+    // Clean, low-complexity scoring calls
+    setP1Score(calculateStrategicScore(s.moves, 0, actualSize));
+    setP2Score(calculateStrategicScore(s.moves, 1, actualSize));
 
-        // 1. Base Points: 10 pts per piece
-        let totalScore = playerMoves.length * 10;
+    if (s.winningPath) {
+      setWinningPathIndices(new Set(s.winningPath.map(p => coordsToIndex(p.x, p.y))));
+    }
 
-        const moveSet = new Set(playerMoves.map(m => `${m.x},${m.y}`));
-        const visited = new Set<string>();
-        
-        // Track which unique side-to-side pairs are connected
-        let connectedAB = false;
-        let connectedBC = false;
-        let connectedAC = false;
-
-        for (const move of playerMoves) {
-          const key = `${move.x},${move.y}`;
-          if (!visited.has(key)) {
-            const queue = [move];
-            visited.add(key);
-            
-            let touchesA = false;
-            let touchesB = false;
-            let touchesC = false;
-
-            let head = 0;
-            while(head < queue.length) {
-              const curr = queue[head++];
-              if (curr.y === actualSize - 1) touchesA = true;
-              if (curr.x === 0) touchesB = true;
-              if (curr.x === curr.y) touchesC = true;
-
-              const neighbors = [
-                {x: curr.x-1, y: curr.y-1}, {x: curr.x, y: curr.y-1},
-                {x: curr.x-1, y: curr.y},   {x: curr.x+1, y: curr.y},
-                {x: curr.x, y: curr.y+1},   {x: curr.x+1, y: curr.y+1}
-              ];
-
-              for (const n of neighbors) {
-                const nKey = `${n.x},${n.y}`;
-                if (moveSet.has(nKey) && !visited.has(nKey)) {
-                  visited.add(nKey);
-                  queue.push({player, x: n.x, y: n.y});
-                }
-              }
-            }
-
-            // 2. Check for unique side-to-side connections in this group
-            if (touchesA && touchesB) connectedAB = true;
-            if (touchesB && touchesC) connectedBC = true;
-            if (touchesA && touchesC) connectedAC = true;
-          }
-        }
-
-        // 3. Apply 30 points per UNIQUE connection type
-        // Even if you have 5 different chains connecting A to B, you only get 30 points once.
-        if (connectedAB) totalScore += 30;
-        if (connectedBC) totalScore += 30;
-        if (connectedAC) totalScore += 30;
-
-        return totalScore;
-      };
-
-      setP1Score(calculateScore(0));
-      setP2Score(calculateScore(1));
-      // -------------------------------
-
-      if (s.winningPath) {
-        const indices = new Set(s.winningPath.map(p => coordsToIndex(p.x, p.y)));
-        setWinningPathIndices(indices);
-      }
-
-      if (s.status === 'finished') {
-        setWinner(s.winner === 0 ? 'P1' : 'P2');
-      }
-
+    if (s.status === 'finished') {
+      setWinner(s.winner === 0 ? 'P1' : 'P2');
       handleGameFinished(s.winner, s.mode);
-    },
-    [boardSize, handleGameFinished]
-  );
+    }
+  },
+  [boardSize, handleGameFinished]
+);
 
   // ── Start a new game
 const handleStartGame = async () => {

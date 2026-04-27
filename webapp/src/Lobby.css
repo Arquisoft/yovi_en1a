@@ -47,7 +47,7 @@ body {
 .nav-logout-btn {
   background: transparent;
   border: 1px solid #555;
-  color: #aaa;
+  color: #f0f0f0;
   padding: 0.5rem 1.5rem;
   border-radius: 4px;
   font-weight: normal;
@@ -261,7 +261,7 @@ body {
 .friend-item:hover {
   background-color: transparent;
   cursor: pointer;
-  color: #fff;
+  color: #b0b0b0;
 }
 
 .friend-item:last-child {
@@ -473,13 +473,12 @@ body {
     cursor: pointer;
     text-align: left;
     font-size: 0.95rem;
-    border-bottom: 1px solid #2a2a2a;
     transition: background 0.2s, color 0.2s;
     background: transparent;
     color: #fff;
     text-transform: none;
     border: none;
-    border-bottom: 1px solid #2a2a2a; /* Zaten vardı, bunu tut */
+    border-bottom: 1px solid #2a2a2a;
     width: 100%;
     display: block;
     font-family: inherit;
