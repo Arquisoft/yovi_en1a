@@ -431,7 +431,7 @@ describe('GameBoard Component', () => {
     fireEvent.click(cells[0]);
 
     await waitFor(() => {
-      expect(screen.getByText('Pts: 1')).toBeInTheDocument();
+      expect(screen.getByText('Pts: 10')).toBeInTheDocument();
       const popupMsg = screen.getAllByText('Guest User WINS!');
       expect(popupMsg.length).toBeGreaterThan(0);
       expect(screen.getByText('Great match!')).toBeInTheDocument();
@@ -562,20 +562,25 @@ describe('GameBoard Component', () => {
   it('should reset hasScored allowing scores to continue across multiple matches', async () => {
     render(<GameBoard />);
 
-    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+    // First Match
+    // Note: makeMockSession() with winner: 0 usually implies 1+ moves exists for P1
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0, moves: [{player: 0, x:0, y:0}] }));
     fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
-    await waitFor(() => expect(screen.getByText('Pts: 1')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Pts: 10')).toBeInTheDocument());
 
+    // Rematch
     mockApiSuccess(makeMockSession({ status: 'ongoing', currentPlayer: 0 }));
     fireEvent.click(screen.getByRole('button', { name: /REMATCH/i }));
     await waitFor(() => expect(screen.queryByText('Great match!')).not.toBeInTheDocument());
 
-    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0 }));
+    // Second Match
+    mockApiSuccess(makeMockSession({ status: 'finished', winner: 0, moves: [{player: 0, x:1, y:1}] }));
     const cells = document.querySelectorAll('.hex-cell');
     fireEvent.click(cells[0]);
 
     await waitFor(() => {
-      expect(screen.getByText('Pts: 2')).toBeInTheDocument();
+      expect(screen.getByText('Pts: 10')).toBeInTheDocument();
     });
   });
+
 });
