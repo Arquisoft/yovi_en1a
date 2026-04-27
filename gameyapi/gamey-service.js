@@ -300,7 +300,7 @@ function randomFreeCell(moves, boardSize) {
   return free[Math.floor(Math.random() * free.length)];
 }
 
-async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
+async function getBotMove(moves, boardSize, nextPlayer, difficulty, rule) {
   const yen = buildYEN(moves, boardSize, nextPlayer);
   let botToCall = 'gamer_bot';
   
@@ -308,12 +308,11 @@ async function getBotMove(moves, boardSize, nextPlayer, difficulty) {
   else if (difficulty === 'medium') botToCall = 'gamer_bot';
   else if (difficulty === 'advanced') botToCall = 'evil_bot'; 
 
-  const res = await fetch(`${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}`, {
+  const res = await fetch(`${GAMEY_RUST_URL}/${API_VERSION}/ybot/choose/${botToCall}?rule=${rule || 'classic'}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(yen),
   });
-
   const data = await res.json();
   if (!res.ok) throw new Error(data.message ?? `Rust engine error ${res.status}`);
 
@@ -393,7 +392,7 @@ function rowColToBarycentric(row, col, boardSize) {
 }
 
 gameyService.get('/play', async (req, res) => {
-  const { position, bot_id } = req.query;
+  const { position, bot_id,rule } = req.query;
   if (!position) return res.status(400).json({ error: "'position' query parameter is required" });
 
   let yen;
@@ -404,7 +403,7 @@ gameyService.get('/play', async (req, res) => {
 
   const moves = yenLayoutToMoves(layout, boardSize);
   try {
-    const result = await getBotMove(moves, boardSize, nextPlayer, difficulty);
+    const result = await getBotMove(moves, boardSize, nextPlayer, difficulty,rule);
     if (!result)
       return res.status(422).json({ error: 'No legal moves available' });
 
@@ -490,8 +489,10 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
     let safety = 10;
     while (s.currentPlayer === 1 && s.status === 'ongoing' && safety-- > 0) {
       try {
-        const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty);
+        // hardbot dalındaki s.rule eklentisi burada
+        const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty, s.rule);
         if (!botCoords || botCoords.action) break;
+
         s.moves.push({ player: 1, ...botCoords });
         s.currentPlayer = 0;
         updateWinStatus(s);
@@ -523,7 +524,7 @@ gameyService.post('/play/:gameId/flip', async (req, res) => {
   s.currentPlayer = 1; 
   if (s.mode === 'hvb') {
     try {
-      const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty);
+      const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty,s.rule);
      
       let moveCoords = botCoords;
       if (botCoords && botCoords.action) {
@@ -553,6 +554,50 @@ gameyService.post('/play/:gameId/flip', async (req, res) => {
   return res.json(response);
 });
 
+gameyService.post('/play/:gameId/flip', async (req, res) => {
+  const s = sessions.get(req.params.gameId);
+  if (!s || s.status === 'finished' || s.rule !== 'fortuney' || !s.needsFlip) {
+    return res.status(400).json({ error: 'Cannot flip now' });
+  }
+
+  const heads = Math.random() < 0.5;
+  const flipResult = heads ? 'heads' : 'tails'; 
+  s.coinFlip = flipResult;
+  s.needsFlip = false; 
+
+  if (heads) {
+    s.currentPlayer = 0; 
+  } else {
+    s.currentPlayer = 1; 
+    if (s.mode === 'hvb') {
+      try {
+        // Burada da bota s.rule parametresini gönderiyoruz
+        const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty, s.rule);
+        
+        let moveCoords = botCoords;
+        if (botCoords && botCoords.action) {
+          moveCoords = randomFreeCell(s.moves, s.boardSize);
+        }
+
+        if (moveCoords) {
+          s.moves.push({ player: 1, x: moveCoords.x, y: moveCoords.y });
+          updateWinStatus(s); 
+          s.coinFlip = flipResult; 
+        } else {
+          s.currentPlayer = 0;
+          s.needsFlip = false;
+        }
+      } catch {
+        s.currentPlayer = 0;
+        s.needsFlip = false;
+      }
+    }
+  }
+
+  const response = sessionView(s);
+  if (s.status === 'finished') saveGameResult(s);
+  return res.json(response);
+});
 // ─── Profile Routes ───────────────────────────────────────────────────────────
 
 gameyService.post('/profile/avatar', async (req, res) => {
