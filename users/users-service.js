@@ -18,14 +18,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec));
 // Never include http://0.0.0.0 — that is a server bind address, not a browser origin.
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : [
-      'http://localhost',
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://127.0.0.1',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173'
-    ];
+  : ['http://localhost', 'http://localhost:3000', 'http://127.0.0.1'];
 app.options('/{*path}', cors());
 app.use(cors({
   origin: (origin, callback) => {
