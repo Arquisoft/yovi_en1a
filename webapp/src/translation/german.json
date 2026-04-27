@@ -61,6 +61,7 @@
   "lbl_pts": "Punkte: {{Punkte}}",
   "btn_undo": "RÜCKGÄNGIG",
   "btn_end_turn": "BEENDE SPIELZUG",
+  "btn_back": "ZURÜCK",
   "status_thinking": "🤔 denkt nach...",
   "msg_loading_profile": "Lädt Profil...",
   "nav_play": "Spielen",

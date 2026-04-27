@@ -22,6 +22,7 @@ interface ProfileProps {
     matchHistory?: MatchEntry[];
     onPlayClick?: () => void;
     onLogout?: () => void;
+    onBack?: () => void;
 }
 
 // ── Constants & Configuration ──────────────────────────────────────────────────
@@ -105,7 +106,7 @@ function useProfileStats() {
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, onLogout }) => {
+const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, onLogout, onBack }) => {
     const { t } = useTranslation();
     const { stats, loading } = useProfileStats();
     const [localSelectedAvatar, setLocalSelectedAvatar] = useState<string | null>(null);
@@ -144,7 +145,14 @@ const Profile: React.FC<ProfileProps> = ({ username = 'Username', onPlayClick, o
     return (
         <div className="profile-page-container">
             <nav className="profile-navbar">
-                <div className="profile-nav-logo">GAME Y</div>
+                <div className="profile-nav-logo">
+                    {onBack && (
+                        <button className="profile-back-btn" onClick={onBack} type="button">
+                            ← {t('btn_back')}
+                        </button>
+                    )}
+                    GAME Y
+                </div>
                 <div className="profile-nav-right">
                     <button className="profile-nav-play-btn" onClick={onPlayClick} type="button">{t('nav_play')}</button>
                     <button className="profile-nav-logout-btn" onClick={onLogout} type="button">{t('nav_logout')}</button>
