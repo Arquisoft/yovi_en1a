@@ -243,7 +243,6 @@ function checkWin(moves, boardSize, player) {
   
   return { win: false, path: [] };
 }
-
 function updateWinStatus(s) {
   const lastPlayer = s.moves[s.moves.length - 1]?.player;
   const toCheck = lastPlayer !== undefined ? [lastPlayer, 1 - lastPlayer] : [0, 1];
@@ -254,17 +253,29 @@ function updateWinStatus(s) {
       s.status = 'finished';
       s.winner = (s.rule === 'whynot') ? (1 - p) : p;
       s.winningPath = result.path;
+      s.coinFlip = null;
+      s.needsFlip = false;
       return true;
     }
   }
 
   if (isBoardFull(s.moves, s.boardSize)) {
     s.status = 'finished';
-    s.winner = null; 
+    s.winner = null;
+    s.needsFlip = false;
     return true;
   }
 
   s.status = 'ongoing';
+
+  if (s.rule === 'fortuney') {
+    s.needsFlip = true;   
+    s.coinFlip = null;
+  } else {
+    s.coinFlip = null;
+    s.needsFlip = false;
+  }
+
   return false;
 }
 
@@ -340,7 +351,9 @@ function newSession(id, mode, boardSize, userId, difficulty, rule) {
     id, mode, boardSize, difficulty: difficulty || 'medium', 
     rule: rule || 'classic',
     moves: [], status: 'ongoing', currentPlayer: 0, 
-    winner: null, userId: userId || null, createdAt: new Date() 
+    winner: null, userId: userId || null, createdAt: new Date() ,
+    coinFlip: null, 
+    needsFlip: false, 
   };
 }
 
@@ -351,6 +364,8 @@ function sessionView(s) {
     moves: s.moves, status: s.status, currentPlayer: s.currentPlayer,
     winner: s.winner, winningPath: s.winningPath || [],
     layout: buildLayout(s.moves, s.boardSize),
+    coinFlip: s.coinFlip || null,
+    needsFlip: s.needsFlip || false,
   };
 }
 
@@ -411,13 +426,16 @@ gameyService.get('/play', async (req, res) => {
 gameyService.post('/play/create', (req, res) => {
   try {
     const { mode, boardSize = 11, difficulty, rule } = req.body;
+    const userId = getUserIdFromRequest(req);
     
-    const userId = getUserIdFromRequest(req); 
-
     const id = uuidv4();
     const session = newSession(id, mode, boardSize, userId, difficulty, rule);
+
+    if (rule === 'fortuney') {
+      session.needsFlip = true;
+    }
+
     sessions.set(id, session);
-    
     return res.status(201).json(sessionView(session));
   } catch (err) {
     console.error("Error in /play/create:", err);
@@ -430,6 +448,28 @@ gameyService.get('/play/:gameId', (req, res) => {
   return res.json(sessionView(s));
 });
 
+gameyService.post('/play/:gameId/bot-move', async (req, res) => {
+  const s = sessions.get(req.params.gameId);
+  if (!s || s.status === 'finished' || s.currentPlayer !== 1) {
+    return res.status(400).json({ error: 'Not bot turn' });
+  }
+  try {
+    const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty);
+    if (botCoords && !botCoords.action) {
+      s.moves.push({ player: 1, ...botCoords });
+      updateWinStatus(s);
+    }
+    const response = sessionView(s);
+    response.botMove = botCoords;
+    if (s.status === 'finished') saveGameResult(s);
+    return res.json(response);
+  } catch {
+    return res.status(502).json({ error: 'Bot failed' });
+  }
+});
+
+
+
 gameyService.post('/play/:gameId/move', async (req, res) => {
   const s = sessions.get(req.params.gameId);
   if (!s || s.status === 'finished') return res.status(400).json({ error: 'Invalid game state' });
@@ -440,26 +480,75 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
   }
 
   s.moves.push({ player, x, y });
-  s.currentPlayer = player === 0 ? 1 : 0;
+
+  if (s.rule !== 'fortuney') {
+    s.currentPlayer = player === 0 ? 1 : 0;
+  }
   updateWinStatus(s);
 
-  let response = sessionView(s);
-
-  if (s.mode === 'hvb' && s.status === 'ongoing') {
-    try {
-      const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty);
-      if (botCoords) {
+  if (s.rule !== 'fortuney' && s.mode === 'hvb' && s.status === 'ongoing') {
+    let safety = 10;
+    while (s.currentPlayer === 1 && s.status === 'ongoing' && safety-- > 0) {
+      try {
+        const botCoords = await getBotMove(s.moves, s.boardSize, s.currentPlayer, s.difficulty);
+        if (!botCoords || botCoords.action) break;
         s.moves.push({ player: 1, ...botCoords });
         s.currentPlayer = 0;
         updateWinStatus(s);
-        response = sessionView(s);
-        response.botMove = botCoords;
-      }
-    } catch (err) {
-      response.error = 'Bot failed';
+      } catch { break; }
     }
   }
 
+  const response = sessionView(s);
+  if (s.status === 'finished') saveGameResult(s);
+  return res.json(response);
+});
+
+gameyService.post('/play/:gameId/flip', async (req, res) => {
+  const s = sessions.get(req.params.gameId);
+  if (!s || s.status === 'finished' || s.rule !== 'fortuney' || !s.needsFlip) {
+    return res.status(400).json({ error: 'Cannot flip now' });
+  }
+
+  const heads = Math.random() < 0.5;
+  const flipResult = heads ? 'heads' : 'tails'; 
+  s.coinFlip = flipResult;
+  s.needsFlip = false; 
+
+  if (heads) {
+    s.currentPlayer = 0; 
+ 
+
+} else {
+  s.currentPlayer = 1; 
+  if (s.mode === 'hvb') {
+    try {
+      const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty);
+     
+      let moveCoords = botCoords;
+      if (botCoords && botCoords.action) {
+        moveCoords = randomFreeCell(s.moves, s.boardSize);
+      }
+
+    
+      if (moveCoords) {
+        s.moves.push({ player: 1, x: moveCoords.x, y: moveCoords.y });
+        updateWinStatus(s); 
+        s.coinFlip = flipResult; 
+      } else {
+        
+        s.currentPlayer = 0;
+        s.needsFlip = false;
+      }
+    } catch {
+      
+      s.currentPlayer = 0;
+      s.needsFlip = false;
+    }
+  }
+}
+
+  const response = sessionView(s);
   if (s.status === 'finished') saveGameResult(s);
   return res.json(response);
 });
@@ -537,9 +626,15 @@ gameyService.post('/play/:gameId/rematch', (req, res) => {
   const old = sessions.get(req.params.gameId);
   if (!old) return res.status(404).json({ error: 'Game not found' });
   const id = uuidv4();
-  sessions.set(id, newSession(id, old.mode, old.boardSize, old.userId, old.difficulty, old.rule));
+  const session = newSession(id, old.mode, old.boardSize, old.userId, old.difficulty, old.rule);
+
+  if (old.rule === 'fortuney') {
+    session.needsFlip = true;
+  }
+
+  sessions.set(id, session);
   sessions.delete(old.id);
-  return res.status(201).json(sessionView(sessions.get(id)));
+  return res.status(201).json(sessionView(session));
 });
 
 gameyService.delete('/play/:gameId', (req, res) => {

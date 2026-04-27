@@ -15,6 +15,7 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: any) => {
       const dict: Record<string, string> = {
+
         'btn_end_turn': 'END TURN',
         'btn_undo': 'UNDO',
         'btn_start_game': 'START GAME',
@@ -37,7 +38,18 @@ vi.mock('react-i18next', () => ({
         'lbl_chat': 'CHAT',
         'lbl_rule': 'RULE',
         'rule_classic': 'CLASSIC',
-        'rule_whynot': 'WHY NOT (Avoid Edges!)'
+        'rule_whynot': 'WHY NOT (Avoid Edges!)',
+        'btn_flip_coin': 'FLIP COIN',
+        'err_rematch_failed': 'Rematch failed: {{msg}}',
+        'btn_close_and_play': 'CLOSE AND PLAY',
+        'lbl_chance_time': 'CHANCE TIME!',
+        'desc_flip_coin': 'Flip to decide who goes first',
+        'msg_determining_turn': 'Determining next turn...',
+        'rule_fortuney': '🪙 Fortuney',       
+        'err_move_failed': 'Move failed',
+        'err_failed_create': 'Failed to create game',
+        'err_undo_failed': 'Undo failed',
+        'err_flip_failed': 'Flip failed',
       };
 
       
@@ -607,5 +619,132 @@ describe('GameBoard Component', () => {
     // Click to unmute
     fireEvent.click(screen.getByTitle('Unmute'));
     expect(screen.getByTitle('Mute')).toBeInTheDocument();
+  });
+}); 
+
+
+describe('GameBoard - Fortuney rule', () => {
+  it('should not show flip button when rule is classic', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ rule: 'classic', needsFlip: false }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+
+    await waitFor(() => screen.getByText("Guest User's TURN"));
+    expect(screen.queryByText(/flip coin/i)).not.toBeInTheDocument();
+  });
+
+  it('should show flip button when needsFlip is true', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ rule: 'fortuney', needsFlip: true }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /flip coin/i })).toBeInTheDocument();
+    });
+  });
+
+  it('should disable all board cells during flip phase', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ rule: 'fortuney', needsFlip: true }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+
+    await waitFor(() => screen.getByRole('button', { name: /flip coin/i }));
+
+    document.querySelectorAll('.hex-cell').forEach(cell => {
+      expect(cell).toBeDisabled();
+    });
+  });
+
+  it('should call /flip endpoint on button click', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ rule: 'fortuney', needsFlip: true }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+
+    await waitFor(() => screen.getByRole('button', { name: /flip coin/i }));
+
+    mockApiSuccess({
+      ...makeMockSession({ rule: 'fortuney', needsFlip: false }),
+      coinFlip: 'heads',
+    });
+    fireEvent.click(screen.getByRole('button', { name: /flip coin/i }));
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/flip'),
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
+  });
+
+  it('should show coin animation overlay after flip', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ rule: 'fortuney', needsFlip: true }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+
+    await waitFor(() => screen.getByRole('button', { name: /flip coin/i }));
+
+    mockApiSuccess({
+      ...makeMockSession({ rule: 'fortuney', needsFlip: false }),
+      coinFlip: 'heads',
+    });
+    fireEvent.click(screen.getByRole('button', { name: /flip coin/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /close.*play/i })).toBeInTheDocument();
+    });
+  });
+
+  it('should dismiss coin animation on close button click', async () => {
+    render(<GameBoard />);
+    mockApiSuccess(makeMockSession({ rule: 'fortuney', needsFlip: true }));
+    fireEvent.click(screen.getByRole('button', { name: /START GAME/i }));
+    await waitFor(() => screen.getByRole('button', { name: /flip coin/i }));
+
+    mockApiSuccess({ ...makeMockSession({ rule: 'fortuney', needsFlip: false }), coinFlip: 'heads' });
+    fireEvent.click(screen.getByRole('button', { name: /flip coin/i }));
+    await waitFor(() => screen.getByRole('button', { name: /close.*play/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /close.*play/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /close.*play/i })).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('getTurnPanelHeader - fortuney phase', () => {
+  const mockT = (k: any, options?: any) => {
+    if (k === 'lbl_chance_time') return 'CHANCE TIME!';
+    if (k === 'msg_bot_thinking') return 'BOT THINKING…';
+    if (k === 'msg_turn') return `${options?.name}'s TURN`;
+    if (k === 'btn_start_game') return 'START GAME';
+    if (k === 'msg_winner') return `${options?.name} WINS!`;
+    if (k === 'msg_p2_turn') return "P2's TURN";
+    return k;
+  };
+
+  it('returns CHANCE TIME when isFlippingPhase is true', () => {
+    expect(getTurnPanelHeader(mockT, 'ongoing', null, false, 'P1', 'Guest User', true))
+      .toBe('CHANCE TIME!');
+  });
+
+  it('flipping phase takes priority over bot thinking', () => {
+    expect(getTurnPanelHeader(mockT, 'ongoing', null, true, 'P1', 'Guest User', true))
+      .toBe('CHANCE TIME!');
+  });
+});
+
+describe('getTurnPanelSubtext - fortuney phase', () => {
+  const mockT = (k: any) => {
+    if (k === 'msg_determining_turn') return 'Determining next turn...';
+    if (k === 'msg_choose_mode') return 'Choose mode below';
+    if (k === 'color_blue') return '(blue)';
+    if (k === 'color_red') return '(red)';
+    return k;
+  };
+
+  it('returns determining turn message when isFlippingPhase is true', () => {
+    expect(getTurnPanelSubtext(mockT, 'ongoing', 'P1', true))
+      .toBe('Determining next turn...');
   });
 });
