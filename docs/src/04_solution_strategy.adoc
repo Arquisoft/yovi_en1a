@@ -1,16 +1,49 @@
-== 4. Solution Strategy
+[[section-solution-strategy]]
+== Solution Strategy
 
-The core architectural style (Microservices), the primary technology stack (Rust, React.js, Node.js), and the communication protocol (YEN Notation) were predefined as strict constraints for this project (as detailed in Sections 2 and 3). 
+=== Technology Decisions
 
-Therefore, our solution strategy focuses exclusively on the actual architectural and organizational decisions our team made to complete and integrate the system.
+The system architecture bridges mandated technical constraints with strategic choices focused on security, internationalization, and performance.
 
-=== 4.1. Technology Decisions
-
+[cols="1,2,3", options="header"]
 |===
 | Decision | Technology | Motivation
-| **Database** | MongoDB | Document-based storage naturally fits the predefined YEN Notation (JSON) format seamlessly. It allows for flexible player statistics and game history storage without the need for rigid schema migrations.
+| **Database** | MongoDB | Fits the YEN Notation (JSON) format naturally and allows for flexible player statistics without rigid schemas.
+| **Hosting** | Microsoft Azure (VM) | Selected for robust management and seamless GitHub Actions integration, utilizing "Azure for Students" credits.
+| **Backend API** | Node.js (Express) | Implemented as `gameyapi` (REST). Chosen for async I/O efficiency when orchestrating downstream Rust and MongoDB calls.
+| **Authentication** | JWT (Stateless) | Allows services to verify user identity locally, reducing network latency and decoupling the service landscape.
+| **Security** | bcrypt | Ensures secure password hashing before persistence in MongoDB, protecting user credentials against rainbow table attacks.
+| **Globalisation** | i18n | Implemented to support multiple languages within the React frontend, ensuring accessibility for a global player base.
 |===
 
-=== 4.2. Achievement of Quality Goals
+==== Testing & Documentation Strategy
+[cols="1,2,3", options="header"]
+|===
+| Decision | Technology | Motivation
+| **API Docs** | OpenAPI / Swagger | Provides a machine-readable contract at `/api-docs` to ensure frontend-backend alignment.
+| **UI Testing** | Playwright | Ensures complex hexagonal grid interactions remain functional across all browser engines.
+| **End-to-End** | Cucumber | BDD-style verification of full game flows (login → move → win) for business logic consistency.
+| **Load Testing** | Gatling | Validates that the Node/Rust stack can sustain high concurrent traffic.
+|===
 
-* **Flexibility & Persistence:** By deliberately choosing **MongoDB** as our database, we ensure that as the game evolves (e.g., adding new bot metrics, different match data structures), the system can dynamically adapt to store these complex JSON objects efficiently.
+=== Top-level Decomposition
+
+The system follows a microservices-oriented approach to ensure a clean separation of concerns:
+
+* **Webapp (React):** The presentation layer. It utilizes **i18n** for localization and translates UI interactions into YEN-compliant API calls.
+* **User Service (Node.js):** The identity provider (Port 3000). Uses **bcrypt** for secure credential storage and issues signed JWTs.
+* **Game API (gameyapi - Node.js):** The core orchestrator (Port 3001). A RESTful service managing active sessions and coordinating the flow between the UI and the logic engine.
+* **Logic Engine (Rust):** The computational core (Port 4000). A stateless service optimized for grid validation and AI calculations.
+
+=== Achievement of Quality Goals
+
+[cols="1,4", options="header"]
+|===
+| Quality Goal | Strategy for Achievement
+| **Interoperability** | Strict adherence to **YEN Notation** and **RESTful** standards. This allows the polyglot stack to exchange game state data effortlessly.
+| **Security** | **Defense in Depth**: Utilizing **bcrypt** for data at rest (passwords) and **JWT** for data in transit (identity) ensures a robust security posture across services.
+| **Usability** | **Internationalization**: By integrating **i18n**, the strategy ensures that the application is accessible to users in different linguistic regions.
+| **Performance** | **Functional Offloading**: Isolating CPU-heavy hexagonal logic in Rust prevents the Node.js event loop from blocking, keeping the API responsive.
+| **Reliability** | **Automated Verification**: The combination of **Playwright**, **Cucumber**, and **Gatling** ensures that game rules and performance benchmarks are met before deployment.
+| **Scalability** | **Stateless Orchestration**: Hosting on **Azure VMs** and using stateless JWTs allows the system to scale horizontally without session-persistence issues.
+|===
