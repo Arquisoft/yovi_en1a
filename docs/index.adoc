@@ -7,6 +7,7 @@
 include::src/config.adoc[]
 
 = image:arc42-logo.png[arc42] yovi_en1a
+
 :revnumber: 8.2 EN
 :revdate: January 2023
 :revremark: (based upon AsciiDoc version)

@@ -97,8 +97,6 @@
 | Webapp
 | The React frontend application that provides the user interface and orchestrates requests to the backend services.
 
-| WebSockets
-| A protocol enabling real‑time, bidirectional communication between client and server, planned for multiplayer scenarios.
 
 | YEN Notation
 | Y Exchange Notation - a compact, JSON‑based format for representing the complete game state (board size, player turn, piece positions).

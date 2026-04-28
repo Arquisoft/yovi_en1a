@@ -7,7 +7,7 @@
 
 *Notable Aspects:* The Webapp acts as a pure presentation layer. Move validations are routed through the `GameY API (Node.js)`, which proxies the request to the `GameY Engine (Rust)`. All coordinate conversions and rule logic are strictly handled by the Rust engine.
 
-[plantuml, target="human-vs-ai-move", format="png"]
+[plantuml, human-vs-ai-move, svg]
 ----
 @startuml
 autonumber
