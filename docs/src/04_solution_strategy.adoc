@@ -40,10 +40,8 @@ The system follows a microservices-oriented approach to ensure a clean separatio
 [cols="1,4", options="header"]
 |===
 | Quality Goal | Strategy for Achievement
-| **Interoperability** | Strict adherence to **YEN Notation** and **RESTful** standards. This allows the polyglot stack to exchange game state data effortlessly.
-| **Security** | **Defense in Depth**: Utilizing **bcrypt** for data at rest (passwords) and **JWT** for data in transit (identity) ensures a robust security posture across services.
-| **Usability** | **Internationalization**: By integrating **i18n**, the strategy ensures that the application is accessible to users in different linguistic regions.
-| **Performance** | **Functional Offloading**: Isolating CPU-heavy hexagonal logic in Rust prevents the Node.js event loop from blocking, keeping the API responsive.
-| **Reliability** | **Automated Verification**: The combination of **Playwright**, **Cucumber**, and **Gatling** ensures that game rules and performance benchmarks are met before deployment.
-| **Scalability** | **Stateless Orchestration**: Hosting on **Azure VMs** and using stateless JWTs allows the system to scale horizontally without session-persistence issues.
+| **Availability** | **Resilient Middleware & Hosting**: Implementing a custom DB health check in the User Service to auto-reconnect to MongoDB and deploying on Azure VMs to ensure the API remains reachable for both users and bots.
+| **Usability** | **Internationalization (i18n)**: Integrating `react-i18next` ensures that game rules, statistics, and UI labels are intuitive and accessible in the user's preferred language, lowering the learning curve.
+| **Performance** | **Functional Offloading**: Isolating CPU-intensive hexagonal grid logic and AI move generation in a dedicated Rust module. This prevents the Node.js event loop from blocking, maintaining low latency for concurrent matches.
+| **Security** | **Data & Identity Protection**: Utilizing **bcrypt** for securing user credentials at rest and **JWT** for stateless authorization, ensuring users can only manage their own profiles and access their specific match histories.
 |===
