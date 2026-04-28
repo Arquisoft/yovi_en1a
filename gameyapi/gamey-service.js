@@ -506,54 +506,6 @@ gameyService.post('/play/:gameId/move', async (req, res) => {
   return res.json(response);
 });
 
-gameyService.post('/play/:gameId/flip', async (req, res) => {
-  const s = sessions.get(req.params.gameId);
-  if (!s || s.status === 'finished' || s.rule !== 'fortuney' || !s.needsFlip) {
-    return res.status(400).json({ error: 'Cannot flip now' });
-  }
-
-  const heads = Math.random() < 0.5;
-  const flipResult = heads ? 'heads' : 'tails'; 
-  s.coinFlip = flipResult;
-  s.needsFlip = false; 
-
-  if (heads) {
-    s.currentPlayer = 0; 
- 
-
-} else {
-  s.currentPlayer = 1; 
-  if (s.mode === 'hvb') {
-    try {
-      const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty,s.rule);
-     
-      let moveCoords = botCoords;
-      if (botCoords && botCoords.action) {
-        moveCoords = randomFreeCell(s.moves, s.boardSize);
-      }
-
-    
-      if (moveCoords) {
-        s.moves.push({ player: 1, x: moveCoords.x, y: moveCoords.y });
-        updateWinStatus(s); 
-        s.coinFlip = flipResult; 
-      } else {
-        
-        s.currentPlayer = 0;
-        s.needsFlip = false;
-      }
-    } catch {
-      
-      s.currentPlayer = 0;
-      s.needsFlip = false;
-    }
-  }
-}
-
-  const response = sessionView(s);
-  if (s.status === 'finished') saveGameResult(s);
-  return res.json(response);
-});
 
 gameyService.post('/play/:gameId/flip', async (req, res) => {
   const s = sessions.get(req.params.gameId);
@@ -572,7 +524,7 @@ gameyService.post('/play/:gameId/flip', async (req, res) => {
     s.currentPlayer = 1; 
     if (s.mode === 'hvb') {
       try {
-        // Burada da bota s.rule parametresini gönderiyoruz
+       
         const botCoords = await getBotMove(s.moves, s.boardSize, 1, s.difficulty, s.rule);
         
         let moveCoords = botCoords;
