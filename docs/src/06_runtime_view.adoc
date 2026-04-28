@@ -9,7 +9,7 @@ This section describes the dynamic behavior of GAME Y. It illustrates how the de
 *Trigger:* User submits credentials. The component determines the endpoint based on the `mode` state ('login' or 'register').
 *Endpoint(s):* `POST :3000/createuser` or `POST :3000/login`.
 
-[plantuml, target="auth-runtime", format="png"]
+[plantuml, human-vs-ai-move, svg]
 ----
 @startuml
 autonumber
