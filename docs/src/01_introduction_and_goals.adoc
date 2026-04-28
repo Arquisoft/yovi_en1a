@@ -15,13 +15,13 @@ must be in the final version of the application:
 | ID | Description
 
 | FR-01
-| The system shall allow users to register and authenticate (login/logout) to manage their personal profiles.
+| The system must allow users to register and authenticate (login/logout) to manage their personal profiles.
 
 | FR-02
-| The system shall maintain a persistent history of matches played by each registered user.
+| The system must maintain a persistent history of matches played by each registered user.
 
 | FR-03
-| The system shall provide a dashboard for users to view their statistics, including win/loss ratios and total games played.
+| The system must provide a profile for users to view their statistics, including win/loss ratios and total games played.
 |===
 
 ==== Gameplay (Web Frontend)

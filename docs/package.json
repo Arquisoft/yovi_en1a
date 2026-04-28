@@ -1,12 +1,14 @@
 {
   "name": "docs",
   "version": "1.0.0",
- "scripts": {
-  "build": "shx rm -rf build && C:\\Ruby34-x64\\bin\\asciidoctor.bat -D build -a imagesdir=./images -r asciidoctor-diagram index.adoc && shx cp -R images build",
-  "deploy": "gh-pages -d build"
-},
+  "scripts": {
+    "build": "asciidoctor -D build -a imagesdir=./images -a imagesoutdir=./images -r asciidoctor-diagram index.adoc && shx cp -R images build/",
+    "deploy": "gh-pages -d build"
+  },
   "dependencies": {
+    "asciidoctor-plantuml": "^1.5.0",
     "gh-pages": "^6.3.0",
+    "plantuml": "^0.0.2",
     "shx": "^0.4.0"
   }
 }

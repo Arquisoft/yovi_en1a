@@ -1,7 +1,7 @@
 [[section-context-and-scope]]
 == Context and Scope
 
-The YOVI_0 system (Game Y at UniOvi) is a distributed gaming platform designed to provide a competitive environment for both human players and automated agents. The system's primary boundary lies between the user-facing web interface and the high-performance game logic engine implemented in Rust.
+Our Game Y system is a distributed gaming platform designed to provide a competitive environment for both human players and automated agents. The system's primary boundary lies between the user-facing web interface and the high-performance game logic engine implemented in Rust.
 
 === Business Context
 

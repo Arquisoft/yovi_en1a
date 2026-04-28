@@ -205,19 +205,19 @@ public class YoviEn1aLoadTest extends Simulation {
     {
 
         setUp(
-            scn.injectOpen(
-                rampUsersPerSec(0).to(0.5).during(Duration.ofSeconds(10)).randomized(),
-                constantUsersPerSec(0.5).during(Duration.ofSeconds(10)).randomized(),
+                scn.injectOpen(
+                        rampUsersPerSec(0).to(0.5).during(Duration.ofSeconds(10)).randomized(),
+                        constantUsersPerSec(0.5).during(Duration.ofSeconds(10)).randomized(),
 
-                rampUsersPerSec(0.5).to(1).during(Duration.ofSeconds(10)).randomized(),
-                constantUsersPerSec(1).during(Duration.ofSeconds(10)).randomized(),
+                        rampUsersPerSec(0.5).to(1).during(Duration.ofSeconds(10)).randomized(),
+                        constantUsersPerSec(1).during(Duration.ofSeconds(10)).randomized(),
 
-                rampUsersPerSec(1).to(2).during(Duration.ofSeconds(15)).randomized(),
-                constantUsersPerSec(2).during(Duration.ofSeconds(15)).randomized(),
+                        rampUsersPerSec(1).to(2).during(Duration.ofSeconds(15)).randomized(),
+                        constantUsersPerSec(2).during(Duration.ofSeconds(15)).randomized(),
 
-                rampUsersPerSec(2).to(5).during(Duration.ofSeconds(30)).randomized(),
-                constantUsersPerSec(5).during(Duration.ofSeconds(30)).randomized()
-            )
+                        rampUsersPerSec(2).to(5).during(Duration.ofSeconds(30)).randomized(),
+                        constantUsersPerSec(5).during(Duration.ofSeconds(30)).randomized()
+                )
         )
         .protocols(httpProtocol)
         .assertions(
