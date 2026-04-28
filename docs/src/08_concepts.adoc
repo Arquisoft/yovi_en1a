@@ -7,11 +7,13 @@ ifndef::imagesdir[:imagesdir: ../images]
 
 ==== Game Y and Hexagonal Grids
 The core domain of the application revolves around the "Classic Version" of Game Y. The game environment is based on variable-sized hexagonal boards. The system supports multiple coordinate representations for these grids:
+
 * **Barycentric Coordinates (x,y,z):** Used to represent three-dimensional positioning in a 2D hexagonal space.
 * **Index-based Coordinates (0...n):** Linear representation for simpler indexing in arrays or matrices.
 
 ==== YEN Notation
-All game states are uniformly formatted using the **YEN Notation**, which dictates how board sizes, player turns, and piece positions are serialized. This ensures consistent state representation across the Frontend, the Logic Engine, and external bots.
+All game states are uniformly formatted using the
+**YEN Notation**, which dictates how board sizes, player turns, and piece positions are serialized. This ensures consistent state representation across the Frontend, the Logic Engine, and external bots.
 
 A YEN string encodes the complete game state in a compact, human-readable format. For example, on a 3×3 board where Blue has played two cells and Red has played one:
 
@@ -24,203 +26,63 @@ B/BR/.R.
 * `BR/` — Row 1 contains a Blue piece, a Red piece, then the row separator.
 * `.R.` — Row 2 contains an empty cell, a Red piece, and another empty cell.
 
-=== Architecture and Design Patterns
-
-==== Microservices Architecture
-The concrete service breakdown (Webapp, User Service, Logic Engine) is described in Sections 4 and 5. The cross-cutting design rules that govern the microservice decomposition are:
-
-* **Independent Deployability:** Each service is packaged as its own Docker image with an isolated build pipeline. A new release of one service never requires redeploying another.
-* **Strict Network Boundaries:** Services communicate exclusively over defined HTTP endpoints. There are no shared databases, in-process calls, or file-system dependencies between services.
-* **Single Responsibility:** Each service owns exactly one concern — the Logic Engine owns game rules, the User Service owns identity and persistence, and the Webapp owns presentation. Business logic must not leak across service boundaries.
-
 ==== Stateless Processing
 The Logic Engine is intentionally stateless. Current game states (in JSON format) are passed within each request, allowing the engine to calculate AI behavior or determine win/loss states without storing active match sessions in memory.
+
+==== State Management and Rendering
+In the Frontend Webapp, complex match states and user actions are managed reactively.
+
+* **State Trees:** React manages the active game properties (board layout, opponent type, current turn) locally to provide instant visual feedback without blocking for server responses during non-validating actions.
+* **Hexagonal UI Representation:** The UI seamlessly maps the engine-provided mathematical coordinate arrays (Barycentric or Index-based) onto visual hexagonal grids for intuitive gameplay.
+
+=== Security Concepts
+
+==== Authentication and Password Storage
+User identity is managed entirely by the User Service. On registration, passwords are hashed using **bcrypt** (cost factor 10) before being persisted to MongoDB. Plaintext passwords are never stored. On login, `bcrypt.compare` verifies the submitted password against the stored hash.
+
+==== JWT-based Session Management
+Upon successful login, the User Service issues a signed **JSON Web Token (JWT)**. The React Webapp stores the token in the browser's Session Storage and attaches it as an `Authorization: Bearer <token>` header on every subsequent API request. The User Service validates the token on all protected endpoints. The `JWT_SECRET` is managed via `.env` files locally and GitHub Secrets in production, ensuring it is never committed to source control.
+
+==== CORS (Cross-Origin Resource Sharing)
+Because the Webapp (Port 80) communicates with backend services on different ports (3000, 3001, 4000), CORS is configured explicitly on each service:
+
+* **User Service (Node.js):** Enforces a strict origin whitelist via the `cors` middleware. Allowed origins are injected through the `ALLOWED_ORIGINS` environment variable. Requests from unlisted origins are rejected.
+* **GameY API (`gameyapi`):** Currently uses a permissive CORS policy to facilitate external bot integration during development. This is identified as a known risk (see Section 11).
 
 === Communication and Integration Concepts
 
 ==== RESTful JSON APIs
 Communication both internally (between subsystems) and externally (third-party bots) relies fully on HTTP REST APIs utilizing JSON.
+
 * **Internal APIs:** The User Service and Logic Engine communicate with the Webapp using predefined JSON schemas strictly validating YEN notation.
 * **External Bot Interface:** The system provides dedicated endpoints (e.g., a `play` method) for third-party bots to interact with the engine.
 
-==== Asynchronous Push Communication (WebSockets)
-For real-time interactions, particularly in the "Human vs. Human" multiplayer scenario, the architecture envisions asynchronous push communication. 
-Instead of relying on inefficient client-side polling, the Node.js User Service will actively push game state updates (e.g., opponent moves) directly to the connected React clients via WebSockets.
-* **Current State:** Asynchronous push communication is planned but not yet implemented. The current system relies exclusively on RESTapi calls. 
-* **Future Updates:** Once WebSockets (e.g., via Socket.IO) are integrated, this section will be expanded with the specific event structures and network flow diagrams.
-
-[plantuml, "api-communication-flow", png]
-----
-@startuml
-actor User
-participant "Webapp\n(TypeScript/React)" as WebApp
-participant "User Service\n(Node.js)" as Node
-participant "Logic Engine\n(Rust)" as Rust
-participant "GameY API\n(Node.js)" as API
-
-User -> WebApp : Clicks "Play Turn"
-activate WebApp
-
-WebApp -> Node : POST /api/stats (Update player stats)
-Node --> WebApp : 200 OK
-
-WebApp -> API : POST /api/play (Send current board state in YEN format)
-activate API
-API -> Rust : POST /play (forward to Engine)
-activate Rust
-Rust -> Rust : Validate Win/Loss
-Rust -> Rust : Calculate AI Move
-Rust --> API : 200 OK + JSON (New Board State in YEN format)
-deactivate Rust
-API --> WebApp : 200 OK + JSON
-deactivate API
-
-WebApp -> User : Renders updated board state
-deactivate WebApp
-@enduml
-----
-
-=== Data Persistence Concepts
-
-==== Data Mapping Strategy
-The technology choice (MongoDB) is documented in Sections 4 and 7. The cross-cutting design rule for persistence is how domain relationships are mapped to documents:
-
-* **User Documents** are stored as flat, self-contained documents in the `users` collection (fields: `username`, `email`, `password` hash, `createdAt`). No embedding of child objects is used at this stage.
-* **Match History (planned):** Match results will be stored as separate documents in a `matches` collection, **referencing** the participating users by their `_id` rather than embedding the full user object. This avoids data duplication and keeps user updates (e.g., profile changes) consistent without cascading writes.
-* **Design Rule — Referencing over Embedding:** Whenever two entities have independent lifecycles (e.g., a user exists regardless of any single match), the system favours **document references** (`ObjectId` foreign keys) over nested embedding. Embedding is reserved for data that is never queried or updated independently (e.g., a list of coordinates within a single match snapshot).
-
-=== Security Concepts
-
-==== User Authentication and Password Storage
-* **Registration:** Players register with a username, email, and password. The User Service hashes all passwords using **bcrypt** (cost factor 10) before persisting them to MongoDB. Plaintext passwords are never stored.
-* **Login:** Upon login the User Service retrieves the stored hash and verifies it against the submitted password via `bcrypt.compare`.
-
-==== Session Management
-* **Current State:** Token-based session management (e.g., JWTs) is not yet implemented. The runtime scenario in Section 6.4 already envisions a JWT-based flow (generate token on login → store in Session Storage → attach to subsequent requests). This will be implemented in a future iteration and this section will be updated accordingly.
-* **Planned Approach:** The User Service will issue a signed **JSON Web Token (JWT)** upon successful login. The React Webapp will store the token in the browser's Session Storage and attach it as an `Authorization: Bearer <token>` header on every API request. The User Service will validate the token on protected endpoints.
-
-==== Configuration and Secrets Management
-Service configuration (ports, upstream URLs, database connection strings) is managed through **environment variables** that are injected via `docker-compose.yml`.
-
-|===
-| Variable | Service | Example Value
-
-| `MONGODB_URI`
-| User Service
-| `mongodb://mongodb:27017/yovi`
-
-| `GAMEY_RUST_URL`
-| GameY API
-| `http://gamey:4000`
-
-| `VITE_API_URL`
-| Webapp (build-time)
-| `http://localhost:3000`
-
-| `ALLOWED_ORIGINS`
-| User Service
-| `http://localhost,http://webapp`
-|===
-
-[WARNING]
-====
-The current setup uses plain environment variables in `docker-compose.yml`, which is sufficient for development but **not production-ready** for sensitive values (e.g., database credentials). Migration to Docker Secrets or a vault-based solution is planned for the production hardening phase. This section will be updated once the approach is finalized.
-====
-
-==== Data Scoping and Privacy
-* **Data Privacy:** Requests are secured to ensure players can only access and modify their own personal profiles and match histories.
-
-==== CORS (Cross-Origin Resource Sharing)
-Because the Webapp (Port 80) communicates with backend APIs on different ports (3000, 3001, 4000), CORS must be configured explicitly.
-
-* **User Service (Node.js):** Implements a strict **origin whitelist** using the `cors` middleware. Allowed origins are configured via the `ALLOWED_ORIGINS` environment variable (comma-separated). By default, only `localhost` origins are permitted. Requests from unlisted origins are rejected with an error.
-* **GameY API (`gameyapi`):** Currently uses a permissive CORS policy (`cors()` with no origin restriction) to facilitate external bot integration. This will be tightened before production deployment.
-
-==== Rate Limiting
-[NOTE]
-====
-Rate limiting is not yet implemented. Since the system exposes a public API for external bots (see Section 3), it is susceptible to abuse or accidental overload. Rate limiting middleware (e.g., `express-rate-limit` on the Node.js services or request throttling via an Nginx reverse proxy) is planned. This section will be updated once the strategy is finalized.
-====
-
-=== User Experience (UX) Concepts
-
-==== State Management and Rendering
-In the Frontend Webapp, complex match states and user actions are managed reactively. 
-* **State Trees:** React manages the active game properties (board layout, opponent type, current turn) locally to provide instant visual feedback without blocking for server responses during non-validating actions.
-* **Hexagonal UI Representation:** The UI seamlessly maps the engine-provided mathematical coordinate arrays (Barycentric or Index-based) onto visual hexagonal grids for intuitive gameplay.
-
-=== Quality and Reliability Concepts
-
-==== Logging Strategy
-All services emit logs exclusively to **stdout/stderr**, which allows the Docker container runtime to collect and forward them transparently. No dedicated log-aggregation sidecar is required for the current setup.
-
-* **Rust Logic Engine (`gamey`):** Uses the https://docs.rs/tracing[`tracing`] crate with `tracing_subscriber`. This produces structured, level-based log output (`INFO`, `DEBUG`, `WARN`) that is machine-readable and can be forwarded to an aggregator (e.g., Loki/Grafana) in a future step. Fatal startup errors are written to `stderr` via `eprintln!`.
-
-* **Node.js Services (`users`, `gameyapi`):** Use the built-in `console.log` / `console.warn` / `console.error` API. Output is written directly to the process stdout/stderr, which Docker captures. Log lines are prefixed with context tags (e.g., `[CREATE]`, `[MOVE]`, `[BOT]`) to aid filtering.
-
-* **React Frontend (`webapp`):** Browser `console.*` calls are available during development. No log forwarding to the backend occurs from the client.
-
-[NOTE]
-====
-Centralized log aggregation (e.g., shipping Docker logs to a Loki stack alongside the existing Prometheus/Grafana setup) is planned for a later iteration.
-====
-
-==== Error Handling and Cross-Service Error Propagation
-The system uses a layered error propagation model based on standard HTTP semantics. The example described in Scenario 5 (Section 6.5) illustrates a concrete instance of this pattern.
-
-[plantuml, "error-propagation", png]
-----
-@startuml
-autonumber
-actor "Player" as User
-participant "Webapp\n(React)" as UI
-participant "GameY API\n(Node.js)" as Node
-participant "Logic Engine\n(Rust)" as Rust
-
-User -> UI : Submits move
-UI -> Node : POST /move (YEN payload)
-activate Node
-
-Node -> Rust : POST /play (forward YEN)
-activate Rust
-Rust -> Rust : Validate rules
-Rust --> Node : 400 Bad Request\n{ "error": "CELL_ALREADY_OCCUPIED" }
-deactivate Rust
-
-Node -> Node : Log error (console.error)\nMap to client-safe response
-Node --> UI : 400 Bad Request\n{ "message": "Invalid move" }
-deactivate Node
-
-UI -> UI : Display warning toast\nRevert optimistic UI state
-UI -> User : "Invalid move!"
-@enduml
-----
-
-The concrete error handling layers are:
-
-* **Rust Logic Engine:** Returns precise HTTP error codes (`400 Bad Request` for invalid YEN/rule violations, `500 Internal Server Error` for unexpected failures). The JSON body contains a machine-readable `error` field.
-* **Node.js Middleware (GameY API / User Service):** Catches errors from upstream Rust calls, logs them via `console.error`, and maps them to sanitized, client-facing JSON responses. Internal error details (stack traces, Rust error messages) are not forwarded to the browser.
-* **React Frontend:** Reads HTTP status codes from API responses. Non-2xx responses trigger UI-level feedback (e.g., warning toasts, reverting optimistic state updates). The Webapp never crashes on expected error payloads.
-
 ==== Observability and Monitoring
 To satisfy availability evaluation metrics, the system incorporates rigorous operational monitoring:
+
 * **Metrics Ingestion:** Both the Node.js API and the Rust Gamey Engine emit structured operational metrics.
 * **Visualization:** **Prometheus** scrapes system health, latency, and throughput metrics, which are then aggregated and visualized using **Grafana** dashboards.
 
 ==== Testing and Quality Assurance
 System reliability is continuously verified through multiple layers of testing:
+
 * **Multi-Layer Testing:** The system utilizes unit tests for individual algorithmic checks (especially Rust logic), integration tests for API endpoints, and End-to-End (E2E) UI tests for critical user journeys.
 * **Static Analysis:** Code quality and security are strictly evaluated via **SonarCloud** against defined Quality Gates prior to any merge.
 
 ==== Continuous Integration and Deployment (CI/CD)
 The development pipeline is automated natively with GitHub Actions:
+
 * **CI Pipelines:** Push events and pull requests trigger automated test suites and SonarCloud evaluations.
 * **CD Pipelines:** Upon a successful release merge, Docker images are automatically built from each service's `Dockerfile` and orchestrated on the production server via `docker-compose` (see Sections 2 and 7 for the containerization details).
 
 === Development and Operational Concepts
 
+==== Internationalization (i18n)
+The React Webapp supports multiple languages via **react-i18next**. All user-facing strings are extracted into locale-specific JSON files, and components reference translation keys rather than hardcoded text. English acts as the fallback locale when a translation key is missing. This decouples the translation process from the codebase, allowing locale files to be updated independently of the application logic.
+
 ==== Documentation Strategy
 The architecture documentation follows a strict **Docs-as-Code** approach:
+
 * **AsciiDoc & Arc42:** All architectural documentation is written in **AsciiDoc**, structured entirely according to the **arc42** template. This approach ensures technical documentation lives alongside the source code in version control.
 * **PlantUML:** As dictated by our conventions, all architectural diagrams and models must comply with UML standards and are rendered programmatically using **PlantUML**.
 
