@@ -98,7 +98,7 @@ We use Gatling (bundle, version 3.10.5) to implement load tests over our deploye
 
 In order to record the requests, we used the recorder script. Using Mozilla Firefox and configuring a proxy for localhost's port 8000, we record interactions with the app (signup, moves in board,) and they are recorded in request file in resources. Simulation file YoviEn1aLoadTest.java is generated as well.
 
-We modify the simulation for managing 100 randomized users interacting with the application at once. After executing, we get 0 KO messages and this results, showing a good management of a bigger user quantity:
+We modify the simulation for managing 100-150 randomized users interacting with the application at once. Approximately, we send 330 requests to the system at once, at it can manage  it. After executing, we get 0 KO messages and this results, showing a good management of a bigger user quantity:
 
 image::load-tests-graphs.png[]
 

@@ -216,15 +216,7 @@ public class YoviEn1aLoadTest extends Simulation {
                         constantUsersPerSec(2).during(Duration.ofSeconds(15)).randomized(),
 
                         rampUsersPerSec(2).to(5).during(Duration.ofSeconds(30)).randomized(),
-                        constantUsersPerSec(5).during(Duration.ofSeconds(30)).randomized(),
-
-                        rampUsersPerSec(5).to(10).during(Duration.ofSeconds(30)).randomized(),
-                        constantUsersPerSec(10).during(Duration.ofSeconds(30)).randomized(),
-
-                        rampUsersPerSec(10).to(15).during(Duration.ofSeconds(30)).randomized(),
-                        constantUsersPerSec(15).during(Duration.ofSeconds(20)).randomized(),
-
-                        rampUsersPerSec(15).to(0).during(Duration.ofSeconds(20)).randomized()
+                        constantUsersPerSec(5).during(Duration.ofSeconds(30)).randomized()
                 )
         )
         .protocols(httpProtocol)
