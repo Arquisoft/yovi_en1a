@@ -1,114 +1,164 @@
 [[section-runtime-view]]
 == Runtime View
 
-=== Scenario 1: Human Player vs. AI (Move Execution)
+This section describes the dynamic behavior of GAME Y. It illustrates how the decomposed building blocks cooperate to fulfill key user scenarios based on the implemented REST endpoints.
 
-*Description:* This scenario illustrates the core game loop when a human player interacts with the frontend to play against the system's AI. It highlights the transformation of UI interactions into the standardized YEN notation and the delegation of logic to the high-performance Rust engine.
+=== Scenario 1: User Authentication (Login & Registration)
 
-*Notable Aspects:* The Webapp acts as a pure presentation layer. Move validations are routed through the `GameY API (Node.js)`, which proxies the request to the `GameY Engine (Rust)`. All coordinate conversions and rule logic are strictly handled by the Rust engine.
+*Description:* The entry point where a user creates an account or authenticates via the `RegisterForm`.
+*Trigger:* User submits credentials. The component determines the endpoint based on the `mode` state ('login' or 'register').
+*Endpoint(s):* `POST :3000/createuser` or `POST :3000/login`.
 
-[plantuml, target="human-vs-ai-move", format="png"]
+[plantuml, target="auth-runtime", format="png"]
 ----
 @startuml
-actor "Human Player" as Player
-participant "Webapp\n(React :80)" as Webapp
-participant "GameY API\n(Node.js :3001)" as API
-participant "GameY Engine\n(Rust :4000)" as Engine
-
-Player -> Webapp : Click cell (index)
-Webapp -> API : POST /play/{gameId}/move\n{ player, x, y }
-API -> Engine : POST /v1/ybot/choose/{bot}\n{ YEN payload }
-Engine --> API : { coords }
-API --> Webapp : 200 OK — GameSession\n{ moves, status, currentPlayer }
-Webapp --> Player : Board updated
-@enduml
-----
-===  Scenario 2: Human Player vs. Human Player (Local Hot-Seat Execution)
-
-*Description:* This diagram illustrates the turn flow between two human players playing on the same device (shared screen). It demonstrates how a move made by one player is validated and saved in the API's memory, seamlessly initiating the next player's turn on the same client.
-
-*Notable Aspects:* Unlike the "Human vs. AI" scenario, the GameY Engine (Rust) is not invoked here, as the Node.js API handles internal win-condition checks (Union-Find). The GameY API acts as the central state manager using an in-memory session. It updates the board state internally and returns the 200 OK response to the shared client without hitting the database or requiring WebSocket infrastructure.
-
-[plantuml, target="human-vs-human", format="png"]
-----
-@startuml
-actor "Active Player\n(P1 or P2)" as Player
-participant "Webapp\n(React :80)" as Webapp
-participant "GameY API\n(Node.js :3001)" as API
-
-Player -> Webapp : Click cell (index)
-Webapp -> API : POST /play/{gameId}/move\n{ player, x, y }
-API -> API : updateWinStatus()\n[Union-Find]
-API --> Webapp : 200 OK — GameSession\n{ currentPlayer, status }
-Webapp --> Player : Board updated / turn switched
-@enduml
-----
-
-=== Scenario 3: Match Conclusion and Statistics Persistance
-
-*Description:* This scenario demonstrates the data flow when a game concludes (either by a win, loss, or draw).It shows the interaction between the Frontend and the GameY API, which detects the win and persists the result directly to MongoDB.
-
-*Notable Aspects:*Win detection is handled entirely within the GameY API via the updateWinStatus() function (Union-Find in JavaScript), without invoking the Rust engine. Upon detecting a winner, the GameY API writes the result directly to MongoDB before returning the final game state to the Webapp. 
-
-[plantuml, target="match-conclusion", format="png"]
-----
-@startuml
-actor "Player" as Player
-participant "Webapp\n(React :80)" as Webapp
-participant "GameY API\n(Node.js :3001)" as API
+autonumber
+actor "Player" as User
+participant "Webapp\n(RegisterForm.tsx)" as UI
+participant "User Service\n(Port 3000)" as UserSvc
 database "MongoDB" as DB
 
-Player -> Webapp : Click winning cell
-Webapp -> API : POST /play/{gameId}/move\n{ player, x, y }
-API -> API : updateWinStatus() → winner found
-API -> DB : insertOne(games collection)
-API --> Webapp : 200 OK — GameSession\n{ status:'finished', winner, winningPath }
-Webapp --> Player : Show winner popup
+User -> UI : Enters Credentials
+UI -> UserSvc : POST /login OR /createuser
+activate UserSvc
+
+UserSvc -> DB : findOne() OR insertOne()
+activate DB
+DB --> UserSvc : User Document / Success
+deactivate DB
+
+UserSvc -> UserSvc : bcrypt.compare() (if login)\nSign JWT (userId, username)
+
+UserSvc --> UI : 200 OK { token, username, userId }
+deactivate UserSvc
+
+UI -> UI : localStorage.setItem('token', data.token)
+UI -> User : Redirect to Lobby (?view=lobby)
 @enduml
 ----
 
-===  Scenario 4: User Authentication and Login Flow
+=== Scenario 2: Human Player vs. Bot (Game Loop)
 
-*Description:* This scenario illustrates the security and session management architecture of the system. It details how the system handles a user login request, verifies credentials, and establishes a secure session for the player.
+*Description:* Orchestrating a move in "Human vs Bot" (hvb) mode.
+*Trigger:* Player clicks a cell on the `GameBoard`.
+*Endpoint(s):* `POST :3001/play/:gameId/move` and internal proxy to `POST :4000/v1/ybot/choose/:bot_id`.
 
-*Notable Aspects:* The `GameY Engine` is bypassed entirely for this process, as it is strictly dedicated to game logic. This interaction occurs purely between the Webapp (Frontend), the `User Service` (Node.js), and the Database (MongoDB). It demonstrates a clean separation of concerns where the User Service handles all identity and access management.
-
-[plantuml, target="auth-flow", format="png"]
+[plantuml, target="game-loop-runtime", format="png"]
 ----
 @startuml
-actor "User" as User
-participant "Webapp\n(React :80)" as Webapp
-participant "User Service\n(Node.js :3000)" as Users
+autonumber
+actor "Human Player" as User
+participant "Webapp\n(GameBoard.tsx)" as UI
+participant "Game API\n(Port 3001)" as API
+participant "Logic Engine\n(Port 4000)" as Rust
+
+User -> UI : Clicks Cell (x, y)
+UI -> API : POST /play/:gameId/move\n{ player, x, y }
+activate API
+
+API -> API : updateWinStatus(s)
+API -> Rust : POST /v1/ybot/choose/gamer_bot\n(YEN Layout JSON)
+activate Rust
+
+Rust -> Rust : Calculate AI Move
+Rust --> API : 200 OK { coords: {x, y, z} }
+deactivate Rust
+
+API -> API : s.moves.push(botCoords)\nupdateWinStatus(s)
+API --> UI : 200 OK (Updated SessionView)
+deactivate API
+
+UI -> User : Render updated grid
+@enduml
+----
+
+=== Scenario 3: Exception Handling (Invalid Move)
+
+*Description:* Handling illegal moves (e.g., clicking an occupied cell or playing out of turn).
+*Trigger:* User attempts an invalid action.
+*Endpoint(s):* `POST :3001/play/:gameId/move`.
+
+[plantuml, target="error-handling-runtime", format="png"]
+----
+@startuml
+autonumber
+actor "Player" as User
+participant "Webapp" as UI
+participant "Game API" as API
+
+User -> UI : Clicks occupied cell
+UI -> API : POST /play/:gameId/move
+activate API
+
+API -> API : Check s.moves.some(...)
+API --> UI : 400 Bad Request\n{ error: "Invalid move" }
+deactivate API
+
+UI -> UI : errorState = t('err_server')
+UI -> User : Show Error Feedback
+@enduml
+----
+
+=== Scenario 4: Match Conclusion and Statistics Persistence
+
+*Description:* Saving game results to the permanent match history upon completion.
+*Trigger:* `updateWinStatus(s)` sets state to 'finished'.
+*Endpoint(s):* Internal call to `saveGameResult(session)`.
+
+[plantuml, target="persistence-runtime", format="png"]
+----
+@startuml
+autonumber
+actor "Player" as User
+participant "Game API" as API
 database "MongoDB" as DB
 
-User -> Webapp : Submit login form\n{ usernameOrEmail, password }
-Webapp -> Users : POST /login
-Users -> DB : findOne({ username or email })
-DB --> Users : User document
-Users -> Users : bcrypt.compare(password, hash)
-Users --> Webapp : 200 OK — { token, username }
-Webapp -> Webapp : localStorage.setItem('token')
-Webapp --> User : Navigate to Lobby
+User -> API : Final Winning Move
+activate API
+
+API -> API : updateWinStatus(s) == 'finished'
+API -> DB : db.collection('games').insertOne({...})
+activate DB
+DB --> API : Acknowledge
+deactivate DB
+
+API --> User : 200 OK { status: 'finished', winner }
+deactivate API
+
+Note right of API: Session remains in Map\nuntil manually deleted or rematch.
 @enduml
 ----
 
-=== Scenario 5: Error Handling - Invalid Move Validation
+=== Scenario 5: Profile & Avatar Management
 
-*Description:* This exception scenario demonstrates system resilience. It shows what happens when an invalid move (for example, attempting to play on an already occupied coordinate) is submitted by the user. 
+*Description:* Fetching match history and updating user personalization.
+*Trigger:* User navigates to `?view=profile` or selects a new avatar.
+*Endpoint(s):* `GET :3001/profile` and `POST :3001/profile/avatar`.
 
-*Notable Aspects:* The GameY API (Node.js) acts as the first validation layer, immediately rejecting moves with a wrong player turn or an already-occupied cell before forwarding anything to the Rust engine. If the move passes this check, the YEN payload is sent to the GameY Engine, which handles deeper rule violations such as malformed board states. The Webapp reverts any optimistic UI update and displays a warning to the user without crashing the game state.
-
-[plantuml, target="invalid-move", format="png"]
+[plantuml, target="profile-runtime", format="png"]
 ----
 @startuml
-actor "Player" as Player
-participant "Webapp\n(React :80)" as Webapp
-participant "GameY API\n(Node.js :3001)" as API
+autonumber
+actor "Player" as User
+participant "Webapp\n(Profile.tsx)" as UI
+participant "Game API\n(Port 3001)" as API
+database "MongoDB" as DB
 
-Player -> Webapp : Click occupied cell
-Webapp -> API : POST /play/{gameId}/move\n{ player, x, y }
-API -> API : Validate move\n(wrong turn or occupied)
-API --> Webapp : 400 — { error: "Invalid move" }
-Webapp --> Player : Revert board / show warning
+User -> UI : Clicks "Profile"
+UI -> API : GET /profile (Auth: Bearer token)
+activate API
+
+API -> DB : games.find({ userId }).sort({ finishedAt: -1 })
+API -> DB : users.findOne({ _id: userId })
+DB --> API : Data Sets
+API --> UI : 200 OK { winRate, matchHistory, avatarUrl }
+deactivate API
+
+User -> UI : Selects New Avatar
+UI -> API : POST /profile/avatar\n{ avatarUrl: "filename" }
+activate API
+API -> DB : users.updateOne({ _id: userId }, { $set: { avatarUrl } })
+API --> UI : 200 OK { success: true }
+deactivate API
 @enduml
 ----
