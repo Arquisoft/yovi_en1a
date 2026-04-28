@@ -437,13 +437,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <body class="article">
 <div id="header">
 <h1><span class="image"><img src="./images/arc42-logo.png" alt="arc42"></span> yovi_en1a</h1>
-<div class="details">
-<span id="revnumber">version 8.2 EN,</span>
-<span id="revdate">January 2023</span>
-<br><span id="revremark">(based upon AsciiDoc version)</span>
-</div>
 <div id="toc" class="toc">
-<div id="toctitle">Table of Contents</div>
+<div id="toctitle">table of contents</div>
 <ul class="sectlevel1">
 <li><a href="#section-introduction-and-goals">1. Introduction and Goals</a>
 <ul class="sectlevel2">
@@ -511,7 +506,19 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_development_and_operational_concepts">8.8. Development and Operational Concepts</a></li>
 </ul>
 </li>
-<li><a href="#section-design-decisions">9. Architecture Decisions</a></li>
+<li><a href="#section-design-decisions">9. Architecture Decisions</a>
+<ul class="sectlevel2">
+<li><a href="#_adr_mongodb_as_dbms">9.1. ADR: MongoDB as DBMS</a></li>
+<li><a href="#_adr_microsoft_azure_as_vm_host">9.2. ADR: Microsoft Azure as VM Host</a></li>
+<li><a href="#_adr_jwt_authentication">9.3. ADR: JWT Authentication</a></li>
+<li><a href="#_adr_gatling_as_load_testing_tool">9.4. ADR: Gatling as Load Testing Tool</a></li>
+<li><a href="#_adr_behavior_and_end_to_end_testing_with_cucumber">9.5. ADR: Behavior and End-to-End Testing with Cucumber</a></li>
+<li><a href="#_adr_playwright_for_browser_automation_and_ui_testing">9.6. ADR: Playwright for Browser Automation and UI Testing</a></li>
+<li><a href="#_adr_bcrypt_as_password_hashing_library">9.7. ADR: bcrypt as Password Hashing Library</a></li>
+<li><a href="#_adr_i18n_for_internationalization">9.8. ADR: i18n for Internationalization</a></li>
+<li><a href="#_adr_gameyapi_as_node_js_rest_api_service">9.9. ADR: gameyapi as Node.js REST API Service</a></li>
+</ul>
+</li>
 <li><a href="#section-quality-scenarios">10. Quality Requirements</a>
 <ul class="sectlevel2">
 <li><a href="#_quality_tree">10.1. Quality Tree</a></li>
@@ -519,7 +526,15 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </ul>
 </li>
 <li><a href="#section-technical-risks">11. Risks and Technical Debts</a></li>
-<li><a href="#_glossary">12. Glossary</a></li>
+<li><a href="#section-testing">12. Testing</a>
+<ul class="sectlevel2">
+<li><a href="#_unit_and_integration_testing">12.1. Unit and Integration Testing</a></li>
+<li><a href="#_acceptance_testing_e2e">12.2. Acceptance Testing (E2E)</a></li>
+<li><a href="#_usability_testing">12.3. Usability Testing</a></li>
+<li><a href="#_load_testing">12.4. Load Testing</a></li>
+</ul>
+</li>
+<li><a href="#_glossary">13. Glossary</a></li>
 </ul>
 </div>
 </div>
@@ -1460,7 +1475,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <h3 id="_level_2_user_service">5.4. Level 2: User Service</h3>
 <div class="imageblock">
 <div class="content">
-<img src="./images/user-service-level3.png" alt="user service level3" width="645" height="918">
+<img src="./images/user-service-level3.png" alt="user service level3" width="645" height="920">
 </div>
 </div>
 <div class="sect3">
@@ -1519,7 +1534,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/human-vs-ai-move.png" alt="human vs ai move" width="928" height="680">
+<img src="./images/human-vs-ai-move.svg" alt="human vs ai move" width="929" height="681">
 </div>
 </div>
 </div>
@@ -2133,51 +2148,115 @@ Instead of relying on inefficient client-side polling, the Node.js User Service 
 <div class="sect1">
 <h2 id="section-design-decisions">9. Architecture Decisions</h2>
 <div class="sectionbody">
-<div class="sidebarblock arc42help">
-<div class="content">
 <div class="paragraph">
-<div class="title">Contents</div>
-<p>Important, expensive, large scale or risky architecture decisions including rationales.
-With "decisions" we mean selecting one alternative based on given criteria.</p>
+<p>This section contains the most important architectural decisions made during the development of the Yovi (Game Y) application. The decisions are documented as lightweight Architecture Decision Records (ADR). Each decision outlines the context, the chosen solution, considered alternatives, and the resulting consequences.</p>
 </div>
+<div class="sect2">
+<h3 id="_adr_mongodb_as_dbms">9.1. ADR: MongoDB as DBMS</h3>
 <div class="paragraph">
-<p>Please use your judgement to decide whether an architectural decision should be documented
-here in this central section or whether you better document it locally
-(e.g. within the white box template of one building block).</p>
+<p>We need a database for the game backend to store player data, game sessions, and other game-related entities. The data model is expected to evolve during development.</p>
 </div>
 <div class="paragraph">
-<p>Avoid redundancy.
-Refer to section 4, where you already captured the most important decisions of your architecture.</p>
+<p>We decided to use MongoDB as our primary Database Management System (DBMS). Unlike relational databases such as MySQL, MongoDB uses a document model based on BSON/JSON-like structures. It integrates well with web applications and is suited for self-contained entities like players and game sessions.</p>
 </div>
 <div class="paragraph">
-<div class="title">Motivation</div>
-<p>Stakeholders of your system should be able to comprehend and retrace your decisions.</p>
+<p>The flexible schema of MongoDB makes it easier to adapt the data model and acts as a natural fit for our JSON-based web backends. The primary alternative, MySQL, was considered due to the team&#8217;s familiarity with it, but MongoDB&#8217;s schema flexibility was deemed more important. As a consequence, the team requires some time to learn MongoDB, and the system is less suited for complex relational queries compared to SQL databases.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_adr_microsoft_azure_as_vm_host">9.2. ADR: Microsoft Azure as VM Host</h3>
+<div class="paragraph">
+<p>The project requires a reliable and scalable environment to host the application and its associated services, primarily our Docker containers and Node.js instances. The chosen cloud provider needs to offer robust Virtual Machine management, global availability, and integration with DevOps workflows.</p>
 </div>
 <div class="paragraph">
-<div class="title">Form</div>
-<p>Various options:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>ADR (<a href="https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions">Documenting Architecture Decisions</a>) for every important decision</p>
-</li>
-<li>
-<p>List or table, ordered by importance and consequences or:</p>
-</li>
-<li>
-<p>more detailed in form of separate sections per decision</p>
-</li>
-</ul>
+<p>We selected Microsoft Azure (Azure Virtual Machines) to host our infrastructure. Azure provides seamless integration with GitHub Actions for our CI/CD pipelines and offers "Azure for Students" credits, which fits the constraints of our academic project. It also provides a web portal for monitoring VM health.</p>
 </div>
 <div class="paragraph">
-<div class="title">Further Information</div>
-<p>See <a href="https://docs.arc42.org/section-9/">Architecture Decisions</a> in the arc42 documentation.
-There you will find links and examples about ADR.</p>
+<p>While alternatives like AWS (Amazon Web Services) and Google Cloud Platform (GCP) are prominent in the cloud landscape, standardizing on Azure simplifies our deployment pipeline without introducing a steeper learning curve regarding billing or disconnecting us from existing academic subscriptions. Using Azure still requires us to monitor credit usage and accept specific Azure CLI tools.</p>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_adr_jwt_authentication">9.3. ADR: JWT Authentication</h3>
+<div class="paragraph">
+<p>The application uses a microservices architecture (<code>users-service</code> and <code>gameyapi</code>). We need a secure, stateless method to share user identity across these boundaries without querying a central database for session validation on every API call.</p>
+</div>
+<div class="paragraph">
+<p>We chose JSON Web Tokens (JWT) for authentication. Upon a successful login, the <code>users-service</code> generates a signed token containing the user&#8217;s ID and username. Secret management uses <code>.env</code> files locally and GitHub Secrets in production to protect the <code>JWT_SECRET</code>. Consumer services like <code>gameyapi</code> verify the token locally using this shared secret.</p>
+</div>
+<div class="paragraph">
+<p>Session-based authentication was discarded because it requires centralized stores like Redis, which increases latency. Opaque tokens were bypassed because they require resource servers to constantly contact the authentication service. JWTs improve performance through localized verification and allow horizontal scalability. However, this introduces security risks if the secret is compromised, and prevents instantly revoking specific active sessions.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_adr_gatling_as_load_testing_tool">9.4. ADR: Gatling as Load Testing Tool</h3>
+<div class="paragraph">
+<p>The game services must handle concurrent players without performance degradation. We require load tests that simulate realistic user flows crossing multiple microservices.</p>
+</div>
+<div class="paragraph">
+<p>We selected Gatling for load testing. Gatling simulations are written in a Scala/Java Domain-Specific Language (DSL) and execute against our staging environment during CI pipelines. Pipelines fail automatically if p95 response times or error rates exceed agreed thresholds. Gatling generates HTML reports after execution.</p>
+</div>
+<div class="paragraph">
+<p>While other tools like JMeter use an XML-heavy format that is difficult to version-control, and options like k6 do not leverage our team&#8217;s existing JVM expertise, choosing Gatling ensures simulations live directly in version control and robustly handle stateful user flows. The primary downside is the needed Scala ramp-up time for developers lacking JVM experience.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_adr_behavior_and_end_to_end_testing_with_cucumber">9.5. ADR: Behavior and End-to-End Testing with Cucumber</h3>
+<div class="paragraph">
+<p>To validate that backend and API logics execute according to defined business rules, we required a testing framework capable of matching behavioral specifications to executable code.</p>
+</div>
+<div class="paragraph">
+<p>We integrated Cucumber for our API-level and functional End-To-End (E2E) tests. Cucumber allows us to write tests using natural language formats (Given/When/Then), directly bridging specifications and code assertions. This ensures our APIs behave exactly as requested by stakeholders.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_adr_playwright_for_browser_automation_and_ui_testing">9.6. ADR: Playwright for Browser Automation and UI Testing</h3>
+<div class="paragraph">
+<p>The application provides a web frontend managing registration, authentication, and gameplay. To ensure user interface flows behave correctly across varied browsers, we need an automated browser testing setup to complement our Cucumber scenarios.</p>
+</div>
+<div class="paragraph">
+<p>We implemented Playwright as our frontend UI testing framework. Tests run in TypeScript against Chromium, Firefox, and WebKit to catch browser-specific rendering flaws. In scenarios where login is not tested, the JWT is injected directly to maintain execution speed.</p>
+</div>
+<div class="paragraph">
+<p>Compared to tools like Selenium, which can be slower with excessive setup boilerplate, or Cypress, which is often tightly bound to Chromium and challenges cross-browser testing needs, Playwright effectively centralizes our test suite. It reduces flakiness through built-in auto-waiting mechanisms. The trade-off is the inherent fragility of UI tests and the extended CI execution times required for multiple browser engines.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_adr_bcrypt_as_password_hashing_library">9.7. ADR: bcrypt as Password Hashing Library</h3>
+<div class="paragraph">
+<p>The <code>users-service</code> handles player registration and login. Passwords must be hashed securely to prevent raw credentials from being exposed in case of a database breach.</p>
+</div>
+<div class="paragraph">
+<p>We standardized on bcrypt as the main library to hash and verify passwords. Passwords are hashed with salt and never persist as plain text. Upon login, bcrypt evaluates the injected password against the stored hash before issuing a JWT.</p>
+</div>
+<div class="paragraph">
+<p>Fast hashing algorithms like MD5 or SHA-256 without key stretching were disqualified because they are easily cracked by modern hardware. Argon2 was considered but passed over due to its smaller ecosystem in Node.js compared to bcrypt. While bcrypt&#8217;s scalable workload provides strong security, developers must use its asynchronous methods to prevent blocking the Node.js event loop.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_adr_i18n_for_internationalization">9.8. ADR: i18n for Internationalization</h3>
+<div class="paragraph">
+<p>The game aims to reach players across multiple language regions. Hardcoding strings into React components requires expensive refactoring later.</p>
+</div>
+<div class="paragraph">
+<p>We integrated <code>react-i18next</code> as our internationalization framework early in development. All user-facing strings are extracted into locale-specific JSON files, allowing frontend code to reference descriptive translation keys. English acts as the fallback locale when a token is missing.</p>
+</div>
+<div class="paragraph">
+<p>By avoiding hardcoded layouts, we uncoupled the translation process from the codebase. Translators can manage the JSON files independently. This requires strict discipline from the frontend team to extract new strings immediately and maintain organized key naming conventions.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_adr_gameyapi_as_node_js_rest_api_service">9.9. ADR: gameyapi as Node.js REST API Service</h3>
+<div class="paragraph">
+<p>The application needs a backend orchestration service to manage game sessions, route player moves to the bot engine, and store match results in the database.</p>
+</div>
+<div class="paragraph">
+<p>We built the <code>gameyapi</code> as a Node.js REST API utilizing the Express framework. It communicates via JSON and trusts authenticated JWTs. The service stores ongoing game sessions in memory and only persists completed classic-mode games to MongoDB.</p>
+</div>
+<div class="paragraph">
+<p>Python with FastAPI was considered for its async capabilities, but the team opted for Node.js to reuse JavaScript tooling and knowledge. A pure Rust solution was discarded because routing API traffic is faster to iterate on in JavaScript, while calculation burdens remain delegated to the Rust service. This design capitalizes on Node&#8217;s async I/O strengths, but risks losing active in-memory games if the Node process restarts unexpectedly.</p>
 </div>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -2656,7 +2735,313 @@ All services currently emit logs exclusively to stdout/stderr. While Docker capt
 </div>
 </div>
 <div class="sect1">
-<h2 id="_glossary">12. Glossary</h2>
+<h2 id="section-testing">12. Testing</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section describes the testing strategy, the technologies utilized, and the improvements made to the application based on the results obtained during the development lifecycle.</p>
+</div>
+<div class="sect2">
+<h3 id="_unit_and_integration_testing">12.1. Unit and Integration Testing</h3>
+<div class="paragraph">
+<p>Our testing strategy focuses on verifying the reliability of both the internal logic and the interaction between microservices. We employ a "bottom-up" approach, moving from isolated utility functions to full API endpoint validation.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Technologies:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Vitest:</strong> Used as the modern, high-performance test runner for both the React frontend and the Node.js microservices.</p>
+</li>
+<li>
+<p><strong>React Testing Library &amp; user-event:</strong> Employed to validate UI components by simulating authentic user behavior and ensuring accessibility through ARIA role-based queries.</p>
+</li>
+<li>
+<p><strong>Supertest:</strong> Utilized for black-box testing of REST API endpoints, verifying HTTP response codes and JSON payloads.</p>
+</li>
+<li>
+<p><strong>MongoDB Memory Server:</strong> Used to provide isolated, ephemeral database instances for every test suite, ensuring zero side effects between test runs.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Results and Verification:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Core Game Mechanics:</strong> We maintained high coverage of the hexagonal grid logic, specifically verifying cell state transitions, coordinate mapping, and winning path calculations.</p>
+</li>
+<li>
+<p><strong>Infrastructure Resiliency:</strong> Tests verify the "Health Guard" middleware, ensuring the system can handle database disconnects and execute automatic retries for <code>MongoNotConnectedError</code> without impacting the user experience.</p>
+</li>
+<li>
+<p><strong>Identity &amp; Security:</strong> The authentication lifecycle was rigorously tested, covering <code>bcrypt</code> password hashing, JWT issuance, and strict CORS origin filtering to prevent unauthorized cross-site requests.</p>
+</li>
+<li>
+<p><strong>Personalization &amp; Localization:</strong> Verified the integration of <code>react-i18next</code> for multilingual support and the secure handling of user profile updates (e.g., avatar selection) via authenticated API calls.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>By prioritizing critical paths—such as move validation, session security, and database connectivity—we maintained a code coverage target of <strong>&gt;80%</strong>, ensuring that core functionalities remain stable as the architecture scales.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_acceptance_testing_e2e">12.2. Acceptance Testing (E2E)</h3>
+<div class="paragraph">
+<p>Acceptance testing ensures the application fulfills the business requirements by simulating real user behavior across different environments.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Technologies:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Cucumber.js:</strong> For defining test scenarios in Gherkin syntax, providing a bridge between technical implementation and functional requirements.</p>
+</li>
+<li>
+<p><strong>Playwright:</strong> Chosen for its superior speed and native support for modern web features.</p>
+</li>
+<li>
+<p><strong>Cross-Browser:</strong> Tests are executed across <strong>Chromium, Firefox, and WebKit</strong> to ensure UI consistency.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Results:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>3-Games E2E Macro:</strong> We successfully automated the complete user journey: Registration &#8594; Playing 3 matches on varying difficulties &#8594; Verifying the "WINS!" UI popup &#8594; Validating Profile Statistics updates &#8594; Logout.</p>
+</li>
+<li>
+<p><strong>CI/CD Integration:</strong> Automated checks are now triggered on every Pull Request and prior to each release, ensuring zero regressions in core features.</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_usability_testing">12.3. Usability Testing</h3>
+<div class="paragraph">
+<p>To evaluate if the application is intuitive and identify visual or flow weaknesses, we conducted a moderated usability test with external users.</p>
+</div>
+<div class="sect3">
+<h4 id="_methodology">12.3.1. Methodology</h4>
+<div class="paragraph">
+<p>The test was conducted as an "at-home" experience. Users were given specific tasks without any guidance to observe natural interaction. We utilized the <strong>"Think Aloud"</strong> protocol, where participants narrated their thoughts and frustrations in real-time.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Privacy:</strong> No personal data (names, IDs) was recorded to ensure complete anonymity.</p>
+</li>
+<li>
+<p><strong>Participant Profiles:</strong> A single batch of 5 users was selected with varying ages, genders, and <strong>Computer Knowledge (CK)</strong> on a scale of 0-10.</p>
+</li>
+<li>
+<p><strong>The Ideal Scenario (Benchmark):</strong> Within the batch, one user was assigned a <strong>CK of 10</strong> (Software Student/Professional). This user serves as the <strong>ideal scenario</strong>, representing the best possible interaction time and providing a reference point for the maximum efficiency of the current UI.</p>
+</li>
+<li>
+<p><strong>Tasks Performed:</strong></p>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Register a new account or Log In.</p>
+</li>
+<li>
+<p>Complete a game session on <strong>Medium Difficulty</strong>.</p>
+</li>
+<li>
+<p>Locate and review personal statistics in the Profile section.</p>
+</li>
+</ol>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_test_results_batch_report">12.3.2. Test Results (Batch Report)</h4>
+<div class="paragraph">
+<p>The following metrics were captured during the session with 5 participants:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.667%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Age</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gender</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CK (0-10)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Time (sec)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Completed?</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grade (0-10)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">21</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">M</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10 (Ref)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">73</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">63</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">M</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">245</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">58</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">F</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">110</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">31</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">F</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">7</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">95</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">8</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">M</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">142</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">9</p></td>
+</tr>
+</tbody>
+</table>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Average Age:</strong> 41.4 years.</p>
+</li>
+<li>
+<p><strong>Gender Ratio:</strong> 60% Male / 40% Female.</p>
+</li>
+<li>
+<p><strong>Average Time by Gender:</strong> Male: 153.3s | Female: 102.5s.</p>
+</li>
+<li>
+<p><strong>Average Time by Age Group:</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>[20-30]: 73s</p>
+</li>
+<li>
+<p>[30-40]: 118.5s</p>
+</li>
+<li>
+<p>[50-65]: 177.5s</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Overall Application Grade:</strong> <strong>8.4 / 10</strong></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_conclusions_and_observations">12.3.3. Conclusions and Observations</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Benchmark Comparison:</strong> By comparing the 'normal' users against our <strong>CK 10 (Ideal Scenario)</strong>, we identified that the primary time difference occurred during the registration phase and navigation to the statistics page. The ideal scenario took only 73 seconds, while the average user took approximately double that time.</p>
+</li>
+<li>
+<p><strong>Demographic Patterns:</strong> While our oldest user (63) successfully completed the test and gave a high grade, their completion time (245s) was significantly higher than the benchmark. This confirms that navigation flow needs to be more explicit for those with lower CK, as users in higher age brackets are more prone to hesitation or frustration when UI cues are purely iconographic.</p>
+</li>
+<li>
+<p><strong>Efficiency vs. Satisfaction:</strong> Interestingly, despite the variations in time taken, the grades remained consistently high (8-9). This suggests that the core game is engaging, but the friction lies in the secondary interface elements (Lobby and Profile navigation).</p>
+</li>
+<li>
+<p><strong>Direct Observations:</strong> During the "Think Aloud" sessions, we observed users hovering over the navbar looking for the "How to Play" section and hesitating at the Lobby screen because the "Start Game" button did not visually stand out as the primary action.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_proposed_changes_future_versions">12.3.4. Proposed Changes (Future Versions)</h4>
+<div class="paragraph">
+<p>Based on the feedback and observations from our test batch, the following improvements are proposed for future releases to enhance clarity and streamline the user flow:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Lobby Logic Optimization:</strong> Currently, game difficulty settings remain visible in the lobby regardless of the selected mode. We propose hiding these settings unless the <strong>PvC (Player vs Computer)</strong> mode is active, as they do not apply to other modes and cause confusion for new users.</p>
+</li>
+<li>
+<p><strong>Explicit Help Navigation:</strong> The "How to Play" section is currently represented only by a <code>?</code> icon in the navbar. To improve discoverability for users with lower computer dexterity, we propose adding an explicit <strong>"How to Play" label</strong> next to the icon or implementing a "First-time user" guided tour.</p>
+</li>
+<li>
+<p><strong>Game Start Visibility:</strong> Users noted that the "Start Game" button is too visually similar to other interface elements, leading to delays in beginning the match. We propose two possible solutions:</p>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Option A:</strong> Redesign the button with a high-contrast "Call to Action" (CTA) style to make it stand out.</p>
+</li>
+<li>
+<p><strong>Option B:</strong> Implement an <strong>automatic start</strong> sequence once all parameters are selected, removing the extra click entirely.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Accessibility:</strong> Increase font sizes and improve color contrast to better accommodate users in higher age brackets who struggled with small text.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_load_testing">12.4. Load Testing</h3>
+<div class="paragraph">
+<p><code>TODO</code></p>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_glossary">13. Glossary</h2>
 <div class="sectionbody">
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -2695,6 +3080,10 @@ All services currently emit logs exclusively to stdout/stderr. While Docker capt
 <td class="tableblock halign-left valign-top"><p class="tableblock">Cross-Origin Resource Sharing - a security mechanism that allows a web page to access resources from a different origin.</p></td>
 </tr>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cucumber.js</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A tool for running automated tests written in plain language (Gherkin), used for the project&#8217;s Acceptance Testing.</p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Docker</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">A containerization platform used to package and run the application services consistently across environments.</p></td>
 </tr>
@@ -2713,6 +3102,10 @@ All services currently emit logs exclusively to stdout/stderr. While Docker capt
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">GameY API</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The Node.js‑based API Gateway that routes moves and YEN payloads between the Webapp (or external bots) and the Rust Logic Engine.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gherkin</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A domain-specific language for defining test scenarios using Given/When/Then syntax, making technical tests readable for stakeholders.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Grafana</p></td>
@@ -2741,6 +3134,10 @@ All services currently emit logs exclusively to stdout/stderr. While Docker capt
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Node.js</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The JavaScript runtime used for the User Service.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Playwright</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A cross-browser automation framework used for End-to-End (E2E) testing on Chromium, Firefox, and WebKit.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">PlantUML</p></td>
@@ -2775,6 +3172,10 @@ All services currently emit logs exclusively to stdout/stderr. While Docker capt
 <td class="tableblock halign-left valign-top"><p class="tableblock">The Node.js‑based subsystem responsible for user registration, authentication, and persistence of statistics.</p></td>
 </tr>
 <tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Vitest</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Vite-native testing framework used as the primary runner for unit and integration tests across the stack.</p></td>
+</tr>
+<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Webapp</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The React frontend application that provides the user interface and orchestrates requests to the backend services.</p></td>
 </tr>
@@ -2798,7 +3199,7 @@ All services currently emit logs exclusively to stdout/stderr. While Docker capt
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-03-13 21:16:36 +0100
+Last updated 2026-04-28 17:42:16 +0200
 </div>
 </div>
 </body>
