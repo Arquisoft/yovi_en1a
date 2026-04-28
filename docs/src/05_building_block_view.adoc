@@ -21,19 +21,20 @@ skinparam componentStyle uml2
     component [GameY API Gateway] as gameyapi <<Node.js>>
     component [GameY Engine] as gamey <<Rust>>
     database "MongoDB" as db <<DBMS>>
-}
+ }
 
-' Connections
-webapp --> usersvc : "HTTPS / JSON (Auth)"
-webapp --> gameyapi : "HTTPS / JSON (Game & Stats)"
-gameyapi --> gamey : "HTTP / YEN JSON (Game Logic)"
-usersvc --> db : "Mongoose / Binary JSON (Persistence)"
+ ' Connections
+ webapp --> usersvc : "HTTPS / JSON (Auth)"
+ webapp --> gameyapi : "HTTPS / JSON (Game & Stats)"
+ gameyapi --> gamey : "HTTP / YEN JSON (Game Logic)"
+ usersvc --> db : "MongoDB Driver / BSON (Auth)"
+ gameyapi --> db : "MongoDB Driver / BSON (Game Stats)"
 
-note right of db
-  Stores User Profiles, 
-  Match History, and 
-  Bot Statistics.
-end note
+ note right of db
+   Stores User Profiles, 
+   Match History, and 
+   Bot Statistics.
+ end note
 @enduml
 ----
 ==== Component Descriptions
@@ -89,7 +90,7 @@ profile --> gameyapi : "GET /profile"
 |Component |Detailed Responsibility
 |main.tsx |The Bootstrap of the application. It utilizes the react-dom/client library to find the root element in the HTML and injects the React application. It implements StrictMode to identify potential problems during development.
 |App.tsx |The Navigation Orchestrator. Reads URL query parameters (?view=) to render the correct view: RegisterForm, Lobby, GameBoard, or Profile. Manages logout and navigation between views.
-|RegisterForm.tsx |The Auth Hub. Manages both Login and Register flows within a single toggleable form. On success, stores the JWT token in localStorage and invokes the onRegisterSuccess callback to navigate to the Lobby.
+|RegisterForm.tsx |On success, stores the JWT token in localStorage and triggers navigation to the Lobby via URL parameters.
 |Lobby.tsx |The Game Configuration Hub. Allows users to select mode (PvP/PvC), difficulty (Beginner/Medium/Advanced), board size (5-15), and game rule (Classic/Why Not/FortuneY).
 |GameBoard.tsx |The Core Gameplay Component. Renders the hexagonal board, manages live sessions via the GameY API, handles moves, bot responses, undo, rematch, and coin-flip (FortuneY rule).
 |Profile.tsx |The Statistics View. Fetches win rate, best score, and match history from MongoDB via the GameY API. Supports avatar selection with live persistence.
@@ -145,7 +146,9 @@ lib --> server
 lib --> notation
 lib --> error
 
-server --> notation : "Uses YEN for API" cli --> core : "Updates state" core --> error : "Throws violations" 
+server --> notation : "Uses YEN for API"
+cli --> core : "Updates state"
+core --> error : "Throws violations" 
 @enduml
 ----
 
@@ -179,37 +182,27 @@ Every action passes through the gamey_error module. If a player (or the Webapp) 
 The notation/yen.rs module ensures that complex triangular board states can be compressed into a single string. This is critical for the "Building Block" connection between the Webapp and GameY, as it minimizes the data payload sent over HTTP.
 
 //==============================================================================
-=== Level 2: User Service 
-[plantuml, user-service-level3, png]
+=== Level 2: User Service (Port 3000)
+
+The User Service is a Node.js/Express application responsible for user identity management. It handles registration, login, password hashing, and JWT token generation.
+
+[plantuml, user-service-level2, png]
 ----
 @startuml
-!include <C4/C4_Container>
+skinparam componentStyle uml2
 
-title Container Diagram for YOVI_EN1A System (Level 2: User Service)
-
-Person(user, "End User", "Interacts with the web application via browser.")
-
-System_Boundary(c1, "YOVI Architecture") {
-    Container(webapp, "Web Application", "React/Vite", "Provides UI for user registration and game interaction.")
-    Container(user_service, "User Service", "Node.js/Express", "Handles user creation and authentication logic.")
-    Container(gamey_api, "GameY API Gateway", "Node.js", "Routes public game API requests to the engine.")
-    Container(gamey_engine, "GameY Engine", "Custom Engine", "Handles game logic and status internally.")
-    ContainerDb(nosql, "Database", "MongoDB", "Stores user profiles and credentials securely.")
-
-    System_Boundary(observability, "Monitoring Stack") {
-        Container(prometheus, "Prometheus", "Time-series DB", "Scrapes and stores performance metrics.")
-        Container(grafana, "Grafana", "Visualization", "Displays metrics and system health dashboards.")
-    }
+package "User Service (users/)" {
+    component [Express Entry Point] as express <<Node.js>>
+    component [bcrypt] as bcrypt <<Security>>
+    component [JWT] as jwt <<Auth>>
+    component [express-prom-bundle] as metrics <<Metrics>>
+    database "MongoDB\n(yovi)" as db <<DBMS>>
 }
 
-Rel(user, webapp, "Uses", "HTTPS/80")
-Rel(webapp, user_service, "API Calls", "JSON/HTTP (Port 3000)")
-Rel(webapp, gamey_api, "API Calls", "JSON/HTTP (Port 3001)")
-Rel(gamey_api, gamey_engine, "Internal Game Logic", "HTTP (Port 4000)")
-Rel(user_service, nosql, "Reads/Writes", "MongoDB Wire Protocol")
-Rel(prometheus, user_service, "Scrapes /metrics", "HTTP")
-Rel(grafana, prometheus, "Queries metrics", "PromQL")
-
+express --> bcrypt : "Hash / Compare passwords"
+express --> jwt : "Sign / Verify tokens"
+express --> db : "Read/Write users collection"
+express --> metrics : "Expose /metrics"
 @enduml
 ----
 
@@ -220,18 +213,77 @@ Rel(grafana, prometheus, "Queries metrics", "PromQL")
 | Component | Technology | Responsibility
 
 | **Express Entry Point**
-| Node.js / Express 5.x
-| Orchestrates the business logic for `/createuser` and `/login` endpoints, including JWT token generation on successful authentication.
+| Node.js / Express 4.x
+| Orchestrates `/createuser` and `/login` endpoints, including JWT token generation on successful authentication.
 
 | **Security Manager**
 | bcrypt
-| Ensures "Security by Design" by hashing passwords.
+| Hashes passwords at cost factor 10 before persistence. Verifies submitted passwords against stored hashes on login.
+
+| **Auth Manager**
+| jsonwebtoken
+| Signs JWT tokens containing `userId`, `username`, and `email` with a 2-hour expiry.
 
 | **Database Driver**
 | MongoDB Driver 7.x
-| Handles asynchronous communication with the `yovi` database.
+| Handles asynchronous communication with the `yovi` database. Enforces unique indexes on `email` and `username`.
 
 | **Metrics Provider**
 | express-prom-bundle
-| Bridges the application to the Prometheus monitoring instance.
+| Exposes `/metrics` endpoint for Prometheus scraping.
+|===
+=== Level 2: GameY API Gateway (Port 3001)
+
+The GameY API Gateway is a Node.js/Express service that orchestrates active game sessions, routes moves to the Rust engine, handles win detection, and persists completed games to MongoDB.
+
+[plantuml, gamey-api-level2, png]
+----
+@startuml
+skinparam componentStyle uml2
+
+package "GameY API (gamey-service/)" {
+    component [Express Entry Point] as express <<Node.js>>
+    component [Session Store] as sessions <<In-Memory>>
+    component [Win Detector] as win <<Union-Find>>
+    component [JWT Verifier] as jwt <<Auth>>
+    database "MongoDB\n(games)" as db <<DBMS>>
+}
+
+node "External" {
+    component [GameY Engine\n(Rust :4000)] as rust
+}
+
+express --> sessions : "Read/Write active games"
+express --> win : "updateWinStatus()"
+express --> jwt : "getUserIdFromRequest()"
+express --> rust : "POST /v1/ybot/choose/{bot}"
+express --> db : "insertOne(games collection)"
+@enduml
+----
+
+==== Component Responsibilities
+
+[cols="1,2,2"]
+|===
+| Component | Technology | Responsibility
+
+| **Express Entry Point**
+| Node.js / Express 4.x
+| Orchestrates all game routes: `/play/create`, `/play/:gameId/move`, `/play/:gameId/flip`, `/profile`, `/profile/avatar`.
+
+| **Session Store**
+| In-Memory Map
+| Stores active game sessions. Sessions are lost if the process restarts unexpectedly.
+
+| **Win Detector**
+| Union-Find (JavaScript)
+| `updateWinStatus()` checks all three sides after each move to detect a winner without calling the Rust engine.
+
+| **JWT Verifier**
+| jsonwebtoken
+| `getUserIdFromRequest()` extracts and verifies the Bearer token to link games to authenticated users.
+
+| **Database Driver**
+| MongoDB Driver 7.x
+| Persists completed game results to the `games` collection via `saveGameResult()`.
 |===
