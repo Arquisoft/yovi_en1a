@@ -437,8 +437,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <body class="article">
 <div id="header">
 <h1><span class="image"><img src="./images/arc42-logo.png" alt="arc42"></span> yovi_en1a</h1>
+<div class="details">
+<span id="revnumber">version 8.2 EN,</span>
+<span id="revdate">January 2023</span>
+<br><span id="revremark">(based upon AsciiDoc version)</span>
+</div>
 <div id="toc" class="toc">
-<div id="toctitle">table of contents</div>
+<div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#section-introduction-and-goals">1. Introduction and Goals</a>
 <ul class="sectlevel2">
@@ -479,7 +484,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#section-runtime-view">6. Runtime View</a>
 <ul class="sectlevel2">
 <li><a href="#_scenario_1_human_player_vs_ai_move_execution">6.1. Scenario 1: Human Player vs. AI (Move Execution)</a></li>
-<li><a href="#_scenario_2_human_player_vs_human_player_multiplayer_turn_execution">6.2. Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)</a></li>
+<li><a href="#_scenario_2_human_player_vs_human_player_local_hot_seat_execution">6.2. Scenario 2: Human Player vs. Human Player (Local Hot-Seat Execution)</a></li>
 <li><a href="#_scenario_3_match_conclusion_and_statistics_persistance">6.3. Scenario 3: Match Conclusion and Statistics Persistance</a></li>
 <li><a href="#_scenario_4_user_authentication_and_login_flow">6.4. Scenario 4: User Authentication and Login Flow</a></li>
 <li><a href="#_scenario_5_error_handling_invalid_move_validation">6.5. Scenario 5: Error Handling - Invalid Move Validation</a></li>
@@ -1069,7 +1074,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/context-diagram.svg" alt="context diagram" width="417" height="350">
+<img src="./images/context-diagram.svg" alt="context diagram" width="412" height="387">
 </div>
 </div>
 <table class="tableblock frame-all grid-all stretch">
@@ -1179,68 +1184,148 @@ These stakeholders determine the extent and the level of detail of your work and
 <div class="sect2">
 <h3 id="_technology_decisions">4.1. Technology Decisions</h3>
 <div class="paragraph">
-<p>As outlined in the Technical Context (Section 3), the core technology stack and infrastructure—Rust for the Logic Engine, React.js for the Frontend, Node.js for the User Service, YEN Notation for communication, and Docker for containerization were predefined constraints for this project.</p>
-</div>
-<div class="paragraph">
-<p>Our primary architectural decisions focus on how to integrate these given constraints effectively and what supplementary technologies to employ to complete the system:</p>
+<p>The system architecture bridges mandated technical constraints with strategic choices focused on security, internationalization, and performance.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
+<col style="width: 16.6666%;">
 <col style="width: 33.3333%;">
-<col style="width: 33.3333%;">
-<col style="width: 33.3334%;">
+<col style="width: 50.0001%;">
 </colgroup>
-<tbody>
+<thead>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Decision</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Technology</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Motivation</p></td>
+<th class="tableblock halign-left valign-top">Decision</th>
+<th class="tableblock halign-left valign-top">Technology</th>
+<th class="tableblock halign-left valign-top">Motivation</th>
 </tr>
+</thead>
+<tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Database</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">MongoDB</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Document-based storage naturally fits the predefined YEN Notation (JSON) format seamlessly and allows for flexible player statistics without rigid schemas.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fits the YEN Notation (JSON) format naturally and allows for flexible player statistics without rigid schemas.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Hosting</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Microsoft Azure (VM)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Selected for robust management and seamless GitHub Actions integration, utilizing "Azure for Students" credits.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Backend API</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node.js (Express)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Implemented as <code>gameyapi</code> (REST). Chosen for async I/O efficiency when orchestrating downstream Rust and MongoDB calls.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Authentication</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JWT (Stateless)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Allows services to verify user identity locally, reducing network latency and decoupling the service landscape.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Security</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">bcrypt</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ensures secure password hashing before persistence in MongoDB, protecting user credentials against rainbow table attacks.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Globalisation</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">i18n</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Implemented to support multiple languages within the React frontend, ensuring accessibility for a global player base.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="sect3">
+<h4 id="_testing_documentation_strategy">4.1.1. Testing &amp; Documentation Strategy</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 33.3333%;">
+<col style="width: 50.0001%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Decision</th>
+<th class="tableblock halign-left valign-top">Technology</th>
+<th class="tableblock halign-left valign-top">Motivation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>API Docs</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">OpenAPI / Swagger</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Provides a machine-readable contract at <code>/api-docs</code> to ensure frontend-backend alignment.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>UI Testing</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Playwright</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ensures complex hexagonal grid interactions remain functional across all browser engines.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>End-to-End</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cucumber</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">BDD-style verification of full game flows (login → move → win) for business logic consistency.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Load Testing</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gatling</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Validates that the Node/Rust stack can sustain high concurrent traffic.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+</div>
 <div class="sect2">
 <h3 id="_top_level_decomposition">4.2. Top-level Decomposition</h3>
 <div class="paragraph">
-<p>To effectively integrate the mandated technologies, the system follows a Microservices-oriented decomposition. This ensures a clean separation of concerns and independent scalability:</p>
+<p>The system follows a microservices-oriented approach to ensure a clean separation of concerns:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Webapp (React):</strong> Serves as the presentation layer and the primary entry point for human users.</p>
+<p><strong>Webapp (React):</strong> The presentation layer. It utilizes <strong>i18n</strong> for localization and translates UI interactions into YEN-compliant API calls.</p>
 </li>
 <li>
-<p><strong>API Gateway (Node.js):</strong> The <code>gameyapi</code> service acting as the public REST interface, routing YEN payloads to the underlying Rust engine (Port 3001).</p>
+<p><strong>User Service (Node.js):</strong> The identity provider (Port 3000). Uses <strong>bcrypt</strong> for secure credential storage and issues signed JWTs.</p>
 </li>
 <li>
-<p><strong>Logic Engine (Rust):</strong> A stateless, isolated service dedicated purely to high-performance game rule validation and AI calculations (Port 4000).</p>
+<p><strong>Game API (gameyapi - Node.js):</strong> The core orchestrator (Port 3001). A RESTful service managing active sessions and coordinating the flow between the UI and the logic engine.</p>
 </li>
 <li>
-<p><strong>User Service (Node.js):</strong> Acts as the orchestrator for user accounts and statistics, handling concurrent API requests and communicating directly with our chosen MongoDB cluster (Port 3000).</p>
+<p><strong>Logic Engine (Rust):</strong> The computational core (Port 4000). A stateless service optimized for grid validation and AI calculations.</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_achievement_of_quality_goals">4.3. Achievement of Quality Goals</h3>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Interoperability:</strong> By rigorously applying the mandated YEN Notation across our REST/JSON APIs, the system allows external bots (using different coordinate systems like Barycentric or Index) to integrate effortlessly with the Rust engine.</p>
-</li>
-<li>
-<p><strong>Persistence &amp; Flexibility:</strong> Our strategic decision to use MongoDB ensures that as the game evolves (e.g., adding new bot metrics or match data), the system can dynamically adapt its data structures.</p>
-</li>
-<li>
-<p><strong>Performance:</strong> The architectural decoupling guarantees that the heavy computational hexagonal grid logic is strictly handled by the Rust Engine, while the Node.js service leverages its non-blocking I/O to handle user requests without bottlenecks.</p>
-</li>
-</ul>
-</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Quality Goal</th>
+<th class="tableblock halign-left valign-top">Strategy for Achievement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Availability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Resilient Middleware &amp; Hosting</strong>: Implementing a custom DB health check in the User Service to auto-reconnect to MongoDB and deploying on Azure VMs to ensure the API remains reachable for both users and bots.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Usability</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Internationalization (i18n)</strong>: Integrating <code>react-i18next</code> ensures that game rules, statistics, and UI labels are intuitive and accessible in the user&#8217;s preferred language, lowering the learning curve.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Performance</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Functional Offloading</strong>: Isolating CPU-intensive hexagonal grid logic and AI move generation in a dedicated Rust module. This prevents the Node.js event loop from blocking, maintaining low latency for concurrent matches.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Security</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Data &amp; Identity Protection</strong>: Utilizing <strong>bcrypt</strong> for securing user credentials at rest and <strong>JWT</strong> for stateless authorization, ensuring users can only manage their own profiles and access their specific match histories.</p></td>
+</tr>
+</tbody>
+</table>
 <div style="page-break-after: always;"></div>
 </div>
 </div>
@@ -1261,7 +1346,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/level1-whitebox.png" alt="level1 whitebox" width="645" height="354">
+<img src="./images/level1-whitebox.png" alt="level1 whitebox" width="698" height="415">
 </div>
 </div>
 <div class="sect3">
@@ -1309,7 +1394,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/webapp-level2.png" alt="webapp level2" width="688" height="439">
+<img src="./images/webapp-level2.png" alt="webapp level2" width="762" height="525">
 </div>
 </div>
 <div class="sect3">
@@ -1392,7 +1477,7 @@ These stakeholders determine the extent and the level of detail of your work and
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/gamey-level2.png" alt="gamey level2" width="811" height="379">
+<img src="./images/gamey-level2.png" alt="gamey level2" width="899" height="461">
 </div>
 </div>
 <div class="sect3">
@@ -1475,7 +1560,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <h3 id="_level_2_user_service">5.4. Level 2: User Service</h3>
 <div class="imageblock">
 <div class="content">
-<img src="./images/user-service-level3.png" alt="user service level3" width="645" height="920">
+<img src="./images/user-service-level3.png" alt="user service level3" width="719" height="1018">
 </div>
 </div>
 <div class="sect3">
@@ -1534,35 +1619,35 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/human-vs-ai-move.svg" alt="human vs ai move" width="929" height="681">
+<img src="./images/human-vs-ai-move.png" alt="human vs ai move" width="621" height="414">
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_scenario_2_human_player_vs_human_player_multiplayer_turn_execution">6.2. Scenario 2: Human Player vs. Human Player (Multiplayer Turn Execution)</h3>
+<h3 id="_scenario_2_human_player_vs_human_player_local_hot_seat_execution">6.2. Scenario 2: Human Player vs. Human Player (Local Hot-Seat Execution)</h3>
 <div class="paragraph">
-<p><strong>Description:</strong> This diagram illustrates the turn flow between two human players. It demonstrates how a move made by one player is validated, saved, and seamlessly pushed to the opponent&#8217;s screen.</p>
+<p><strong>Description:</strong> This diagram illustrates the turn flow between two human players playing on the same device (shared screen). It demonstrates how a move made by one player is validated and saved in the API&#8217;s memory, seamlessly initiating the next player&#8217;s turn on the same client.</p>
 </div>
 <div class="paragraph">
-<p><strong>Notable Aspects:</strong> Unlike the "Human vs. AI" scenario where the Rust engine immediately calculates a counter-move, here the GameY Engine (Rust) is strictly used for rule validation. The User Service (Node) acts as the central state manager. It handles saving the updated board to the database internally and directly pushes the new state to the second player&#8217;s client (via WebSockets/Push), initiating their turn without the need for manual retrieval or polling.</p>
+<p><strong>Notable Aspects:</strong> Unlike the "Human vs. AI" scenario, the GameY Engine (Rust) is not invoked here, as the Node.js API handles internal win-condition checks (Union-Find). The GameY API acts as the central state manager using an in-memory session. It updates the board state internally and returns the 200 OK response to the shared client without hitting the database or requiring WebSocket infrastructure.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/human-vs-human.png" alt="human vs human" width="958" height="565">
+<img src="./images/human-vs-human.png" alt="human vs human" width="546" height="432">
 </div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_scenario_3_match_conclusion_and_statistics_persistance">6.3. Scenario 3: Match Conclusion and Statistics Persistance</h3>
 <div class="paragraph">
-<p><strong>Description:</strong> This scenario demonstrates the data flow when a game concludes (either by a win, loss, or draw). It shows the interaction between the Frontend, the Logic Engine, and the User Service to ensure persistent data storage.</p>
+<p><strong>Description:</strong> This scenario demonstrates the data flow when a game concludes (either by a win, loss, or draw).It shows the interaction between the Frontend and the GameY API, which detects the win and persists the result directly to MongoDB.</p>
 </div>
 <div class="paragraph">
-<p><strong>Notable Aspects:</strong> The <code>GameY Engine</code> is stateless; it only validates the win. The responsibility of saving the match and updating user statistics is delegated to the <code>User Service</code>, which asynchronously communicates with <code>MongoDB</code>.</p>
+<p>*Notable Aspects:*Win detection is handled entirely within the GameY API via the updateWinStatus() function (Union-Find in JavaScript), without invoking the Rust engine. Upon detecting a winner, the GameY API writes the result directly to MongoDB before returning the final game state to the Webapp.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/match-conclusion.png" alt="match conclusion" width="1191" height="580">
+<img src="./images/match-conclusion.png" alt="match conclusion" width="662" height="411">
 </div>
 </div>
 </div>
@@ -1576,7 +1661,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/auth-flow.png" alt="auth flow" width="690" height="544">
+<img src="./images/auth-flow.png" alt="auth flow" width="668" height="468">
 </div>
 </div>
 </div>
@@ -1586,11 +1671,11 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <p><strong>Description:</strong> This exception scenario demonstrates system resilience. It shows what happens when an invalid move (for example, attempting to play on an already occupied coordinate) is submitted by the user.</p>
 </div>
 <div class="paragraph">
-<p><strong>Notable Aspects:</strong> The <code>GameY Engine</code> acts as the single source of truth for game rules. If a YEN payload violates these rules, the engine strictly rejects the state change. It returns an appropriate error code, which the Webapp must gracefully handle to warn the user without breaking or crashing the UI state.</p>
+<p><strong>Notable Aspects:</strong> The GameY API (Node.js) acts as the first validation layer, immediately rejecting moves with a wrong player turn or an already-occupied cell before forwarding anything to the Rust engine. If the move passes this check, the YEN payload is sent to the GameY Engine, which handles deeper rule violations such as malformed board states. The Webapp reverts any optimistic UI update and displays a warning to the user without crashing the game state.</p>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/invalid-move.png" alt="invalid move" width="1007" height="577">
+<img src="./images/invalid-move.png" alt="invalid move" width="561" height="381">
 </div>
 </div>
 <div style="page-break-after: always;"></div>
@@ -1609,7 +1694,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/level1-whitebox.svg" alt="level1 whitebox" width="1202" height="362">
+<img src="./images/level1-whitebox.svg" alt="level1 whitebox" width="1358" height="429">
 </div>
 </div>
 </div>
@@ -1629,7 +1714,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <h4 id="_level_2a_application_services">7.2.2. Level 2a: Application Services</h4>
 <div class="imageblock">
 <div class="content">
-<img src="./images/level2-app.svg" alt="level2 app" width="468" height="549">
+<img src="./images/level2-app.svg" alt="level2 app" width="524" height="627">
 </div>
 </div>
 </div>
@@ -1637,7 +1722,7 @@ The notation/yen.rs module ensures that complex triangular board states can be c
 <h4 id="_level_2b_observability_stack">7.2.3. Level 2b: Observability Stack</h4>
 <div class="imageblock">
 <div class="content">
-<img src="./images/level2-obs.svg" alt="level2 obs" width="385" height="481">
+<img src="./images/level2-obs.svg" alt="level2 obs" width="376" height="560">
 </div>
 </div>
 </div>
@@ -1865,7 +1950,7 @@ Instead of relying on inefficient client-side polling, the Node.js User Service 
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/api-communication-flow.png" alt="api communication flow" width="940" height="513">
+<img src="./images/api-communication-flow.png" alt="api communication flow" width="941" height="513">
 </div>
 </div>
 </div>
@@ -2073,7 +2158,7 @@ Instead of relying on inefficient client-side polling, the Node.js User Service 
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="./images/error-propagation.png" alt="error propagation" width="754" height="561">
+<img src="./images/error-propagation.png" alt="error propagation" width="748" height="561">
 </div>
 </div>
 <div class="paragraph">
@@ -3199,7 +3284,7 @@ All services currently emit logs exclusively to stdout/stderr. While Docker capt
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-04-28 17:42:16 +0200
+Last updated 2026-04-28 20:30:59 +0200
 </div>
 </div>
 </body>
