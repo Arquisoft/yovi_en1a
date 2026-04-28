@@ -2,7 +2,7 @@
   "name": "docs",
   "version": "1.0.0",
   "scripts": {
-    "build": "asciidoctor -D build -a imagesdir=./images -a imagesoutdir=./images -r asciidoctor-diagram index.adoc && shx cp -R images build/",
+    "build": "asciidoctor -D ../build -a imagesdir=../images -a imagesoutdir=../images -r asciidoctor-diagram index.adoc && shx cp -R ../images ../build/",
     "deploy": "gh-pages -d build"
   },
   "dependencies": {
