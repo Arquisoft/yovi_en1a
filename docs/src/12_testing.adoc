@@ -100,3 +100,6 @@ In order to record the requests, we used the recorder script. Using Mozilla Fire
 
 We modify the simulation for including 1 to 30 randomized users interacting with the application. After executing, we get 0 KO messages and this results, showing a good management of a bigger user quantity:
 
+image::load-tests-graphs.png[]
+
+image::load-tests.png[]
