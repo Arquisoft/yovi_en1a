@@ -1,142 +1,114 @@
 [[section-runtime-view]]
 == Runtime View
 
-=== Scenario 1: User Authentication and Login Flow (Entry)
+=== Scenario 1: Human Player vs. AI (Move Execution)
 
-*Description:* Secure login process using **bcrypt** for credential verification and **JWT** for session issuance. This is the entry point for all authenticated interactions.
+*Description:* This scenario illustrates the core game loop when a human player interacts with the frontend to play against the system's AI. It highlights the transformation of UI interactions into the standardized YEN notation and the delegation of logic to the high-performance Rust engine.
 
-*Notable Aspects:* This interaction occurs strictly between the Webapp and the User Service (Port 3000). Password safety is ensured via hashing, and the resulting stateless token allows for decentralized authorization in subsequent game calls.
-
-[plantuml, target="auth-flow", format="png"]
-----
-@startuml
-autonumber
-actor "Human Player" as User
-participant "Webapp\n(React)" as UI
-participant "User Service\n(Node.js:3000)" as UserSvc
-database "MongoDB" as DB
-
-User -> UI : Submits credentials\n(username, password)
-UI -> UserSvc : POST /auth/login
-activate UserSvc
-
-UserSvc -> DB : Find user by username
-activate DB
-DB --> UserSvc : User Document (Hashed PWD)
-deactivate DB
-
-UserSvc -> UserSvc : bcrypt.compare(password, hash)
-UserSvc -> UserSvc : Sign JWT (userId, username)
-
-UserSvc --> UI : 200 OK (JWT Token)
-deactivate UserSvc
-
-UI -> UI : Store JWT in SessionStorage
-UI -> User : Redirect to Game Lobby
-@enduml
-----
-
-=== Scenario 2: Human Player vs. AI (Game Loop)
-
-*Description:* The primary game loop where `gameyapi` orchestrates moves between the user and the Rust Engine.
-
-*Notable Aspects:* Every move request is authorized via JWT. `gameyapi` (Port 3001) maintains the active session in-memory and proxies the move to the Logic Engine (Port 4000) for validation and AI counter-move calculation.
+*Notable Aspects:* The Webapp acts as a pure presentation layer. Move validations are routed through the `GameY API (Node.js)`, which proxies the request to the `GameY Engine (Rust)`. All coordinate conversions and rule logic are strictly handled by the Rust engine.
 
 [plantuml, target="human-vs-ai-move", format="png"]
 ----
 @startuml
-autonumber
-actor "Human Player" as User
-participant "Webapp\n(React)" as UI
-participant "gameyapi\n(Node.js:3001)" as API
-participant "Logic Engine\n(Rust:4000)" as Rust
+actor "Human Player" as Player
+participant "Webapp\n(React :80)" as Webapp
+participant "GameY API\n(Node.js :3001)" as API
+participant "GameY Engine\n(Rust :4000)" as Engine
 
-User -> UI : Clicks hexagonal cell
-UI -> API : POST /game/move\n(JWT + YEN Payload)
-activate API
-
-API -> API : Verify JWT Statelessly
-API -> Rust : POST /next-move\n(YEN Payload)
-activate Rust
-
-Rust -> Rust : Validate Player Move
-Rust -> Rust : Calculate AI Response
-Rust --> API : 200 OK (New YEN Board State)
-deactivate Rust
-
-API -> API : Update in-memory session map
-API --> UI : 200 OK (New Board State)
-deactivate API
-
-UI -> User : Render updated grid
+Player -> Webapp : Click cell (index)
+Webapp -> API : POST /play/{gameId}/move\n{ player, x, y }
+API -> Engine : POST /v1/ybot/choose/{bot}\n{ YEN payload }
+Engine --> API : { coords }
+API --> Webapp : 200 OK — GameSession\n{ moves, status, currentPlayer }
+Webapp --> Player : Board updated
 @enduml
 ----
+===  Scenario 2: Human Player vs. Human Player (Local Hot-Seat Execution)
 
-=== Scenario 3: Invalid Move Validation (Exception Flow)
+*Description:* This diagram illustrates the turn flow between two human players playing on the same device (shared screen). It demonstrates how a move made by one player is validated and saved in the API's memory, seamlessly initiating the next player's turn on the same client.
 
-*Description:* System resilience during rule violations. This scenario occurs when the user attempts a move that contradicts the game logic.
+*Notable Aspects:* Unlike the "Human vs. AI" scenario, the GameY Engine (Rust) is not invoked here, as the Node.js API handles internal win-condition checks (Union-Find). The GameY API acts as the central state manager using an in-memory session. It updates the board state internally and returns the 200 OK response to the shared client without hitting the database or requiring WebSocket infrastructure.
 
-*Notable Aspects:* The **Logic Engine** acts as the single source of truth. If a move is invalid (e.g., cell occupied), the engine returns a 400-range error which `gameyapi` forwards to the UI to trigger a user notification.
-
-[plantuml, target="invalid-move", format="png"]
+[plantuml, target="human-vs-human", format="png"]
 ----
 @startuml
-autonumber
-actor "Player" as User
-participant "Webapp\n(React)" as UI
-participant "gameyapi\n(Node.js:3001)" as API
-participant "Logic Engine\n(Rust:4000)" as Rust
+actor "Active Player\n(P1 or P2)" as Player
+participant "Webapp\n(React :80)" as Webapp
+participant "GameY API\n(Node.js :3001)" as API
 
-User -> UI : Clicks occupied cell
-UI -> API : POST /game/move (JWT + YEN)
-activate API
-
-API -> Rust : POST /next-move
-activate Rust
-Rust -> Rust : Rule Check: OCCUPIED_CELL
-Rust --> API : 400 Bad Request (Error: "INVALID_MOVE")
-deactivate Rust
-
-API --> UI : 400 Bad Request (Error: "INVALID_MOVE")
-deactivate API
-
-UI -> UI : Revert optimistic UI state
-UI -> User : Show Warning: "Cell already occupied!"
+Player -> Webapp : Click cell (index)
+Webapp -> API : POST /play/{gameId}/move\n{ player, x, y }
+API -> API : updateWinStatus()\n[Union-Find]
+API --> Webapp : 200 OK — GameSession\n{ currentPlayer, status }
+Webapp --> Player : Board updated / turn switched
 @enduml
 ----
 
-=== Scenario 4: Match Conclusion and Statistics Persistence (Exit)
+=== Scenario 3: Match Conclusion and Statistics Persistance
 
-*Description:* The data flow triggered when a terminal state is reached (Win/Loss/Draw), moving data from volatile memory to the database.
+*Description:* This scenario demonstrates the data flow when a game concludes (either by a win, loss, or draw).It shows the interaction between the Frontend and the GameY API, which detects the win and persists the result directly to MongoDB.
 
-*Notable Aspects:* Once the **Logic Engine** detects a game-over state, `gameyapi` triggers the persistence. Finished games are written to MongoDB to update the player's permanent history and statistics.
+*Notable Aspects:*Win detection is handled entirely within the GameY API via the updateWinStatus() function (Union-Find in JavaScript), without invoking the Rust engine. Upon detecting a winner, the GameY API writes the result directly to MongoDB before returning the final game state to the Webapp. 
 
 [plantuml, target="match-conclusion", format="png"]
 ----
 @startuml
-autonumber
-actor "Player" as User
-participant "Webapp\n(React)" as UI
-participant "gameyapi\n(Node.js:3001)" as API
-participant "Logic Engine\n(Rust:4000)" as Rust
+actor "Player" as Player
+participant "Webapp\n(React :80)" as Webapp
+participant "GameY API\n(Node.js :3001)" as API
 database "MongoDB" as DB
 
-User -> UI : Makes the winning move
-UI -> API : POST /game/move (JWT + YEN)
-activate API
+Player -> Webapp : Click winning cell
+Webapp -> API : POST /play/{gameId}/move\n{ player, x, y }
+API -> API : updateWinStatus() → winner found
+API -> DB : insertOne(games collection)
+API --> Webapp : 200 OK — GameSession\n{ status:'finished', winner, winningPath }
+Webapp --> Player : Show winner popup
+@enduml
+----
 
-API -> Rust : POST /next-move
-activate Rust
-Rust --> API : Result: "WINNER_PLAYER" (YEN JSON)
-deactivate Rust
+===  Scenario 4: User Authentication and Login Flow
 
-API -> DB : Insert finished match record
-API -> DB : Update User Stats ($inc wins)
-API -> API : Remove session from in-memory Map
+*Description:* This scenario illustrates the security and session management architecture of the system. It details how the system handles a user login request, verifies credentials, and establishes a secure session for the player.
 
-API --> UI : 200 OK (Final Result + Updated Stats)
-deactivate API
+*Notable Aspects:* The `GameY Engine` is bypassed entirely for this process, as it is strictly dedicated to game logic. This interaction occurs purely between the Webapp (Frontend), the `User Service` (Node.js), and the Database (MongoDB). It demonstrates a clean separation of concerns where the User Service handles all identity and access management.
 
-UI -> User : Display "Victory!" and new stats
+[plantuml, target="auth-flow", format="png"]
+----
+@startuml
+actor "User" as User
+participant "Webapp\n(React :80)" as Webapp
+participant "User Service\n(Node.js :3000)" as Users
+database "MongoDB" as DB
+
+User -> Webapp : Submit login form\n{ usernameOrEmail, password }
+Webapp -> Users : POST /login
+Users -> DB : findOne({ username or email })
+DB --> Users : User document
+Users -> Users : bcrypt.compare(password, hash)
+Users --> Webapp : 200 OK — { token, username }
+Webapp -> Webapp : localStorage.setItem('token')
+Webapp --> User : Navigate to Lobby
+@enduml
+----
+
+=== Scenario 5: Error Handling - Invalid Move Validation
+
+*Description:* This exception scenario demonstrates system resilience. It shows what happens when an invalid move (for example, attempting to play on an already occupied coordinate) is submitted by the user. 
+
+*Notable Aspects:* The GameY API (Node.js) acts as the first validation layer, immediately rejecting moves with a wrong player turn or an already-occupied cell before forwarding anything to the Rust engine. If the move passes this check, the YEN payload is sent to the GameY Engine, which handles deeper rule violations such as malformed board states. The Webapp reverts any optimistic UI update and displays a warning to the user without crashing the game state.
+
+[plantuml, target="invalid-move", format="png"]
+----
+@startuml
+actor "Player" as Player
+participant "Webapp\n(React :80)" as Webapp
+participant "GameY API\n(Node.js :3001)" as API
+
+Player -> Webapp : Click occupied cell
+Webapp -> API : POST /play/{gameId}/move\n{ player, x, y }
+API -> API : Validate move\n(wrong turn or occupied)
+API --> Webapp : 400 — { error: "Invalid move" }
+Webapp --> Player : Revert board / show warning
 @enduml
 ----
