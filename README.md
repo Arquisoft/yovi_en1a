@@ -1,83 +1,129 @@
 <div align="center">
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0f0c29,50:302b63,100:24243e&height=160&section=header&text=RIFT%20VAULT&fontSize=48&fontColor=6ec6ff&fontAlignY=40&desc=Your%20Riftbound%20Card%20Stock%2C%20Organized&descAlignY=62&descSize=17&descColor=8fd3ff&animation=fadeIn" width="100%"/>
 
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:1a1a2e,50:16213e,100:e94560&height=150&section=header&text=%F0%9F%94%BA%20YOVI%20%F0%9F%94%BA&fontSize=55&fontColor=ffffff&fontAlignY=45&desc=Game%20Y%20at%20UniOvi&descAlignY=68&descSize=18&descColor=aaaaaa" width="100%"/>
 
-*Browse, sort, and manage your Riftbound card collection right from your browser.*
+[![Release](https://github.com/arquisoft/yovi_en1a/actions/workflows/release-deploy.yml/badge.svg)](https://github.com/arquisoft/yovi_en1a/actions/workflows/release-deploy.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en1a&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en1a)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en1a&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en1a)
 
-<br/>
+### 🌐 [▶ Play now! → http://20.199.137.85](http://20.199.137.85)
 
-![Node.js](https://img.shields.io/badge/Node.js-Required-1e3a5f?style=for-the-badge&logo=node.js&logoColor=6ec6ff)
-![Status](https://img.shields.io/badge/Status-Early%20Build-1e3a5f?style=for-the-badge&logo=riot-games&logoColor=6ec6ff)
-![Data](https://img.shields.io/badge/Data-riftscribe.gg-1e3a5f?style=for-the-badge&logo=databricks&logoColor=6ec6ff)
+### 💻 [▶ Presentation about our project!](https://www.canva.com/design/DAHEDEt87NU/3sfOKeuWXhSWBLjhyTD-tA/view?utm_content=DAHEDEt87NU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h9077cf4937)
+
+*Outsmart your rivals — or the bot — on a triangular board where every move counts.*<br/>
+*Built for the ASW course at Universidad de Oviedo — requested by Micrati.*
 
 </div>
 
 ---
 
-## 🔷 About
-
-**Rift Folio** is a local app for tracking your *Riftbound* card stock. It runs on a small Node.js server that acts as a bridge to the card API from [riftscribe.gg](https://riftscribe.gg).
-
----
-
-## 👥 Collaborators
+## 👥 Team
 
 | | Name | GitHub |
 |---|---|---|
+| 👩‍💻 | Olga Alonso Grela | [@uo288066](https://github.com/uo288066) |
 | 👩‍💻 | Clara Fernández Pérez | [@megu-hub](https://github.com/megu-hub) |
-| 👨‍💻 | Sergio Fernández-Miranda Longo | [@clubserg](https://github.com/clubserg) |
+| 👨‍💻 | Emre Sen | [@emresen12](https://github.com/emresen12) |
+| 👨‍💻 | Donato Giuliano | [@donatogiuliano](https://github.com/donatogiuliano) |
+| 👨‍💻 | Marvin Kickel | [@m8rvin](https://github.com/m8rvin) |
 
 ---
 
-## 🗃️ File Structure
-
-> *Note: this is an early, minimal version — the structure will evolve. Still missing: a database, auth/security, and the UI will move from plain HTML to React.*
+## 🏗️ Architecture
 
 ```
-rift-folio/
-├── server.js         🔹 Local server
-└── public/
-    └── index.html    🔹 Full app (UI + logic)
+yovi_en1a/
+├── webapp/       ⚛️  React + Vite + TypeScript frontend
+├── users/        🟢  Node.js + Express user service
+├── gamey/        🦀  Rust game engine & bot
+└── docs/         📐  Arc42 architecture documentation
+└── gameyapi/     🎮  API for the GameY bot
 ```
 
 ---
 
-## 📘 Requirements
+## ✨ Features
 
-| Requirement | Detail |
+| Feature | Description |
 |---|---|
-| 🔵 **Node.js** | Any recent version |
+| 🎮 **Game Y** | Triangular board game with bot support via Rust engine |
+| 👤 **User Registration** | Register and track players |
+| 🤖 **Bot Play** | Play against an AI opponent |
+| 📊 **Monitoring** | Prometheus + Grafana dashboards |
 
-Check whether you already have it installed by opening a terminal and running:
+---
+
+## 🚀 Running the Project
+
+### 🐳 With Docker (recommended)
 
 ```bash
-node -v
+docker-compose up --build
 ```
 
-If no version number shows up, download it for free from [nodejs.org](https://nodejs.org) (choose the **LTS** version).
+| Service | URL |
+|---|---|
+| 🌐 Web App | http://localhost |
+| 👤 Users API | http://localhost:3000 / http://localhost:3000/api-docs |
+| 🦀 Gamey Engine | http://localhost:4000 |
+| 🎮 Game API | http://localhost:3001 / http://localhost:3001/api-docs |
+| 📈 Prometheus | http://localhost:9090 |
+| 📊 Grafana | http://localhost:9091 |
 
 ---
 
-## 🚀 Getting Started
+### 💻 Without Docker
 
-1. Open a terminal (or command prompt) in this folder — the one containing `server.js` and the `public/` folder.
-2. Run:
-   ```bash
-   node server.js
-   ```
-3. You should see a message like:
-   ```
-   Rift Vault running at http://localhost:3000
-   ```
-4. Open that address in your browser: **http://localhost:3000**
-5. To stop the app, go back to the terminal and press `Ctrl+C`.
+You'll need **Node.js** and **Rust/Cargo** installed.
 
-> 🔁 Every time you want to use the app again, just repeat steps 1–4.
+**1. Users Service**
+```bash
+cd users && npm install && npm start
+# → http://localhost:3000
+```
+
+**2. Web App**
+```bash
+cd webapp && npm install && npm run dev
+# → http://localhost:5173
+```
+
+**3. Gamey Engine**
+```bash
+cd gamey && cargo run
+# → http://localhost:4000
+```
+
+---
+
+## 🧪 Scripts
+
+### Webapp
+| Command | Description |
+|---|---|
+| `npm run dev` | Start dev server |
+| `npm test` | Run unit tests |
+| `npm run test:e2e` | Run end-to-end tests |
+| `npm run start:all` | Start webapp + users together |
+
+### Users
+| Command | Description |
+|---|---|
+| `npm start` | Start the service |
+| `npm test` | Run tests |
+
+### Gamey (Cargo)
+| Command | Description |
+|---|---|
+| `cargo build` | Build the engine |
+| `cargo test` | Run tests |
+| `cargo run` | Run the engine |
+| `cargo doc` | Generate docs |
 
 ---
 
 <div align="center">
 
-*Made with 💙 by Clubserg & Megu*
+*Made with ❤️ at Universidad de Oviedo*
 
 </div>
